@@ -3,76 +3,72 @@
     {
       "action": "release",
       "apt_distributions": [
-        "focal"
+        "focal",
+        "jammy",
+        "noble"
       ],
       "apt_install": [
-        "ros-noetic-xgc2-gazebo-sim-manager",
-        "ros-noetic-xgc2-gazebo-sim-examples"
+        "xgc2-lichtblick-web"
       ],
+      "apt_package_architectures": {
+        "xgc2-lichtblick": [
+          "amd64",
+          "arm64"
+        ],
+        "xgc2-lichtblick-web": [
+          "amd64",
+          "arm64"
+        ]
+      },
+      "apt_package_distributions": {
+        "xgc2-lichtblick": [
+          "focal",
+          "jammy",
+          "noble"
+        ],
+        "xgc2-lichtblick-web": [
+          "focal",
+          "jammy",
+          "noble"
+        ]
+      },
       "apt_packages": [
-        "ros-noetic-xgc2-gazebo-sim-manager",
-        "ros-noetic-xgc2-gazebo-sim-examples"
+        "xgc2-lichtblick-web",
+        "xgc2-lichtblick"
       ],
       "apt_version_template": "",
       "apt_versions": {
-        "focal": "1.1.0-9"
+        "focal": "1.25.0-8~focal",
+        "jammy": "1.25.0-8~jammy",
+        "noble": "1.25.0-8~noble"
       },
-      "expected_source_sha": "332d9bab4b91816a8767171a5d26858058db61d2",
-      "expected_version": "1.1.0-9",
-      "id": "xgc2-gazebo-sim-tools",
+      "ci_workflow": "ci.yml",
+      "dependencies": [],
+      "dependency_policy": {},
+      "dependency_set_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "expected_source_sha": "a46594b9b1ee06c0178a9a1ae7a36f0885ed4c1d",
+      "expected_version": "1.25.0-8",
+      "id": "xgc2-lichtblick",
       "inputs": {},
       "layer": 1,
-      "ref": "noetic",
-      "repository": "lxk36/xgc2-gazebo-sim-tools",
+      "ref": "main",
+      "release_scoped_build": false,
+      "repository": "lxk36/xgc2-lichtblick-packaging",
       "skip_apt_verify": false,
-      "source": "/home/runner/work/xgc2-devops/xgc2-devops/products/ros1/simulator/gazebo-sim-tools",
-      "source_sha": "332d9bab4b91816a8767171a5d26858058db61d2",
-      "version": "1.1.0-8",
+      "source": "products/webui/lichtblick-packaging",
+      "source_sha": "a46594b9b1ee06c0178a9a1ae7a36f0885ed4c1d",
+      "version": "1.25.0-7",
       "workflow": "release.yml",
       "workflow_inputs": [
+        "apt_overlay_url",
+        "dependency_set_digest",
         "expected_source_sha",
         "expected_version",
-        "publish_apt",
-        "run_cpp_quality",
-        "run_source_tests"
-      ]
-    },
-    {
-      "action": "release",
-      "apt_distributions": [
-        "focal"
-      ],
-      "apt_install": [
-        "ros-noetic-xgc2-gazebo-sim"
-      ],
-      "apt_packages": [
-        "ros-noetic-xgc2-gazebo-sim",
-        "ros-noetic-xgc2-gazebo-sim-all"
-      ],
-      "apt_version_template": "",
-      "apt_versions": {
-        "focal": "1.1.0-11"
-      },
-      "expected_source_sha": "a5c1ffbfbf82616446307f42796d24f743e8db14",
-      "expected_version": "1.1.0-11",
-      "id": "xgc2-gazebo-sim",
-      "inputs": {},
-      "layer": 2,
-      "ref": "noetic",
-      "repository": "lxk36/xgc2-gazebo-sim",
-      "skip_apt_verify": false,
-      "source": "/home/runner/work/xgc2-devops/xgc2-devops/products/ros1/simulator/gazebo-sim",
-      "source_sha": "a5c1ffbfbf82616446307f42796d24f743e8db14",
-      "version": "1.1.0-10",
-      "workflow": "release.yml",
-      "workflow_inputs": [
-        "expected_source_sha",
-        "expected_version",
-        "publish_apt",
+        "prepare_action",
         "run_cpp_quality",
         "run_source_tests"
       ]
     }
   ],
-  "schema": "xgc2.release-lock.v1"
+  "schema": "xgc2.release-lock.v2"
 }
