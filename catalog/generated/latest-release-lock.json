@@ -6,43 +6,43 @@
         "focal"
       ],
       "apt_install": [
-        "ros-noetic-xgc2-camera-calibration"
+        "ros-noetic-xgc2-mecanum-description"
       ],
       "apt_package_architectures": {
-        "ros-noetic-xgc2-camera-calibration": [
+        "ros-noetic-xgc2-mecanum-description": [
           "amd64",
           "arm64"
         ]
       },
       "apt_package_distributions": {
-        "ros-noetic-xgc2-camera-calibration": [
+        "ros-noetic-xgc2-mecanum-description": [
           "focal"
         ]
       },
       "apt_packages": [
-        "ros-noetic-xgc2-camera-calibration"
+        "ros-noetic-xgc2-mecanum-description"
       ],
       "apt_version_template": "",
       "apt_versions": {
-        "focal": "0.3.0-3"
+        "focal": "0.1.0-2"
       },
       "ci_workflow": "ci.yml",
       "dependencies": [],
       "dependency_policy": {},
       "dependency_set_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
       "dependency_sources": {},
-      "expected_source_sha": "59a275f6c29fea8565b538b947d991019f719b8f",
-      "expected_version": "0.3.0-3",
-      "id": "xgc2-camera-calibration-ros1",
+      "expected_source_sha": "87c8c83ed7166633eaaa8a4ce890fb6e5849f596",
+      "expected_version": "0.1.0-2",
+      "id": "xgc2-mecanum-description",
       "inputs": {},
       "layer": 1,
-      "ref": "main",
+      "ref": "noetic",
       "release_scoped_build": false,
-      "repository": "lxk36/xgc2-camera-calibration-ros1",
+      "repository": "lxk36/xgc2-mecanum-description",
       "skip_apt_verify": false,
-      "source": "products/ros1/perception/camera-calibration",
-      "source_sha": "59a275f6c29fea8565b538b947d991019f719b8f",
-      "version": "0.3.0-2",
+      "source": "products/ros1/robot/mecanum_description",
+      "source_sha": "87c8c83ed7166633eaaa8a4ce890fb6e5849f596",
+      "version": "0.1.0-1",
       "workflow": "release.yml",
       "workflow_inputs": [
         "apt_overlay_url",
