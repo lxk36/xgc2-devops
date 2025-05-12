@@ -3,61 +3,46 @@
     {
       "action": "release",
       "apt_distributions": [
-        "focal",
-        "jammy",
-        "noble"
+        "focal"
       ],
       "apt_install": [
-        "xgc2-lichtblick-web"
+        "ros-noetic-xgc2-camera-calibration"
       ],
       "apt_package_architectures": {
-        "xgc2-lichtblick": [
-          "amd64",
-          "arm64"
-        ],
-        "xgc2-lichtblick-web": [
+        "ros-noetic-xgc2-camera-calibration": [
           "amd64",
           "arm64"
         ]
       },
       "apt_package_distributions": {
-        "xgc2-lichtblick": [
-          "focal",
-          "jammy",
-          "noble"
-        ],
-        "xgc2-lichtblick-web": [
-          "focal",
-          "jammy",
-          "noble"
+        "ros-noetic-xgc2-camera-calibration": [
+          "focal"
         ]
       },
       "apt_packages": [
-        "xgc2-lichtblick-web",
-        "xgc2-lichtblick"
+        "ros-noetic-xgc2-camera-calibration"
       ],
       "apt_version_template": "",
       "apt_versions": {
-        "focal": "1.25.0-8~focal",
-        "jammy": "1.25.0-8~jammy",
-        "noble": "1.25.0-8~noble"
+        "focal": "0.3.0-3"
       },
       "ci_workflow": "ci.yml",
       "dependencies": [],
       "dependency_policy": {},
       "dependency_set_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
-      "expected_source_sha": "2af5b817b0e31a8f780fe4dbee5c14e1e77acce4",
-      "expected_version": "1.25.0-8",
-      "id": "xgc2-lichtblick",
+      "dependency_sources": {},
+      "expected_source_sha": "59a275f6c29fea8565b538b947d991019f719b8f",
+      "expected_version": "0.3.0-3",
+      "id": "xgc2-camera-calibration-ros1",
       "inputs": {},
       "layer": 1,
       "ref": "main",
       "release_scoped_build": false,
-      "repository": "lxk36/xgc2-lichtblick-packaging",
+      "repository": "lxk36/xgc2-camera-calibration-ros1",
       "skip_apt_verify": false,
-      "source": "products/webui/lichtblick-packaging",
-      "source_sha": "2af5b817b0e31a8f780fe4dbee5c14e1e77acce4",
-      "version": "1.25.0-8",
+      "source": "products/ros1/perception/camera-calibration",
+      "source_sha": "59a275f6c29fea8565b538b947d991019f719b8f",
+      "version": "0.3.0-2",
       "workflow": "release.yml",
       "workflow_inputs": [
         "apt_overlay_url",
