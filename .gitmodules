@@ -1,0 +1,6 @@
+[submodule "xgc2-app-store"]
+	path = xgc2-app-store
+	url = git@github.com:lxk36/xgc2-app-store.git
+[submodule "xgc2-apt-repo"]
+	path = xgc2-apt-repo
+	url = git@github.com:lxk36/xgc2-apt-repo.git
