@@ -1,0 +1,32 @@
+schema: xgc2.product.v1
+id: xgc2-example-product
+name: XGC2 Example Product
+kind: ros1-apt
+summary: Short product description used by generated catalogs.
+
+ros:
+  distro: noetic
+  packages:
+    - example_ros_package
+
+apt:
+  distribution: focal
+  install:
+    - ros-noetic-xgc2-example-product
+  packages:
+    - ros-noetic-xgc2-example-product
+
+usage:
+  install: |
+    sudo apt update
+    sudo apt install ros-noetic-xgc2-example-product
+  smoke_test: |
+    roslaunch example_ros_package example.launch
+
+ownership:
+  paths:
+    - /opt/ros/noetic/share/example_ros_package
+
+conflicts:
+  ros_packages: []
+  apt_packages: []

@@ -1,0 +1,160 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://xgc2.dev/schemas/product.schema.json",
+  "title": "XGC2 Product Metadata",
+  "type": "object",
+  "required": ["schema", "id", "name", "kind"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "xgc2.product.v1"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "ros1-apt",
+        "ros2-apt",
+        "toolchain-apt",
+        "webui-docker",
+        "app-store",
+        "docker-image",
+        "mixed"
+      ]
+    },
+    "summary": {
+      "type": "string"
+    },
+    "lifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "deprecated": {
+          "type": "boolean"
+        },
+        "replaced_by": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "ros": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "distro": {
+          "type": "string"
+        },
+        "packages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "apt": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "distribution": {
+          "type": "string"
+        },
+        "install": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "packages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "docker": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "images": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "app_store": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "app_id": {
+          "type": "string"
+        }
+      }
+    },
+    "usage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "install": {
+          "type": "string"
+        },
+        "smoke_test": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "ownership": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "conflicts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ros_packages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "apt_packages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      }
+    }
+  }
+}

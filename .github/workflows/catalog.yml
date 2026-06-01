@@ -1,0 +1,29 @@
+name: catalog
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install validator dependencies
+        run: python3 -m pip install PyYAML jsonschema
+
+      - name: Collect product metadata
+        run: |
+          python3 scripts/collect-products.py \
+            --root . \
+            --output catalog/generated/products.json
