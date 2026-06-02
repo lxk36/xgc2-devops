@@ -19,9 +19,9 @@ jobs:
           git submodule update --init --depth=1 \
             products/common/acados \
             products/common/mavlink-router \
-            products/ros1/common/ros1-utils \
-            products/ros1/common/state-machine \
+            products/common/state-machine \
             products/common/tbb \
+            products/ros1/common/ros1-utils \
             products/ros1/communication/runtime-sync \
             products/ros1/manager/linux-utils \
             products/ros1/perception/estimator-hover-thrust \
