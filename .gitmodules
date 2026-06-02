@@ -85,7 +85,7 @@
 [submodule "products/xgc1"]
 	path = products/xgc1
 	url = git@github.com:lxk36/xgc1.git
-[submodule "products/ros1/ros1_dev"]
-	path = products/ros1/ros1_dev
+[submodule "products/ros1_dev"]
+	path = products/ros1_dev
 	url = git@github.com:lxk36/alg_ros1_ws.git
 	branch = dev-open
