@@ -22,14 +22,6 @@
 	path = products/xgc2
 	url = git@github.com:lxk36/xgc2-vibe-coding-temp.git
 	branch = dev
-[submodule "products/ros1/simulator/px4-sitl-112"]
-	path = products/ros1/simulator/px4-sitl-112
-	url = git@github.com:lxk36/xgc2-px4-sitl.git
-	branch = v1.12-noetic
-[submodule "products/ros1/simulator/px4-sitl-114"]
-	path = products/ros1/simulator/px4-sitl-114
-	url = git@github.com:lxk36/xgc2-px4-sitl.git
-	branch = v1.14-noetic
 [submodule "products/ros1/simulator/swarm-sync-sim"]
 	path = products/ros1/simulator/swarm-sync-sim
 	url = git@github.com:lxk36/xgc2-swarm-sync-sim.git
@@ -42,10 +34,6 @@
 	path = products/common/tbb
 	url = git@github.com:lxk36/xgc2-tbb.git
 	branch = master
-[submodule "products/ros1/simulator/agilex"]
-	path = products/ros1/simulator/agilex
-	url = git@github.com:lxk36/xgc2-agilex.git
-	branch = xgc2-noetic
 [submodule "products/ros1/perception/estimator-hover-thrust"]
 	path = products/ros1/perception/estimator-hover-thrust
 	url = git@github.com:lxk36/xgc2-estimator-hover-thrust.git

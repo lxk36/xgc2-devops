@@ -305,63 +305,18 @@
       }
     },
     {
-      "_source": "products/ros1/simulator/agilex/.xgc2/product.yml",
-      "apt": {
-        "depends": [
-          "ros-noetic-xgc2-scout-description",
-          "ros-noetic-xgc2-scout-gazebo-sim"
-        ],
-        "distribution": "focal",
-        "install": [
-          "ros-noetic-xgc2-agilex"
-        ],
-        "packages": [
-          "ros-noetic-xgc2-scout-description",
-          "ros-noetic-xgc2-scout-gazebo-sim",
-          "ros-noetic-xgc2-agilex"
-        ]
-      },
-      "id": "xgc2-agilex",
-      "kind": "ros1-apt",
-      "name": "XGC2 AgileX",
-      "ownership": {
-        "paths": [
-          "/opt/ros/noetic/share/scout_description",
-          "/opt/ros/noetic/share/scout_gazebo_sim",
-          "/opt/ros/noetic/include/scout_gazebo_sim",
-          "/opt/ros/noetic/lib/scout_gazebo_sim",
-          "/opt/ros/noetic/lib/libscout_gazebo.a"
-        ]
-      },
-      "ros": {
-        "distro": "noetic",
-        "packages": [
-          "scout_description",
-          "scout_gazebo_sim"
-        ]
-      },
-      "schema": "xgc2.product.v1",
-      "summary": "AgileX Scout robot description and Gazebo Classic simulation packages for ROS Noetic.",
-      "usage": {
-        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-agilex\n",
-        "smoke_test": "roslaunch --files scout_gazebo_sim mini_gz_classic_simple.launch rviz:=false\n"
-      }
-    },
-    {
       "_source": "products/ros1/simulator/convex_geometry/.xgc2/product.yml",
       "apt": {
         "depends": [
-          "ros-noetic-xgc2-convex-geometry-core",
-          "ros-noetic-xgc2-cluttered-environment"
+          "ros-noetic-xgc2-convex-geometry-core"
         ],
         "distribution": "focal",
         "install": [
-          "ros-noetic-xgc2-convex-geometry"
+          "ros-noetic-xgc2-convex-geometry-environment"
         ],
         "packages": [
-          "ros-noetic-xgc2-convex-geometry",
           "ros-noetic-xgc2-convex-geometry-core",
-          "ros-noetic-xgc2-cluttered-environment"
+          "ros-noetic-xgc2-convex-geometry-environment"
         ]
       },
       "id": "xgc2-convex-geometry",
@@ -371,23 +326,23 @@
         "paths": [
           "/opt/ros/noetic/share/convex_geometry",
           "/opt/ros/noetic/include/convex_geometry",
-          "/opt/ros/noetic/share/cluttered_environment",
-          "/opt/ros/noetic/include/cluttered_environment",
-          "/opt/ros/noetic/lib/cluttered_environment"
+          "/opt/ros/noetic/share/convex_geometry_environment",
+          "/opt/ros/noetic/include/convex_geometry_environment",
+          "/opt/ros/noetic/lib/convex_geometry_environment"
         ]
       },
       "ros": {
         "distro": "noetic",
         "packages": [
           "convex_geometry",
-          "cluttered_environment"
+          "convex_geometry_environment"
         ]
       },
       "schema": "xgc2.product.v1",
-      "summary": "Convex geometry messages and cluttered simulation environment tools for XGC2 ROS1.",
+      "summary": "Convex geometry messages and simulation environment tools for XGC2 ROS1.",
       "usage": {
-        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-convex-geometry\n",
-        "smoke_test": "rospack find convex_geometry\nrospack find cluttered_environment\n"
+        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-convex-geometry-environment\n",
+        "smoke_test": "rospack find convex_geometry\nrospack find convex_geometry_environment\n"
       }
     },
     {
@@ -430,12 +385,55 @@
       "summary": "Gazebo Classic session manager and Gazebo-to-VRPN bridge packages for ROS Noetic.",
       "usage": {
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-gazebo-sim\n",
-        "notes": "Full AgileX Gazebo workflows also use ros-noetic-xgc2-agilex.\n",
+        "notes": "Full Scout Gazebo Classic workflows also use ros-noetic-xgc2-gz-classic-scout.\n",
         "smoke_test": "roslaunch --files gazebo_session_manager session_manager.launch world_name:=/tmp/xgc2-empty.world\nroslaunch --files gazebo_session_manager gzserver_vrpn.launch world_name:=/tmp/xgc2-empty.world\nroslaunch --files gazebo_sim_vrpn_bridge gazebo_vrpn_server.launch\n"
       }
     },
     {
-      "_source": "products/ros1/simulator/px4-sitl-112/.xgc2/product.yml",
+      "_source": "products/ros1/simulator/gazebo-sim/agilex/.xgc2/product.yml",
+      "apt": {
+        "depends": [
+          "ros-noetic-xgc2-scout-description",
+          "ros-noetic-xgc2-scout-gazebo-sim"
+        ],
+        "distribution": "focal",
+        "install": [
+          "ros-noetic-xgc2-gz-classic-scout"
+        ],
+        "packages": [
+          "ros-noetic-xgc2-scout-description",
+          "ros-noetic-xgc2-scout-gazebo-sim",
+          "ros-noetic-xgc2-gz-classic-scout"
+        ]
+      },
+      "id": "xgc2-gz-classic-scout",
+      "kind": "ros1-apt",
+      "name": "XGC2 Gazebo Classic Scout",
+      "ownership": {
+        "paths": [
+          "/opt/ros/noetic/share/scout_description",
+          "/opt/ros/noetic/share/scout_gazebo_sim",
+          "/opt/ros/noetic/include/scout_gazebo_sim",
+          "/opt/ros/noetic/lib/scout_gazebo_sim",
+          "/opt/ros/noetic/lib/libscout_gazebo.a"
+        ]
+      },
+      "ros": {
+        "distro": "noetic",
+        "packages": [
+          "scout_description",
+          "scout_gazebo_sim"
+        ]
+      },
+      "schema": "xgc2.product.v1",
+      "summary": "AgileX Scout robot description and Gazebo Classic simulation packages for ROS Noetic.",
+      "usage": {
+        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-gz-classic-scout\n",
+        "smoke_test": "roslaunch --files scout_gazebo_sim mini_gz_classic_simple.launch rviz:=false\n"
+      }
+    },
+    {
+      "_source": "products/ros1/simulator/gazebo-sim/px4-sitl-112/.xgc2/product.yml",
       "apt": {
         "depends": [
           "ros-noetic-xgc2-px4-sitl-1-12",
@@ -479,7 +477,7 @@
       }
     },
     {
-      "_source": "products/ros1/simulator/px4-sitl-114/.xgc2/product.yml",
+      "_source": "products/ros1/simulator/gazebo-sim/px4-sitl-114/.xgc2/product.yml",
       "apt": {
         "depends": [
           "ros-noetic-xgc2-px4-sitl-1-14",
@@ -625,7 +623,8 @@
       "_source": "products/xgc1/.xgc2/product.yml",
       "apt": {
         "depends": [
-          "ros-noetic-xgc1-qt-runtime"
+          "ros-noetic-xgc1-qt-runtime",
+          "ros-noetic-tf-conversions"
         ],
         "distribution": "focal",
         "install": [

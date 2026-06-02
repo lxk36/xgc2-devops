@@ -16,7 +16,7 @@ jobs:
       - name: Checkout product metadata submodules
         run: |
           git config --global url."https://github.com/".insteadOf git@github.com:
-          git submodule update --init --depth=1 \
+          git submodule update --init --recursive --depth=1 \
             products/common/acados \
             products/common/mavlink-router \
             products/common/state-machine \
@@ -25,11 +25,8 @@ jobs:
             products/ros1/communication/runtime-sync \
             products/ros1/manager/linux-utils \
             products/ros1/perception/estimator-hover-thrust \
-            products/ros1/simulator/agilex \
             products/ros1/simulator/convex_geometry \
             products/ros1/simulator/gazebo-sim \
-            products/ros1/simulator/px4-sitl-112 \
-            products/ros1/simulator/px4-sitl-114 \
             products/ros1/simulator/swarm-sync-sim \
             products/ros2/simulator/px4-sitl-116
 
