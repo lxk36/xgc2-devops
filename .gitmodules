@@ -82,3 +82,6 @@
 	path = products/ros1/common/ros1-utils
 	url = git@github.com:lxk36/xgc2-ros1-utils.git
 	branch = noetic
+[submodule "products/xgc1"]
+	path = products/xgc1
+	url = git@github.com:lxk36/xgc1.git
