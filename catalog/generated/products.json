@@ -99,6 +99,40 @@
       }
     },
     {
+      "_source": "products/ros1/communication/xgc2-runtime-sync/.xgc2/product.yml",
+      "apt": {
+        "distribution": "focal",
+        "install": [
+          "ros-noetic-xgc2-runtime-sync"
+        ],
+        "packages": [
+          "ros-noetic-xgc2-runtime-sync"
+        ]
+      },
+      "id": "xgc2-runtime-sync",
+      "kind": "ros1-apt",
+      "name": "XGC2 Runtime Sync",
+      "ownership": {
+        "paths": [
+          "/opt/ros/noetic/share/periodic_sync",
+          "/opt/ros/noetic/include/periodic_sync",
+          "/opt/ros/noetic/lib/periodic_sync/sync_coordinator"
+        ]
+      },
+      "ros": {
+        "distro": "noetic",
+        "packages": [
+          "periodic_sync"
+        ]
+      },
+      "schema": "xgc2.product.v1",
+      "summary": "Runtime synchronization messages and coordinator for XGC2 ROS1 multi-agent systems.",
+      "usage": {
+        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-runtime-sync\n",
+        "smoke_test": "rospack find periodic_sync\n"
+      }
+    },
+    {
       "_source": "products/ros1/manager/linux-utils/.xgc2/product.yml",
       "apt": {
         "distribution": "focal",
