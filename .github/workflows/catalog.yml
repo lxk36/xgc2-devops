@@ -17,12 +17,16 @@ jobs:
         run: |
           git config --global url."https://github.com/".insteadOf git@github.com:
           git submodule update --init --depth=1 \
-            products/ros1/common/acados \
+            products/common/acados \
+            products/common/mavlink-router \
+            products/ros1/common/ros1-utils \
             products/ros1/common/state-machine \
             products/ros1/common/tbb \
+            products/ros1/communication/runtime-sync \
             products/ros1/manager/linux-utils \
             products/ros1/perception/estimator-hover-thrust \
             products/ros1/simulator/agilex \
+            products/ros1/simulator/convex_geometry \
             products/ros1/simulator/gazebo-sim \
             products/ros1/simulator/px4-sitl-112 \
             products/ros1/simulator/px4-sitl-114 \
