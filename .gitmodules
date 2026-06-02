@@ -38,10 +38,10 @@
 	path = products/common/acados
 	url = git@github.com:lxk36/xgc2-acados.git
 	branch = master
-[submodule "products/ros1/common/tbb"]
-	path = products/ros1/common/tbb
+[submodule "products/common/tbb"]
+	path = products/common/tbb
 	url = git@github.com:lxk36/xgc2-tbb.git
-	branch = noetic
+	branch = master
 [submodule "products/ros1/simulator/agilex"]
 	path = products/ros1/simulator/agilex
 	url = git@github.com:lxk36/xgc2-agilex.git

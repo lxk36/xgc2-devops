@@ -62,6 +62,40 @@
       }
     },
     {
+      "_source": "products/common/tbb/.xgc2/product.yml",
+      "apt": {
+        "distribution": "focal,noble",
+        "install": [
+          "xgc2-tbb"
+        ],
+        "packages": [
+          "xgc2-tbb"
+        ]
+      },
+      "conflicts": {
+        "apt_packages": [
+          "ros-noetic-xgc2-tbb"
+        ]
+      },
+      "id": "xgc2-tbb",
+      "kind": "toolchain-apt",
+      "name": "XGC2 oneTBB",
+      "ownership": {
+        "paths": [
+          "/opt/xgc2/tbb",
+          "/usr/lib/cmake/xgc2_tbb",
+          "/etc/ld.so.conf.d/xgc2-tbb.conf"
+        ]
+      },
+      "schema": "xgc2.product.v1",
+      "summary": "System-level oneAPI Threading Building Blocks runtime for XGC2 projects on Ubuntu 20.04 and 24.04.",
+      "usage": {
+        "install": "sudo apt update\nsudo apt install xgc2-tbb\n",
+        "notes": "CMake consumers should use find_package(xgc2_tbb REQUIRED CONFIG).\nThe upstream oneTBB CMake package remains available under /opt/xgc2/tbb.\n",
+        "smoke_test": "source /opt/xgc2/tbb/setup.bash\ncmake --find-package -DNAME=xgc2_tbb -DCOMPILER_ID=GNU -DLANGUAGE=CXX -DMODE=EXIST\n"
+      }
+    },
+    {
       "_source": "products/ros1/common/ros1-utils/.xgc2/product.yml",
       "apt": {
         "distribution": "focal",
@@ -129,38 +163,6 @@
       "usage": {
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-state-machine\n",
         "smoke_test": "rospack find state_machine\n"
-      }
-    },
-    {
-      "_source": "products/ros1/common/tbb/.xgc2/product.yml",
-      "apt": {
-        "distribution": "focal",
-        "install": [
-          "ros-noetic-xgc2-tbb"
-        ],
-        "packages": [
-          "ros-noetic-xgc2-tbb"
-        ]
-      },
-      "id": "xgc2-tbb",
-      "kind": "toolchain-apt",
-      "name": "XGC2 oneTBB",
-      "ownership": {
-        "paths": [
-          "/opt/ros/noetic/share/xgc2_tbb"
-        ]
-      },
-      "ros": {
-        "distro": "noetic",
-        "packages": [
-          "xgc2_tbb"
-        ]
-      },
-      "schema": "xgc2.product.v1",
-      "summary": "ROS Noetic vendor package for the XGC2 oneAPI Threading Building Blocks runtime.",
-      "usage": {
-        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-tbb\n",
-        "smoke_test": "rospack find xgc2_tbb\n"
       }
     },
     {
