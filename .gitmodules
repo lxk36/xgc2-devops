@@ -54,10 +54,10 @@
 	path = products/ros1/perception/estimator-hover-thrust
 	url = git@github.com:lxk36/xgc2-estimator-hover-thrust.git
 	branch = noetic
-[submodule "products/ros1/common/state-machine"]
+[submodule "products/common/state-machine"]
 	path = products/common/state-machine
 	url = git@github.com:lxk36/xgc2-state-machine.git
-	branch = noetic
+	branch = master
 [submodule "products/ros1/manager/linux-utils"]
 	path = products/ros1/manager/linux-utils
 	url = git@github.com:lxk36/xgc2-linux-utils.git

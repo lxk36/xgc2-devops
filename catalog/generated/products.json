@@ -62,6 +62,40 @@
       }
     },
     {
+      "_source": "products/common/state-machine/.xgc2/product.yml",
+      "apt": {
+        "distribution": "focal,jammy,noble",
+        "install": [
+          "libxgc2-state-machine-dev"
+        ],
+        "packages": [
+          "libxgc2-state-machine-dev"
+        ]
+      },
+      "conflicts": {
+        "apt_packages": [
+          "ros-noetic-xgc2-state-machine"
+        ]
+      },
+      "id": "libxgc2-state-machine-dev",
+      "kind": "toolchain-apt",
+      "name": "XGC2 State Machine",
+      "ownership": {
+        "paths": [
+          "/usr/include/state_machine",
+          "/usr/lib/*/libxgc2_state_machine.so*",
+          "/usr/lib/*/cmake/xgc2_state_machine"
+        ]
+      },
+      "schema": "xgc2.product.v1",
+      "summary": "System-level deterministic C++ state machine development library for XGC2 controllers, planners, and runtime workflows.",
+      "usage": {
+        "install": "sudo apt update\nsudo apt install libxgc2-state-machine-dev\n",
+        "notes": "CMake consumers should use find_package(xgc2_state_machine REQUIRED CONFIG)\nand link xgc2_state_machine::state_machine. The public include path remains\n<state_machine/state_machine.hpp>.\n",
+        "smoke_test": "cmake --find-package -DNAME=xgc2_state_machine -DCOMPILER_ID=GNU -DLANGUAGE=CXX -DMODE=EXIST\n"
+      }
+    },
+    {
       "_source": "products/common/tbb/.xgc2/product.yml",
       "apt": {
         "distribution": "focal,jammy,noble",
@@ -129,40 +163,6 @@
       "usage": {
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-ros1-utils\n",
         "smoke_test": "rospack find ros1_utils\n"
-      }
-    },
-    {
-      "_source": "products/ros1/common/state-machine/.xgc2/product.yml",
-      "apt": {
-        "distribution": "focal",
-        "install": [
-          "ros-noetic-xgc2-state-machine"
-        ],
-        "packages": [
-          "ros-noetic-xgc2-state-machine"
-        ]
-      },
-      "id": "xgc2-state-machine",
-      "kind": "ros1-apt",
-      "name": "XGC2 State Machine",
-      "ownership": {
-        "paths": [
-          "/opt/ros/noetic/share/state_machine",
-          "/opt/ros/noetic/include/state_machine",
-          "/opt/ros/noetic/lib/libstate_machine.so"
-        ]
-      },
-      "ros": {
-        "distro": "noetic",
-        "packages": [
-          "state_machine"
-        ]
-      },
-      "schema": "xgc2.product.v1",
-      "summary": "Deterministic event-driven state machine runtime for ROS1 controllers, planners, and workflow managers.",
-      "usage": {
-        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-state-machine\n",
-        "smoke_test": "rospack find state_machine\n"
       }
     },
     {
@@ -564,6 +564,40 @@
         "install": "sudo apt update\nsudo apt install ros-jazzy-xgc2-sim-1-16\n",
         "notes": "Runtime entry scripts are installed from package scripts; packaging scripts stay under .xgc2/scripts.\n",
         "smoke_test": "ros2 pkg prefix xgc2_sim_1_16\n"
+      }
+    },
+    {
+      "_source": "products/xgc1/.xgc2/product.yml",
+      "apt": {
+        "distribution": "focal",
+        "install": [
+          "ros-noetic-xgc1"
+        ],
+        "packages": [
+          "ros-noetic-xgc1",
+          "ros-noetic-xgc1-qt-runtime"
+        ]
+      },
+      "id": "xgc1",
+      "kind": "ros1-apt",
+      "name": "XGC1",
+      "ownership": {
+        "paths": [
+          "/opt/xgc1/app",
+          "/opt/xgc1/ros_ws",
+          "/opt/xgc1/toolchains/qt/5.15.2-runtime",
+          "/usr/bin/xgc1"
+        ]
+      },
+      "ros": {
+        "distro": "noetic",
+        "workspace": "/opt/xgc1/ros_ws"
+      },
+      "schema": "xgc2.product.v1",
+      "summary": "XGC1 ROS Noetic ground-control application with bundled Qt runtime.",
+      "usage": {
+        "install": "sudo apt update\nsudo apt install ros-noetic-xgc1\n",
+        "smoke_test": "xgc1 --help\n"
       }
     }
   ],

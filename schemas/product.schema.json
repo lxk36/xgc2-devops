@@ -54,6 +54,9 @@
         "distro": {
           "type": "string"
         },
+        "workspace": {
+          "type": "string"
+        },
         "packages": {
           "type": "array",
           "items": {
