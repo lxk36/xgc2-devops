@@ -3,6 +3,19 @@
     {
       "_source": "products/common/acados/.xgc2/product.yml",
       "apt": {
+        "depends": [
+          "libc6",
+          "libgcc-s1",
+          "libgomp1",
+          "libstdc++6",
+          "libblas-dev",
+          "python3",
+          "python3-deprecated",
+          "python3-matplotlib",
+          "python3-numpy",
+          "python3-pip",
+          "python3-scipy"
+        ],
         "distribution": "focal,jammy,noble",
         "install": [
           "xgc2-acados"
@@ -37,6 +50,12 @@
     {
       "_source": "products/common/mavlink-router/.xgc2/product.yml",
       "apt": {
+        "depends": [
+          "libc6",
+          "libgcc-s1",
+          "libstdc++6",
+          "systemd"
+        ],
         "distribution": "focal,jammy,noble",
         "install": [
           "xgc2-mavlink-router"
@@ -64,6 +83,11 @@
     {
       "_source": "products/common/state-machine/.xgc2/product.yml",
       "apt": {
+        "depends": [
+          "libc6",
+          "libgcc-s1",
+          "libstdc++6"
+        ],
         "distribution": "focal,jammy,noble",
         "install": [
           "libxgc2-state-machine-dev"
@@ -98,6 +122,11 @@
     {
       "_source": "products/common/tbb/.xgc2/product.yml",
       "apt": {
+        "depends": [
+          "libc6",
+          "libgcc-s1",
+          "libstdc++6"
+        ],
         "distribution": "focal,jammy,noble",
         "install": [
           "xgc2-tbb"
@@ -278,6 +307,10 @@
     {
       "_source": "products/ros1/simulator/agilex/.xgc2/product.yml",
       "apt": {
+        "depends": [
+          "ros-noetic-xgc2-scout-description",
+          "ros-noetic-xgc2-scout-gazebo-sim"
+        ],
         "distribution": "focal",
         "install": [
           "ros-noetic-xgc2-agilex"
@@ -317,6 +350,10 @@
     {
       "_source": "products/ros1/simulator/convex_geometry/.xgc2/product.yml",
       "apt": {
+        "depends": [
+          "ros-noetic-xgc2-convex-geometry-core",
+          "ros-noetic-xgc2-cluttered-environment"
+        ],
         "distribution": "focal",
         "install": [
           "ros-noetic-xgc2-convex-geometry"
@@ -356,6 +393,10 @@
     {
       "_source": "products/ros1/simulator/gazebo-sim/.xgc2/product.yml",
       "apt": {
+        "depends": [
+          "ros-noetic-xgc2-gazebo-sim-manager",
+          "ros-noetic-xgc2-gazebo-sim-vrpn-bridge"
+        ],
         "distribution": "focal",
         "install": [
           "ros-noetic-xgc2-gazebo-sim"
@@ -396,6 +437,10 @@
     {
       "_source": "products/ros1/simulator/px4-sitl-112/.xgc2/product.yml",
       "apt": {
+        "depends": [
+          "ros-noetic-xgc2-px4-sitl-1-12",
+          "ros-noetic-xgc2-px4-gazebo-classic-1-12"
+        ],
         "distribution": "focal",
         "install": [
           "ros-noetic-xgc2-sim-1-12"
@@ -437,6 +482,10 @@
     {
       "_source": "products/ros1/simulator/px4-sitl-114/.xgc2/product.yml",
       "apt": {
+        "depends": [
+          "ros-noetic-xgc2-px4-sitl-1-14",
+          "ros-noetic-xgc2-px4-gazebo-classic-1-14"
+        ],
         "distribution": "focal",
         "install": [
           "ros-noetic-xgc2-sim-1-14"
@@ -478,6 +527,13 @@
     {
       "_source": "products/ros1/simulator/swarm-sync-sim/.xgc2/product.yml",
       "apt": {
+        "depends": [
+          "ros-noetic-xgc2-sss-sim-env",
+          "ros-noetic-xgc2-sss-px4-rotor-sim",
+          "ros-noetic-xgc2-sss-tello-sim",
+          "ros-noetic-xgc2-sss-ugv-sim",
+          "ros-noetic-xgc2-sss-fw-plane-sim"
+        ],
         "distribution": "focal",
         "install": [
           "ros-noetic-xgc2-swarm-sync-sim"
@@ -528,6 +584,10 @@
     {
       "_source": "products/ros2/px4-sitl-116/.xgc2/product.yml",
       "apt": {
+        "depends": [
+          "ros-jazzy-xgc2-px4-sitl-1-16",
+          "ros-jazzy-xgc2-px4-gz-harmonic-1-16"
+        ],
         "distribution": "noble",
         "install": [
           "ros-jazzy-xgc2-sim-1-16"
@@ -569,6 +629,9 @@
     {
       "_source": "products/xgc1/.xgc2/product.yml",
       "apt": {
+        "depends": [
+          "ros-noetic-xgc1-qt-runtime"
+        ],
         "distribution": "focal",
         "install": [
           "ros-noetic-xgc1"

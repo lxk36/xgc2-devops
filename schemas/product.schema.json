@@ -86,6 +86,13 @@
             "type": "string"
           },
           "uniqueItems": true
+        },
+        "depends": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
         }
       }
     },
