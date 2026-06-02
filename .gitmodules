@@ -55,7 +55,7 @@
 	url = git@github.com:lxk36/xgc2-estimator-hover-thrust.git
 	branch = noetic
 [submodule "products/ros1/common/state-machine"]
-	path = products/ros1/common/state-machine
+	path = products/common/state-machine
 	url = git@github.com:lxk36/xgc2-state-machine.git
 	branch = noetic
 [submodule "products/ros1/manager/linux-utils"]
