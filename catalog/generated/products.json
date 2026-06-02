@@ -3,7 +3,7 @@
     {
       "_source": "products/common/acados/.xgc2/product.yml",
       "apt": {
-        "distribution": "focal,noble",
+        "distribution": "focal,jammy,noble",
         "install": [
           "xgc2-acados"
         ],
@@ -27,7 +27,7 @@
         ]
       },
       "schema": "xgc2.product.v1",
-      "summary": "System-level acados solver stack for XGC2 projects on Ubuntu 20.04 and 24.04.",
+      "summary": "System-level acados solver stack for XGC2 projects on Ubuntu 20.04, 22.04, and 24.04.",
       "usage": {
         "install": "sudo apt update\nsudo apt install xgc2-acados\n",
         "notes": "CMake consumers should use find_package(xgc2_acados REQUIRED CONFIG).\nMATLAB users should run /opt/xgc2/acados/setup_acados.m.\n",
@@ -37,7 +37,7 @@
     {
       "_source": "products/common/mavlink-router/.xgc2/product.yml",
       "apt": {
-        "distribution": "focal,noble",
+        "distribution": "focal,jammy,noble",
         "install": [
           "xgc2-mavlink-router"
         ],
@@ -55,7 +55,7 @@
         ]
       },
       "schema": "xgc2.product.v1",
-      "summary": "XGC2 fork of mavlink-router packaged as a native Debian executable for Ubuntu 20.04 and 24.04.",
+      "summary": "XGC2 fork of mavlink-router packaged as a native Debian executable for Ubuntu 20.04, 22.04, and 24.04.",
       "usage": {
         "install": "sudo apt update\nsudo apt install xgc2-mavlink-router\n",
         "smoke_test": "command -v mavlink-routerd\nmavlink-routerd --version\n"
@@ -64,7 +64,7 @@
     {
       "_source": "products/common/tbb/.xgc2/product.yml",
       "apt": {
-        "distribution": "focal,noble",
+        "distribution": "focal,jammy,noble",
         "install": [
           "xgc2-tbb"
         ],
@@ -88,7 +88,7 @@
         ]
       },
       "schema": "xgc2.product.v1",
-      "summary": "System-level oneAPI Threading Building Blocks runtime for XGC2 projects on Ubuntu 20.04 and 24.04.",
+      "summary": "System-level oneAPI Threading Building Blocks runtime for XGC2 projects on Ubuntu 20.04, 22.04, and 24.04.",
       "usage": {
         "install": "sudo apt update\nsudo apt install xgc2-tbb\n",
         "notes": "CMake consumers should use find_package(xgc2_tbb REQUIRED CONFIG).\nThe upstream oneTBB CMake package remains available under /opt/xgc2/tbb.\n",
