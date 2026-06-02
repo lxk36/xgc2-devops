@@ -70,3 +70,7 @@
 	path = products/ros1/communication/runtime-sync
 	url = git@github.com:lxk36/xgc2-runtime-sync.git
 	branch = noetic
+[submodule "products/ros1/simulator/convex_geometry"]
+	path = products/ros1/simulator/convex_geometry
+	url = git@github.com:lxk36/xgc2-convex_geometry.git
+	branch = noetic

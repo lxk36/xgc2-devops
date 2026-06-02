@@ -248,6 +248,45 @@
       }
     },
     {
+      "_source": "products/ros1/simulator/convex_geometry/.xgc2/product.yml",
+      "apt": {
+        "distribution": "focal",
+        "install": [
+          "ros-noetic-xgc2-convex-geometry"
+        ],
+        "packages": [
+          "ros-noetic-xgc2-convex-geometry",
+          "ros-noetic-xgc2-convex-geometry-core",
+          "ros-noetic-xgc2-cluttered-environment"
+        ]
+      },
+      "id": "xgc2-convex-geometry",
+      "kind": "ros1-apt",
+      "name": "XGC2 Convex Geometry",
+      "ownership": {
+        "paths": [
+          "/opt/ros/noetic/share/convex_geometry",
+          "/opt/ros/noetic/include/convex_geometry",
+          "/opt/ros/noetic/share/cluttered_environment",
+          "/opt/ros/noetic/include/cluttered_environment",
+          "/opt/ros/noetic/lib/cluttered_environment"
+        ]
+      },
+      "ros": {
+        "distro": "noetic",
+        "packages": [
+          "convex_geometry",
+          "cluttered_environment"
+        ]
+      },
+      "schema": "xgc2.product.v1",
+      "summary": "Convex geometry messages and cluttered simulation environment tools for XGC2 ROS1.",
+      "usage": {
+        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-convex-geometry\n",
+        "smoke_test": "rospack find convex_geometry\nrospack find cluttered_environment\n"
+      }
+    },
+    {
       "_source": "products/ros1/simulator/gazebo-sim/.xgc2/product.yml",
       "apt": {
         "distribution": "focal",
