@@ -15,6 +15,7 @@ jobs:
 
       - name: Checkout product metadata submodules
         run: |
+          git config --global url."https://github.com/".insteadOf git@github.com:
           git submodule update --init --depth=1 \
             products/ros1/common/acados \
             products/ros1/common/state-machine \
