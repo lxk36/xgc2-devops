@@ -528,23 +528,23 @@
       "_source": "products/ros1/simulator/swarm-sync-sim/.xgc2/product.yml",
       "apt": {
         "depends": [
-          "ros-noetic-xgc2-sss-sim-env",
-          "ros-noetic-xgc2-sss-px4-rotor-sim",
-          "ros-noetic-xgc2-sss-tello-sim",
-          "ros-noetic-xgc2-sss-ugv-sim",
-          "ros-noetic-xgc2-sss-fw-plane-sim"
+          "ros-noetic-sss-sim-env",
+          "ros-noetic-sss-px4-rotor-sim",
+          "ros-noetic-sss-tello-sim",
+          "ros-noetic-sss-ugv-sim",
+          "ros-noetic-sss-fw-plane-sim"
         ],
         "distribution": "focal",
         "install": [
-          "ros-noetic-xgc2-swarm-sync-sim"
+          "ros-noetic-sss-swarm-sync-sim"
         ],
         "packages": [
-          "ros-noetic-xgc2-swarm-sync-sim",
-          "ros-noetic-xgc2-sss-sim-env",
-          "ros-noetic-xgc2-sss-px4-rotor-sim",
-          "ros-noetic-xgc2-sss-tello-sim",
-          "ros-noetic-xgc2-sss-ugv-sim",
-          "ros-noetic-xgc2-sss-fw-plane-sim"
+          "ros-noetic-sss-swarm-sync-sim",
+          "ros-noetic-sss-sim-env",
+          "ros-noetic-sss-px4-rotor-sim",
+          "ros-noetic-sss-tello-sim",
+          "ros-noetic-sss-ugv-sim",
+          "ros-noetic-sss-fw-plane-sim"
         ]
       },
       "id": "xgc2-swarm-sync-sim",
@@ -577,7 +577,7 @@
       "schema": "xgc2.product.v1",
       "summary": "Multi-vehicle synchronized simulation packages for ROS Noetic.",
       "usage": {
-        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-swarm-sync-sim\n",
+        "install": "sudo apt update\nsudo apt install ros-noetic-sss-swarm-sync-sim\n",
         "smoke_test": "roslaunch --files sss_sim_env sim_clock.launch\n"
       }
     },
