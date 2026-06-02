@@ -46,10 +46,6 @@
 	path = products/ros1/simulator/agilex
 	url = git@github.com:lxk36/xgc2-agilex.git
 	branch = xgc2-noetic
-[submodule "products/ros1/xgc2-ros1-adapter"]
-	path = products/ros1/xgc2-ros1-adapter
-	url = git@github.com:lxk36/xgc2-ros1-adapter.git
-	branch = master
 [submodule "products/ros1/perception/estimator-hover-thrust"]
 	path = products/ros1/perception/estimator-hover-thrust
 	url = git@github.com:lxk36/xgc2-estimator-hover-thrust.git
