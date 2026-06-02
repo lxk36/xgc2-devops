@@ -1,0 +1,17 @@
+ros1_dev is the high-frequency ROS1 development workspace represented by
+alg_ros1_ws.
+
+The packages under xgc2-devops/products/ros1 are the productized ROS1
+packages that have been stabilized, assigned metadata, built by CI, and
+published to the XGC2 APT repository.
+
+Dependency direction:
+
+  xgc2-devops/products/ros1 -> CI/CD -> XGC2 APT repository -> alg_ros1_ws
+
+alg_ros1_ws should depend on released APT packages from xgc2-devops instead of
+keeping duplicated source copies for stable product packages.
+
+Use alg_ros1_ws for active development, integration experiments, and fast
+iteration. Use xgc2-devops/products/ros1 for low-frequency maintenance of
+deployable ROS1 packages.
