@@ -99,7 +99,7 @@
       }
     },
     {
-      "_source": "products/ros1/communication/xgc2-runtime-sync/.xgc2/product.yml",
+      "_source": "products/ros1/communication/runtime-sync/.xgc2/product.yml",
       "apt": {
         "distribution": "focal",
         "install": [

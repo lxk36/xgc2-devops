@@ -66,7 +66,7 @@
 	path = products/ros1/simulator/gazebo-sim
 	url = git@github.com:lxk36/xgc2-gazebo-sim.git
 	branch = noetic
-[submodule "products/ros1/communication/xgc2-runtime-sync"]
-	path = products/ros1/communication/xgc2-runtime-sync
+[submodule "products/ros1/communication/runtime-sync"]
+	path = products/ros1/communication/runtime-sync
 	url = git@github.com:lxk36/xgc2-runtime-sync.git
 	branch = noetic
