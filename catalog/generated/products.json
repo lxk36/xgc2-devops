@@ -60,6 +60,42 @@
       }
     },
     {
+      "_source": "products/ros1/common/ros1-utils/.xgc2/product.yml",
+      "apt": {
+        "distribution": "focal",
+        "install": [
+          "ros-noetic-xgc2-ros1-utils"
+        ],
+        "packages": [
+          "ros-noetic-xgc2-ros1-utils"
+        ]
+      },
+      "id": "xgc2-ros1-utils",
+      "kind": "ros1-apt",
+      "name": "XGC2 ROS1 Utils",
+      "ownership": {
+        "paths": [
+          "/opt/ros/noetic/share/ros1_utils",
+          "/opt/ros/noetic/include/ros1_utils",
+          "/opt/ros/noetic/include/controller_runtime",
+          "/opt/ros/noetic/include/control_utils",
+          "/opt/ros/noetic/lib/libros1_utils_ugv_identification.so"
+        ]
+      },
+      "ros": {
+        "distro": "noetic",
+        "packages": [
+          "ros1_utils"
+        ]
+      },
+      "schema": "xgc2.product.v1",
+      "summary": "ROS1-coupled runtime, scheduling, topic, and control utility helpers for XGC2 controllers.",
+      "usage": {
+        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-ros1-utils\n",
+        "smoke_test": "rospack find ros1_utils\n"
+      }
+    },
+    {
       "_source": "products/ros1/common/state-machine/.xgc2/product.yml",
       "apt": {
         "distribution": "focal",

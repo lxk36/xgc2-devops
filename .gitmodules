@@ -78,3 +78,7 @@
 	path = products/common/mavlink-router
 	url = git@github.com:lxk36/xgc2-mavlink-router.git
 	branch = master
+[submodule "products/ros1/common/ros1-utils"]
+	path = products/ros1/common/ros1-utils
+	url = git@github.com:lxk36/xgc2-ros1-utils.git
+	branch = noetic
