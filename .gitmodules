@@ -34,10 +34,10 @@
 	path = products/ros1/simulator/swarm-sync-sim
 	url = git@github.com:lxk36/xgc2-swarm-sync-sim.git
 	branch = master
-[submodule "products/ros1/common/acados"]
-	path = products/ros1/common/acados
+[submodule "products/common/acados"]
+	path = products/common/acados
 	url = git@github.com:lxk36/xgc2-acados.git
-	branch = noetic
+	branch = master
 [submodule "products/ros1/common/tbb"]
 	path = products/ros1/common/tbb
 	url = git@github.com:lxk36/xgc2-tbb.git

@@ -1,6 +1,40 @@
 {
   "products": [
     {
+      "_source": "products/common/acados/.xgc2/product.yml",
+      "apt": {
+        "distribution": "focal,noble",
+        "install": [
+          "xgc2-acados"
+        ],
+        "packages": [
+          "xgc2-acados"
+        ]
+      },
+      "conflicts": {
+        "apt_packages": [
+          "ros-noetic-xgc2-acados"
+        ]
+      },
+      "id": "xgc2-acados",
+      "kind": "toolchain-apt",
+      "name": "XGC2 acados",
+      "ownership": {
+        "paths": [
+          "/opt/xgc2/acados",
+          "/usr/lib/cmake/xgc2_acados",
+          "/etc/ld.so.conf.d/xgc2-acados.conf"
+        ]
+      },
+      "schema": "xgc2.product.v1",
+      "summary": "System-level acados solver stack for XGC2 projects on Ubuntu 20.04 and 24.04.",
+      "usage": {
+        "install": "sudo apt update\nsudo apt install xgc2-acados\n",
+        "notes": "CMake consumers should use find_package(xgc2_acados REQUIRED CONFIG).\nMATLAB users should run /opt/xgc2/acados/setup_acados.m.\n",
+        "smoke_test": "source /opt/xgc2/acados/setup.bash\npython3 -c 'from acados_template import AcadosOcp'\n"
+      }
+    },
+    {
       "_source": "products/common/mavlink-router/.xgc2/product.yml",
       "apt": {
         "distribution": "focal,noble",
@@ -25,38 +59,6 @@
       "usage": {
         "install": "sudo apt update\nsudo apt install xgc2-mavlink-router\n",
         "smoke_test": "command -v mavlink-routerd\nmavlink-routerd --version\n"
-      }
-    },
-    {
-      "_source": "products/ros1/common/acados/.xgc2/product.yml",
-      "apt": {
-        "distribution": "focal",
-        "install": [
-          "ros-noetic-xgc2-acados"
-        ],
-        "packages": [
-          "ros-noetic-xgc2-acados"
-        ]
-      },
-      "id": "xgc2-acados",
-      "kind": "toolchain-apt",
-      "name": "XGC2 acados",
-      "ownership": {
-        "paths": [
-          "/opt/ros/noetic/share/xgc2_acados"
-        ]
-      },
-      "ros": {
-        "distro": "noetic",
-        "packages": [
-          "xgc2_acados"
-        ]
-      },
-      "schema": "xgc2.product.v1",
-      "summary": "ROS Noetic vendor package for the XGC2 acados solver stack.",
-      "usage": {
-        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-acados\n",
-        "smoke_test": "rospack find xgc2_acados\n"
       }
     },
     {
