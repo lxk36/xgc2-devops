@@ -22,34 +22,47 @@
 	path = products/xgc2
 	url = git@github.com:lxk36/xgc2-vibe-coding-temp.git
 	branch = dev
-[submodule "products/ros1/px4-sitl-112"]
-	path = products/ros1/px4-sitl-112
+[submodule "products/ros1/simulator/px4-sitl-112"]
+	path = products/ros1/simulator/px4-sitl-112
 	url = git@github.com:lxk36/xgc2-px4-sitl.git
 	branch = v1.12-noetic
-[submodule "products/ros1/px4-sitl-114"]
-	path = products/ros1/px4-sitl-114
+[submodule "products/ros1/simulator/px4-sitl-114"]
+	path = products/ros1/simulator/px4-sitl-114
 	url = git@github.com:lxk36/xgc2-px4-sitl.git
 	branch = v1.14-noetic
-[submodule "products/ros1/swarm-sync-sim"]
-	path = products/ros1/swarm-sync-sim
+[submodule "products/ros1/simulator/swarm-sync-sim"]
+	path = products/ros1/simulator/swarm-sync-sim
 	url = git@github.com:lxk36/xgc2-swarm-sync-sim.git
 	branch = master
-[submodule "products/ros1/sim-px4-drone"]
-	path = products/ros1/sim-px4-drone
-	url = git@github.com:lxk36/xgc2-sim-px4-drone.git
-[submodule "products/ros1/acados"]
-	path = products/ros1/acados
+[submodule "products/ros1/common/acados"]
+	path = products/ros1/common/acados
 	url = git@github.com:lxk36/xgc2-acados.git
 	branch = noetic
-[submodule "products/ros1/tbb"]
-	path = products/ros1/tbb
+[submodule "products/ros1/common/tbb"]
+	path = products/ros1/common/tbb
 	url = git@github.com:lxk36/xgc2-tbb.git
 	branch = noetic
-[submodule "products/ros1/agilex"]
-	path = products/ros1/agilex
+[submodule "products/ros1/simulator/agilex"]
+	path = products/ros1/simulator/agilex
 	url = git@github.com:lxk36/xgc2-agilex.git
 	branch = xgc2-noetic
 [submodule "products/ros1/xgc2-ros1-adapter"]
 	path = products/ros1/xgc2-ros1-adapter
 	url = git@github.com:lxk36/xgc2-ros1-adapter.git
 	branch = master
+[submodule "products/ros1/perception/estimator-hover-thrust"]
+	path = products/ros1/perception/estimator-hover-thrust
+	url = git@github.com:lxk36/xgc2-estimator-hover-thrust.git
+	branch = noetic
+[submodule "products/ros1/common/state-machine"]
+	path = products/ros1/common/state-machine
+	url = git@github.com:lxk36/xgc2-state-machine.git
+	branch = noetic
+[submodule "products/ros1/manager/linux-utils"]
+	path = products/ros1/manager/linux-utils
+	url = git@github.com:lxk36/xgc2-linux-utils.git
+	branch = noetic
+[submodule "products/ros1/simulator/gazebo-sim"]
+	path = products/ros1/simulator/gazebo-sim
+	url = git@github.com:lxk36/xgc2-gazebo-sim.git
+	branch = noetic
