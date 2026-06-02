@@ -4,8 +4,8 @@
 [submodule "platforms/apt-repo"]
 	path = platforms/apt-repo
 	url = git@github.com:lxk36/xgc2-apt-repo.git
-[submodule "products/ros2/px4-sitl-116"]
-	path = products/ros2/px4-sitl-116
+[submodule "products/ros2/simulator/px4-sitl-116"]
+	path = products/ros2/simulator/px4-sitl-116
 	url = git@github.com:lxk36/xgc2-px4-sitl.git
 	branch = v1.16-jazzy
 [submodule "products/ros2/vrx"]

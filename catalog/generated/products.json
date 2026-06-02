@@ -439,16 +439,17 @@
       "apt": {
         "depends": [
           "ros-noetic-xgc2-px4-sitl-1-12",
-          "ros-noetic-xgc2-px4-gazebo-classic-1-12"
+          "gazebo11",
+          "ros-noetic-gazebo-ros",
+          "ros-noetic-mavros"
         ],
         "distribution": "focal",
         "install": [
-          "ros-noetic-xgc2-sim-1-12"
+          "ros-noetic-xgc2-gz-classic-px4-1-12"
         ],
         "packages": [
-          "ros-noetic-xgc2-sim-1-12",
           "ros-noetic-xgc2-px4-sitl-1-12",
-          "ros-noetic-xgc2-px4-gazebo-classic-1-12"
+          "ros-noetic-xgc2-gz-classic-px4-1-12"
         ]
       },
       "id": "xgc2-px4-sitl-112",
@@ -458,7 +459,6 @@
         "paths": [
           "/opt/ros/noetic/share/px4_sitl_runtime_1_12",
           "/opt/ros/noetic/share/sitl_gazebo_1_12",
-          "/opt/ros/noetic/share/xgc2_sim_1_12",
           "/opt/ros/noetic/lib/px4_sitl_runtime_1_12",
           "/opt/ros/noetic/lib/sitl_gazebo_1_12"
         ]
@@ -467,16 +467,15 @@
         "distro": "noetic",
         "packages": [
           "px4_sitl_runtime_1_12",
-          "sitl_gazebo_1_12",
-          "xgc2_sim_1_12"
+          "sitl_gazebo_1_12"
         ]
       },
       "schema": "xgc2.product.v1",
       "summary": "PX4 v1.12 SITL runtime and Gazebo Classic assets for ROS Noetic.",
       "usage": {
-        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-sim-1-12\n",
+        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-gz-classic-px4-1-12\n",
         "notes": "Runtime entry scripts are installed from package scripts; packaging scripts stay under .xgc2/scripts.\n",
-        "smoke_test": "roslaunch --files xgc2_sim_1_12 iris_mavros_gazebo.launch\n"
+        "smoke_test": "roslaunch --files sitl_gazebo_1_12 iris_mavros_gazebo.launch\n"
       }
     },
     {
@@ -484,16 +483,17 @@
       "apt": {
         "depends": [
           "ros-noetic-xgc2-px4-sitl-1-14",
-          "ros-noetic-xgc2-px4-gazebo-classic-1-14"
+          "gazebo11",
+          "ros-noetic-gazebo-ros",
+          "ros-noetic-mavros"
         ],
         "distribution": "focal",
         "install": [
-          "ros-noetic-xgc2-sim-1-14"
+          "ros-noetic-xgc2-gz-classic-px4-1-14"
         ],
         "packages": [
-          "ros-noetic-xgc2-sim-1-14",
           "ros-noetic-xgc2-px4-sitl-1-14",
-          "ros-noetic-xgc2-px4-gazebo-classic-1-14"
+          "ros-noetic-xgc2-gz-classic-px4-1-14"
         ]
       },
       "id": "xgc2-px4-sitl-114",
@@ -503,7 +503,6 @@
         "paths": [
           "/opt/ros/noetic/share/px4_sitl_runtime_1_14",
           "/opt/ros/noetic/share/sitl_gazebo_1_14",
-          "/opt/ros/noetic/share/xgc2_sim_1_14",
           "/opt/ros/noetic/lib/px4_sitl_runtime_1_14",
           "/opt/ros/noetic/lib/sitl_gazebo_1_14"
         ]
@@ -512,16 +511,15 @@
         "distro": "noetic",
         "packages": [
           "px4_sitl_runtime_1_14",
-          "sitl_gazebo_1_14",
-          "xgc2_sim_1_14"
+          "sitl_gazebo_1_14"
         ]
       },
       "schema": "xgc2.product.v1",
       "summary": "PX4 v1.14 SITL runtime and Gazebo Classic assets for ROS Noetic.",
       "usage": {
-        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-sim-1-14\n",
+        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-gz-classic-px4-1-14\n",
         "notes": "Runtime entry scripts are installed from package scripts; packaging scripts stay under .xgc2/scripts.\n",
-        "smoke_test": "roslaunch --files xgc2_sim_1_14 iris_mavros_gazebo.launch\n"
+        "smoke_test": "roslaunch --files sitl_gazebo_1_14 iris_mavros_gazebo.launch\n"
       }
     },
     {
@@ -582,20 +580,19 @@
       }
     },
     {
-      "_source": "products/ros2/px4-sitl-116/.xgc2/product.yml",
+      "_source": "products/ros2/simulator/px4-sitl-116/.xgc2/product.yml",
       "apt": {
         "depends": [
           "ros-jazzy-xgc2-px4-sitl-1-16",
-          "ros-jazzy-xgc2-px4-gz-harmonic-1-16"
+          "gz-harmonic"
         ],
         "distribution": "noble",
         "install": [
-          "ros-jazzy-xgc2-sim-1-16"
+          "ros-jazzy-xgc2-gz-harmonic-px4-1-16"
         ],
         "packages": [
-          "ros-jazzy-xgc2-sim-1-16",
           "ros-jazzy-xgc2-px4-sitl-1-16",
-          "ros-jazzy-xgc2-px4-gz-harmonic-1-16"
+          "ros-jazzy-xgc2-gz-harmonic-px4-1-16"
         ]
       },
       "id": "xgc2-px4-sitl-116",
@@ -605,7 +602,6 @@
         "paths": [
           "/opt/ros/jazzy/share/px4_sitl_runtime_1_16",
           "/opt/ros/jazzy/share/px4_gz_sim_1_16",
-          "/opt/ros/jazzy/share/xgc2_sim_1_16",
           "/opt/ros/jazzy/lib/px4_sitl_runtime_1_16",
           "/opt/ros/jazzy/lib/px4_gz_sim_1_16"
         ]
@@ -614,16 +610,15 @@
         "distro": "jazzy",
         "packages": [
           "px4_sitl_runtime_1_16",
-          "px4_gz_sim_1_16",
-          "xgc2_sim_1_16"
+          "px4_gz_sim_1_16"
         ]
       },
       "schema": "xgc2.product.v1",
       "summary": "PX4 v1.16 SITL runtime and Gazebo Sim Harmonic assets for ROS Jazzy.",
       "usage": {
-        "install": "sudo apt update\nsudo apt install ros-jazzy-xgc2-sim-1-16\n",
+        "install": "sudo apt update\nsudo apt install ros-jazzy-xgc2-gz-harmonic-px4-1-16\n",
         "notes": "Runtime entry scripts are installed from package scripts; packaging scripts stay under .xgc2/scripts.\n",
-        "smoke_test": "ros2 pkg prefix xgc2_sim_1_16\n"
+        "smoke_test": "ros2 pkg prefix px4_gz_sim_1_16\n"
       }
     },
     {

@@ -31,7 +31,7 @@ jobs:
             products/ros1/simulator/px4-sitl-112 \
             products/ros1/simulator/px4-sitl-114 \
             products/ros1/simulator/swarm-sync-sim \
-            products/ros2/px4-sitl-116
+            products/ros2/simulator/px4-sitl-116
 
       - uses: actions/setup-python@v5
         with:
