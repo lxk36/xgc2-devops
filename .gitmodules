@@ -77,3 +77,7 @@
 	path = products/ros1/perception/vrpn-router
 	url = git@github.com:lxk36/xgc2-vrpn-router.git
 	branch = mavros-noetic
+[submodule "products/ros1/perception/sensor-calibration"]
+	path = products/ros1/perception/sensor-calibration
+	url = git@github.com:lxk36/xgc2-sensor-calibration.git
+	branch = noetic
