@@ -73,3 +73,7 @@
 	path = products/ros1_dev
 	url = git@github.com:lxk36/alg_ros1_ws.git
 	branch = dev-open
+[submodule "products/ros1/perception/vrpn-router"]
+	path = products/ros1/perception/vrpn-router
+	url = git@github.com:lxk36/xgc2-vrpn-router.git
+	branch = mavros-noetic
