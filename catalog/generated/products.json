@@ -440,43 +440,50 @@
       "_source": "products/ros1/simulator/convex_geometry/.xgc2/product.yml",
       "apt": {
         "depends": [
-          "ros-noetic-xgc2-convex-geometry-core",
-          "ros-noetic-xgc2-cluttered-environment"
+          "libxgc2-geometry-dev",
+          "ros-noetic-xgc2-geometry-msgs",
+          "ros-noetic-xgc2-cluttered-environment",
+          "ros-noetic-xgc2-mockamap"
         ],
         "distribution": "focal",
         "install": [
-          "ros-noetic-xgc2-convex-geometry"
+          "ros-noetic-xgc2-scene-generation"
         ],
         "packages": [
-          "ros-noetic-xgc2-convex-geometry",
-          "ros-noetic-xgc2-convex-geometry-core",
-          "ros-noetic-xgc2-cluttered-environment"
+          "ros-noetic-xgc2-scene-generation",
+          "ros-noetic-xgc2-geometry-msgs",
+          "ros-noetic-xgc2-cluttered-environment",
+          "ros-noetic-xgc2-mockamap"
         ]
       },
-      "id": "xgc2-convex-geometry",
+      "id": "xgc2-scene-generation",
       "kind": "ros1-apt",
-      "name": "XGC2 Convex Geometry",
+      "name": "XGC2 Scene Generation",
       "ownership": {
         "paths": [
-          "/opt/ros/noetic/share/convex_geometry",
-          "/opt/ros/noetic/include/convex_geometry",
+          "/opt/ros/noetic/share/xgc2_geometry_msgs",
+          "/opt/ros/noetic/include/xgc2_geometry_msgs",
           "/opt/ros/noetic/share/cluttered_environment",
           "/opt/ros/noetic/include/cluttered_environment",
-          "/opt/ros/noetic/lib/cluttered_environment"
+          "/opt/ros/noetic/lib/cluttered_environment",
+          "/opt/ros/noetic/share/mockamap",
+          "/opt/ros/noetic/include/mockamap",
+          "/opt/ros/noetic/lib/mockamap"
         ]
       },
       "ros": {
         "distro": "noetic",
         "packages": [
-          "convex_geometry",
-          "cluttered_environment"
+          "xgc2_geometry_msgs",
+          "cluttered_environment",
+          "mockamap"
         ]
       },
       "schema": "xgc2.product.v1",
-      "summary": "Convex geometry messages and cluttered simulation environment tools for XGC2 ROS1.",
+      "summary": "ROS1 scene-generation tools for convex obstacle scenarios and procedural point-cloud maps.",
       "usage": {
-        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-convex-geometry\n",
-        "smoke_test": "rospack find convex_geometry\nrospack find cluttered_environment\n"
+        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-scene-generation\n",
+        "smoke_test": "rospack find xgc2_geometry_msgs\nrospack find cluttered_environment\nrospack find mockamap\n"
       }
     },
     {
