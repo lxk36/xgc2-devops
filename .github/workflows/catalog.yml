@@ -10,13 +10,32 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
 
       - name: Checkout product metadata submodules
+        env:
+          SUBMODULE_SSH_KEY: ${{ secrets.SUBMODULE_SSH_KEY }}
         run: |
-          git config --global url."https://github.com/".insteadOf git@github.com:
-          git submodule update --init --recursive --depth=1 \
+          set -euo pipefail
+          repo_root="$(git rev-parse --show-toplevel)"
+          cd "${repo_root}"
+
+          if [[ -n "${SUBMODULE_SSH_KEY:-}" ]]; then
+            install -m 0700 -d "${HOME}/.ssh"
+            key_file="${HOME}/.ssh/xgc2-submodule-key"
+            printf '%s\n' "${SUBMODULE_SSH_KEY}" > "${key_file}"
+            chmod 0600 "${key_file}"
+            ssh-keyscan github.com >> "${HOME}/.ssh/known_hosts"
+            git config --global core.sshCommand "ssh -i ${key_file} -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
+          else
+            git config --global url."https://github.com/".insteadOf git@github.com:
+          fi
+
+          submodules=(
             products/common/acados \
             products/common/mavlink-router \
             products/common/state-machine \
@@ -25,10 +44,22 @@ jobs:
             products/ros1/communication/runtime-sync \
             products/ros1/manager/linux-utils \
             products/ros1/perception/estimator-hover-thrust \
+            products/ros1/planner \
             products/ros1/simulator/convex_geometry \
             products/ros1/simulator/gazebo-sim \
             products/ros1/simulator/swarm-sync-sim \
             products/ros2/simulator/px4-sitl-116
+          )
+
+          for submodule_path in "${submodules[@]}"; do
+            if ! git ls-files -s "${submodule_path}" | grep -q '^160000 '; then
+              echo "::warning title=Submodule not indexed::${submodule_path} is not a gitlink in this revision"
+              continue
+            fi
+            if ! git submodule update --init --recursive --depth=1 "${submodule_path}"; then
+              echo "::warning title=Submodule checkout failed::${submodule_path} could not be checked out; catalog will continue with available products"
+            fi
+          done
 
       - uses: actions/setup-python@v5
         with:
