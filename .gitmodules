@@ -85,6 +85,10 @@
 	path = products/ros1/perception/sensor-calibration
 	url = git@github.com:lxk36/xgc2-sensor-calibration.git
 	branch = noetic
+[submodule "products/ros1/perception/slam"]
+	path = products/ros1/perception/slam
+	url = git@github.com:lxk36/xgc2-slam.git
+	branch = noetic
 [submodule "products/common/xgc2-observer"]
 	path = products/common/xgc2-observer
 	url = git@github.com:lxk36/xgc2-observer.git
