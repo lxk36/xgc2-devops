@@ -17,6 +17,10 @@
       "type": "string",
       "minLength": 1
     },
+    "version": {
+      "type": "string",
+      "minLength": 1
+    },
     "kind": {
       "type": "string",
       "enum": [
