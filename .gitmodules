@@ -58,6 +58,10 @@
 	path = products/ros1/simulator/convex_geometry
 	url = git@github.com:lxk36/xgc2-scene-generation.git
 	branch = noetic
+[submodule "products/ros1/planner/xgc2-planner"]
+	path = products/ros1/planner/xgc2-planner
+	url = git@github.com:lxk36/xgc2-planner.git
+	branch = noetic
 [submodule "products/common/mavlink-router"]
 	path = products/common/mavlink-router
 	url = git@github.com:lxk36/xgc2-mavlink-router.git
