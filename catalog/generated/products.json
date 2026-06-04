@@ -159,6 +159,44 @@
       }
     },
     {
+      "_source": "products/common/xgc2-observer/.xgc2/product.yml",
+      "apt": {
+        "depends": [
+          "libc6",
+          "libgcc-s1",
+          "libstdc++6"
+        ],
+        "distribution": "focal,jammy,noble",
+        "install": [
+          "libxgc2-observer-dev"
+        ],
+        "packages": [
+          "libxgc2-observer-dev"
+        ]
+      },
+      "conflicts": {
+        "apt_packages": [
+          "ros-noetic-xgc2-observer"
+        ]
+      },
+      "id": "libxgc2-observer-dev",
+      "kind": "toolchain-apt",
+      "name": "XGC2 Observer",
+      "ownership": {
+        "paths": [
+          "/usr/include/xgc2_observer",
+          "/usr/lib/cmake/xgc2_observer"
+        ]
+      },
+      "schema": "xgc2.product.v1",
+      "summary": "Header-only C++ observer, differentiator, and signal filtering utilities for XGC2 robotics runtime code.",
+      "usage": {
+        "install": "sudo apt update\nsudo apt install libxgc2-observer-dev\n",
+        "notes": "CMake consumers should use find_package(xgc2_observer REQUIRED CONFIG)\nand link xgc2_observer::observer. The public include path is\n<xgc2_observer/observer.hpp>.\n",
+        "smoke_test": "cmake --find-package -DNAME=xgc2_observer -DCOMPILER_ID=GNU -DLANGUAGE=CXX -DMODE=EXIST\n"
+      }
+    },
+    {
       "_source": "products/ros1/common/ros1-utils/.xgc2/product.yml",
       "apt": {
         "distribution": "focal",
@@ -481,13 +519,14 @@
         "notes": "This repository is the verified Gazebo simulation suite entrypoint. Source packages live in child product repositories.\nThe aggregate package depends on child package names, but does not pin exact child versions.\nChild repositories may publish compatible packaging revisions independently; bump this product version only when the aggregate dependency set or compatibility contract changes.\n",
         "smoke_test": "dpkg -s ros-noetic-xgc2-gazebo-sim\nroslaunch --files gazebo_sim_scout simple.launch rviz:=false\nroslaunch --files gazebo_sim_px4_1_12 iris.launch gui:=false\nroslaunch --files gazebo_sim_px4_1_14 iris.launch gui:=false\nroslaunch --files gazebo_sim_fs150_sitl fs150.launch gui:=false\n"
       },
-      "version": "1.0.16-1"
+      "version": "1.0.17-1"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/agilex/.xgc2/product.yml",
       "apt": {
         "depends": [
-          "ros-noetic-xgc2-scout-description"
+          "ros-noetic-xgc2-scout-description",
+          "ros-noetic-xgc2-gazebo-sim-vrpn-bridge"
         ],
         "distribution": "focal",
         "install": [
@@ -561,7 +600,7 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-gazebo-sim-fs150-sitl\n",
         "smoke_test": "roslaunch --files gazebo_sim_fs150_sitl fs150.launch gui:=false\n"
       },
-      "version": "1.0.8-1"
+      "version": "1.0.9-1"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/gazebo-sim-tools/.xgc2/product.yml",
