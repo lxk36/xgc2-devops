@@ -159,7 +159,7 @@
       }
     },
     {
-      "_source": "products/common/xgc2-observer/.xgc2/product.yml",
+      "_source": "products/common/observer/.xgc2/product.yml",
       "apt": {
         "depends": [
           "libc6",
@@ -491,6 +491,7 @@
       "apt": {
         "depends": [
           "ros-noetic-xgc2-gazebo-sim-manager",
+          "ros-noetic-xgc2-gazebo-sim-examples",
           "ros-noetic-xgc2-gazebo-sim-vrpn-bridge",
           "ros-noetic-xgc2-gazebo-sim-scout",
           "ros-noetic-xgc2-gazebo-sim-px4-1-12",
@@ -524,9 +525,9 @@
       "usage": {
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-gazebo-sim\n",
         "notes": "This repository is the verified Gazebo simulation suite entrypoint. Source packages live in child product repositories.\nThe aggregate package depends on child package names, but does not pin exact child versions.\nChild repositories may publish compatible packaging revisions independently; bump this product version only when the aggregate dependency set or compatibility contract changes.\n",
-        "smoke_test": "dpkg -s ros-noetic-xgc2-gazebo-sim\nroslaunch --files gazebo_sim_scout simple.launch rviz:=false\nroslaunch --files gazebo_sim_px4_1_12 iris.launch gui:=false\nroslaunch --files gazebo_sim_px4_1_14 iris.launch gui:=false\nroslaunch --files gazebo_sim_fs150_sitl fs150.launch gui:=false\n"
+        "smoke_test": "dpkg -s ros-noetic-xgc2-gazebo-sim\nroslaunch --files gazebo_sim_examples fs150_ugv_vrpn.launch\nroslaunch --files gazebo_sim_scout simple.launch rviz:=false\nroslaunch --files gazebo_sim_px4_1_12 iris.launch gui:=false\nroslaunch --files gazebo_sim_px4_1_14 iris.launch gui:=false\nroslaunch --files gazebo_sim_fs150_sitl fs150.launch gui:=false\n"
       },
-      "version": "1.0.18-1"
+      "version": "1.0.19-1"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/agilex/.xgc2/product.yml",
@@ -613,15 +614,20 @@
       "_source": "products/ros1/simulator/gazebo-sim/gazebo-sim-tools/.xgc2/product.yml",
       "apt": {
         "depends": [
-          "ros-noetic-vrpn-client-ros"
+          "ros-noetic-vrpn-client-ros",
+          "ros-noetic-xgc2-gazebo-sim-fs150-sitl",
+          "ros-noetic-xgc2-gazebo-sim-scout",
+          "ros-noetic-xgc2-vrpn-router"
         ],
         "distribution": "focal",
         "install": [
           "ros-noetic-xgc2-gazebo-sim-manager",
+          "ros-noetic-xgc2-gazebo-sim-examples",
           "ros-noetic-xgc2-gazebo-sim-vrpn-bridge"
         ],
         "packages": [
           "ros-noetic-xgc2-gazebo-sim-manager",
+          "ros-noetic-xgc2-gazebo-sim-examples",
           "ros-noetic-xgc2-gazebo-sim-vrpn-bridge"
         ]
       },
@@ -632,6 +638,8 @@
         "paths": [
           "/opt/ros/noetic/share/gazebo_session_manager",
           "/opt/ros/noetic/lib/gazebo_session_manager",
+          "/opt/ros/noetic/share/gazebo_sim_examples",
+          "/opt/ros/noetic/lib/gazebo_sim_examples",
           "/opt/ros/noetic/share/gazebo_sim_vrpn_bridge",
           "/opt/ros/noetic/include/gazebo_sim_vrpn_bridge",
           "/opt/ros/noetic/lib/gazebo_sim_vrpn_bridge"
@@ -641,17 +649,18 @@
         "distro": "noetic",
         "packages": [
           "gazebo_session_manager",
+          "gazebo_sim_examples",
           "gazebo_sim_vrpn_bridge"
         ]
       },
       "schema": "xgc2.product.v1",
-      "summary": "Gazebo Classic session manager and Gazebo-to-VRPN bridge packages for ROS Noetic.",
+      "summary": "Gazebo Classic session manager, examples, and Gazebo-to-VRPN bridge packages for ROS Noetic.",
       "usage": {
-        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-gazebo-sim-manager ros-noetic-xgc2-gazebo-sim-vrpn-bridge\n",
+        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-gazebo-sim-manager ros-noetic-xgc2-gazebo-sim-examples ros-noetic-xgc2-gazebo-sim-vrpn-bridge\n",
         "notes": "These are Gazebo Classic simulation tools. The full suite is installed through ros-noetic-xgc2-gazebo-sim-all from xgc2-gazebo-sim.\n",
-        "smoke_test": "roslaunch --files gazebo_session_manager session_manager.launch world_name:=/tmp/xgc2-empty.world\nroslaunch --files gazebo_sim_vrpn_bridge vrpn_server.launch auto_track_known_models:=true\nroslaunch --files gazebo_sim_vrpn_bridge vrpn_client.launch trackers:=[uav1]\n"
+        "smoke_test": "roslaunch --files gazebo_session_manager session_manager.launch world_name:=/tmp/xgc2-empty.world\nroslaunch --files gazebo_sim_examples fs150_ugv_vrpn.launch\nroslaunch --files gazebo_sim_vrpn_bridge vrpn_server.launch auto_track_known_models:=true\nroslaunch --files gazebo_sim_vrpn_bridge vrpn_client.launch trackers:=[uav1]\n"
       },
-      "version": "1.0.6-1"
+      "version": "1.0.7-1"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/px4-sitl-112/.xgc2/product.yml",

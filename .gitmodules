@@ -89,7 +89,11 @@
 	path = products/ros1/perception/slam
 	url = git@github.com:lxk36/xgc2-slam.git
 	branch = noetic
-[submodule "products/common/xgc2-observer"]
-	path = products/common/xgc2-observer
+[submodule "products/common/observer"]
+	path = products/common/observer
 	url = git@github.com:lxk36/xgc2-observer.git
+	branch = master
+[submodule "products/common/geometry"]
+	path = products/common/geometry
+	url = git@github.com:lxk36/xgc2-geometry.git
 	branch = master
