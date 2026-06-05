@@ -101,3 +101,11 @@
 	path = products/common/geometry
 	url = git@github.com:lxk36/xgc2-geometry.git
 	branch = master
+[submodule "products/ros1/driver/livox_ros_driver"]
+	path = products/ros1/driver/livox_ros_driver
+	url = git@github.com:lxk36/livox_ros_driver.git
+	branch = noetic
+[submodule "products/ros1/driver/livox_ros_driver2"]
+	path = products/ros1/driver/livox_ros_driver2
+	url = git@github.com:lxk36/livox_ros_driver2.git
+	branch = noetic
