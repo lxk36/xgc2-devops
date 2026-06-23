@@ -62,6 +62,10 @@
 	path = products/ros1/planner/planner
 	url = git@github.com:lxk36/xgc2-planner.git
 	branch = noetic
+[submodule "products/ros1/controller"]
+	path = products/ros1/controller
+	url = git@github.com:lxk36/xgc2-controller.git
+	branch = noetic
 [submodule "products/common/mavlink-router"]
 	path = products/common/mavlink-router
 	url = git@github.com:lxk36/xgc2-mavlink-router.git
