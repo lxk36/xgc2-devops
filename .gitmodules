@@ -113,3 +113,7 @@
 	path = products/ros1/driver/livox_ros_driver2
 	url = git@github.com:lxk36/livox_ros_driver2.git
 	branch = noetic
+[submodule "products/ros1/perception/estimator-rigid-state"]
+	path = products/ros1/perception/estimator-rigid-state
+	url = git@github.com:lxk36/xgc2-estimator-rigid-state.git
+	branch = noetic
