@@ -97,13 +97,9 @@
 	path = products/ros1/perception/detection
 	url = git@github.com:lxk36/xgc2-detection.git
 	branch = noetic
-[submodule "products/common/observer"]
-	path = products/common/observer
-	url = git@github.com:lxk36/xgc2-observer.git
-	branch = master
-[submodule "products/common/geometry"]
-	path = products/common/geometry
-	url = git@github.com:lxk36/xgc2-geometry.git
+[submodule "products/common/math"]
+	path = products/common/math
+	url = git@github.com:lxk36/xgc2-math.git
 	branch = master
 [submodule "products/ros1/driver/livox_ros_driver"]
 	path = products/ros1/driver/livox_ros_driver
