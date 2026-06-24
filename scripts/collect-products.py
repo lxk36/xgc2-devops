@@ -50,7 +50,7 @@ def validate_schema(product: dict[str, Any], schema: dict[str, Any], path: Path)
 
 
 def iter_metadata_files(root: Path) -> list[Path]:
-    ignored = {".git", ".github", "catalog/generated"}
+    ignored = {".git", ".github", ".work", "catalog/generated"}
     files: list[Path] = []
     for candidate in root.rglob(".xgc2/product.yml"):
         relative = candidate.relative_to(root)
