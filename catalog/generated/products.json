@@ -48,7 +48,7 @@
       "version": "0.1.0-3"
     },
     {
-      "_source": "products/common/geometry/.xgc2/product.yml",
+      "_source": "products/common/math/.xgc2/product.yml",
       "apt": {
         "depends": [
           "libeigen3-dev",
@@ -58,28 +58,38 @@
         ],
         "distribution": "focal,jammy,noble",
         "install": [
-          "libxgc2-geometry-dev"
+          "libxgc2-math-dev"
         ],
         "packages": [
-          "libxgc2-geometry-dev"
+          "libxgc2-math-algebra-dev",
+          "libxgc2-math-utils-dev",
+          "libxgc2-math-geometry-dev",
+          "libxgc2-math-filter-dev",
+          "libxgc2-math-observer-dev",
+          "libxgc2-math-estimation-dev",
+          "libxgc2-math-optimization-dev",
+          "libxgc2-math-trajectory-dev",
+          "libxgc2-math-control-dev",
+          "libxgc2-math-dev"
         ]
       },
-      "id": "libxgc2-geometry-dev",
+      "id": "libxgc2-math-dev",
       "kind": "toolchain-apt",
-      "name": "XGC2 Geometry",
+      "name": "XGC2 Math",
       "ownership": {
         "paths": [
-          "/usr/include/xgc2_geometry",
-          "/usr/lib/cmake/xgc2_geometry"
+          "/usr/include/xgc2_math",
+          "/usr/lib/cmake/xgc2_math"
         ]
       },
       "schema": "xgc2.product.v1",
-      "summary": "Header-only C++ convex geometry, convex-set, convex-hull, and GJK utilities.",
+      "summary": "Header-only C++ math library for XGC2 geometry, filters, observers, estimators, and control utilities.",
       "usage": {
-        "install": "sudo apt update\nsudo apt install libxgc2-geometry-dev\n",
-        "notes": "CMake consumers should use find_package(xgc2_geometry REQUIRED CONFIG)\nand link xgc2_geometry::geometry. New public headers live under\n",
-        "smoke_test": "cmake --find-package -DNAME=xgc2_geometry -DCOMPILER_ID=GNU -DLANGUAGE=CXX -DMODE=EXIST\n"
-      }
+        "install": "sudo apt update\nsudo apt install libxgc2-math-dev\n",
+        "notes": "CMake consumers should use find_package(xgc2_math REQUIRED CONFIG)\nand link xgc2_math::math or one of the component targets:\nxgc2_math::algebra, xgc2_math::utils, xgc2_math::geometry, xgc2_math::filter,\nxgc2_math::observer, xgc2_math::estimation, xgc2_math::optimization,\nxgc2_math::trajectory, xgc2_math::control.\n",
+        "smoke_test": "cmake --find-package -DNAME=xgc2_math -DCOMPILER_ID=GNU -DLANGUAGE=CXX -DMODE=EXIST\n"
+      },
+      "version": "0.5.2-1"
     },
     {
       "_source": "products/common/mavlink-router/.xgc2/product.yml",
@@ -112,45 +122,6 @@
       "usage": {
         "install": "sudo apt update\nsudo apt install xgc2-mavlink-router\n",
         "smoke_test": "command -v mavlink-routerd\nmavlink-routerd --version\n"
-      }
-    },
-    {
-      "_source": "products/common/observer/.xgc2/product.yml",
-      "apt": {
-        "depends": [
-          "libeigen3-dev",
-          "libc6",
-          "libgcc-s1",
-          "libstdc++6"
-        ],
-        "distribution": "focal,jammy,noble",
-        "install": [
-          "libxgc2-observer-dev"
-        ],
-        "packages": [
-          "libxgc2-observer-dev"
-        ]
-      },
-      "conflicts": {
-        "apt_packages": [
-          "ros-noetic-xgc2-observer"
-        ]
-      },
-      "id": "libxgc2-observer-dev",
-      "kind": "toolchain-apt",
-      "name": "XGC2 Observer",
-      "ownership": {
-        "paths": [
-          "/usr/include/xgc2_observer",
-          "/usr/lib/cmake/xgc2_observer"
-        ]
-      },
-      "schema": "xgc2.product.v1",
-      "summary": "Header-only C++ observer, differentiator, and signal filtering utilities for XGC2 robotics runtime code.",
-      "usage": {
-        "install": "sudo apt update\nsudo apt install libxgc2-observer-dev\n",
-        "notes": "CMake consumers should use find_package(xgc2_observer REQUIRED CONFIG)\nand link xgc2_observer::observer. The public include path is\n<xgc2_observer/observer.hpp>.\n",
-        "smoke_test": "cmake --find-package -DNAME=xgc2_observer -DCOMPILER_ID=GNU -DLANGUAGE=CXX -DMODE=EXIST\n"
       }
     },
     {
@@ -234,9 +205,7 @@
     {
       "_source": "products/ros1/common/ros1-utils/.xgc2/product.yml",
       "apt": {
-        "depends": [
-          "libxgc2-observer-dev"
-        ],
+        "depends": [],
         "distribution": "focal",
         "install": [
           "ros-noetic-xgc2-ros1-utils"
@@ -251,10 +220,7 @@
       "ownership": {
         "paths": [
           "/opt/ros/noetic/share/ros1_utils",
-          "/opt/ros/noetic/include/ros1_utils",
-          "/opt/ros/noetic/include/controller_runtime",
-          "/opt/ros/noetic/include/control_utils",
-          "/opt/ros/noetic/lib/libros1_utils_ugv_identification.so"
+          "/opt/ros/noetic/include/ros1_utils"
         ]
       },
       "ros": {
@@ -264,11 +230,12 @@
         ]
       },
       "schema": "xgc2.product.v1",
-      "summary": "ROS1-coupled runtime, scheduling, topic, and control utility helpers for XGC2 controllers.",
+      "summary": "ROS1-coupled parameter, namespace, and topic quality helpers for XGC2 runtime packages.",
       "usage": {
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-ros1-utils\n",
         "smoke_test": "rospack find ros1_utils\n"
-      }
+      },
+      "version": "1.1.0-1"
     },
     {
       "_source": "products/ros1/communication/runtime-sync/.xgc2/product.yml",
@@ -314,13 +281,8 @@
       "_source": "products/ros1/controller/.xgc2/product.yml",
       "apt": {
         "depends": [
-          "libeigen3-dev",
-          "libxgc2-state-machine-dev (>= 0.1.2-1~focal)",
-          "libxgc2-geometry-dev",
-          "xgc2-acados (>= 0.1.0-3~focal)",
-          "ros-noetic-xgc2-ros1-utils",
-          "ros-noetic-xgc2-estimator-hover-thrust (>= 1.1.21-1)",
-          "ros-noetic-xgc2-estimator-rigid-state (>= 1.0.2-1)"
+          "ros-noetic-xgc2-multirotor-controller (>= 1.0.0-1)",
+          "ros-noetic-xgc2-ugv-controller (>= 1.0.0-1)"
         ],
         "distribution": "focal",
         "install": [
@@ -332,33 +294,120 @@
       },
       "id": "xgc2-controller",
       "kind": "ros1-apt",
-      "name": "XGC2 Controller",
+      "name": "XGC2 Controller Aggregate",
       "ownership": {
         "paths": [
-          "/opt/ros/noetic/share/multirotor_controller",
-          "/opt/ros/noetic/share/reference_trajectory",
-          "/opt/ros/noetic/include/multirotor_controller",
-          "/opt/ros/noetic/include/reference_trajectory",
-          "/opt/ros/noetic/lib/multirotor_controller",
-          "/opt/ros/noetic/lib/reference_trajectory",
-          "/opt/ros/noetic/lib/libmultirotor_controller_uav_nmpc_runtime.so",
-          "/opt/ros/noetic/lib/libreference_trajectory_nmpc.so"
+          "/usr/share/doc/ros-noetic-xgc2-controller"
+        ]
+      },
+      "ros": {
+        "distro": "noetic",
+        "packages": []
+      },
+      "schema": "xgc2.product.v1",
+      "summary": "Aggregate ROS1 controller package that depends on the split XGC2 multirotor and UGV controller products.",
+      "usage": {
+        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-controller\n",
+        "smoke_test": "roslaunch --files px4_multirotor_controller uav_nmpc_controller.launch\nroslaunch --files unicycle_ugv_controller ugv_unicycle_nmpc_controller.launch\n"
+      },
+      "version": "1.3.2-1"
+    },
+    {
+      "_source": "products/ros1/controller/multirotor-controller/.xgc2/product.yml",
+      "apt": {
+        "depends": [
+          "libeigen3-dev",
+          "libxgc2-state-machine-dev (>= 0.1.2-1~focal)",
+          "libxgc2-math-dev (>= 0.5.1-1)",
+          "xgc2-acados (>= 0.1.0-3~focal)",
+          "ros-noetic-xgc2-ros1-utils",
+          "ros-noetic-xgc2-estimator-hover-thrust (>= 1.1.21-1)",
+          "ros-noetic-xgc2-estimator-rigid-state (>= 1.1.0-1)"
+        ],
+        "distribution": "focal",
+        "install": [
+          "ros-noetic-xgc2-multirotor-controller"
+        ],
+        "packages": [
+          "ros-noetic-xgc2-multirotor-controller"
+        ]
+      },
+      "id": "xgc2-multirotor-controller",
+      "kind": "ros1-apt",
+      "name": "XGC2 Multirotor Controller",
+      "ownership": {
+        "paths": [
+          "/opt/ros/noetic/share/multirotor_reference_trajectory",
+          "/opt/ros/noetic/share/px4_multirotor_controller",
+          "/opt/ros/noetic/include/multirotor_reference_trajectory",
+          "/opt/ros/noetic/include/px4_multirotor_controller",
+          "/opt/ros/noetic/lib/multirotor_reference_trajectory",
+          "/opt/ros/noetic/lib/px4_multirotor_controller",
+          "/opt/ros/noetic/lib/libpx4_multirotor_controller_uav_nmpc_runtime.so"
         ]
       },
       "ros": {
         "distro": "noetic",
         "packages": [
-          "multirotor_controller",
-          "reference_trajectory"
+          "multirotor_reference_trajectory",
+          "px4_multirotor_controller"
         ]
       },
       "schema": "xgc2.product.v1",
-      "summary": "ROS1 controller packages for XGC2 robots, including multirotor PX4/MAVROS NMPC control and reference trajectory generation.",
+      "summary": "ROS1 PX4 multirotor controller and multirotor reference trajectory packages for XGC2 robots.",
       "usage": {
-        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-controller\n",
-        "smoke_test": "roslaunch --files multirotor_controller uav_nmpc_controller.launch\n"
+        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-multirotor-controller\n",
+        "smoke_test": "roslaunch --files multirotor_reference_trajectory uav_multirotor_reference_trajectory.launch\nroslaunch --files px4_multirotor_controller uav_nmpc_controller.launch\n"
       },
-      "version": "1.0.8-1"
+      "version": "1.0.0-1"
+    },
+    {
+      "_source": "products/ros1/controller/ugv-controller/.xgc2/product.yml",
+      "apt": {
+        "depends": [
+          "libeigen3-dev",
+          "libxgc2-state-machine-dev (>= 0.1.2-1~focal)",
+          "libxgc2-math-dev (>= 0.5.1-1)",
+          "xgc2-acados (>= 0.1.0-3~focal)",
+          "ros-noetic-xgc2-ros1-utils",
+          "ros-noetic-xgc2-estimator-rigid-state (>= 1.1.0-1)"
+        ],
+        "distribution": "focal",
+        "install": [
+          "ros-noetic-xgc2-ugv-controller"
+        ],
+        "packages": [
+          "ros-noetic-xgc2-ugv-controller"
+        ]
+      },
+      "id": "xgc2-ugv-controller",
+      "kind": "ros1-apt",
+      "name": "XGC2 UGV Controller",
+      "ownership": {
+        "paths": [
+          "/opt/ros/noetic/share/unicycle_reference_trajectory",
+          "/opt/ros/noetic/share/unicycle_ugv_controller",
+          "/opt/ros/noetic/include/unicycle_reference_trajectory",
+          "/opt/ros/noetic/include/unicycle_ugv_controller",
+          "/opt/ros/noetic/lib/unicycle_reference_trajectory",
+          "/opt/ros/noetic/lib/unicycle_ugv_controller",
+          "/opt/ros/noetic/lib/libunicycle_ugv_controller_nmpc_runtime.so"
+        ]
+      },
+      "ros": {
+        "distro": "noetic",
+        "packages": [
+          "unicycle_reference_trajectory",
+          "unicycle_ugv_controller"
+        ]
+      },
+      "schema": "xgc2.product.v1",
+      "summary": "ROS1 unicycle UGV controller and planar reference trajectory packages for XGC2 robots.",
+      "usage": {
+        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-ugv-controller\n",
+        "smoke_test": "roslaunch --files unicycle_reference_trajectory ugv_unicycle_reference_trajectory.launch\nroslaunch --files unicycle_ugv_controller ugv_unicycle_nmpc_controller.launch\n"
+      },
+      "version": "1.0.0-1"
     },
     {
       "_source": "products/ros1/driver/livox_ros_driver/.xgc2/product.yml",
@@ -511,7 +560,7 @@
       "_source": "products/ros1/perception/estimator-hover-thrust/.xgc2/product.yml",
       "apt": {
         "depends": [
-          "libxgc2-observer-dev (>= 0.3.2-1)",
+          "libxgc2-math-dev (>= 0.4.0-1)",
           "libxgc2-state-machine-dev (>= 0.1.2-1~focal)",
           "ros-noetic-xgc2-ros1-utils"
         ],
@@ -553,7 +602,7 @@
       "_source": "products/ros1/perception/estimator-rigid-state/.xgc2/product.yml",
       "apt": {
         "depends": [
-          "libxgc2-observer-dev (>= 0.3.3-1)",
+          "libxgc2-math-dev (>= 0.4.1-1)",
           "libxgc2-state-machine-dev (>= 0.1.2-1~focal)",
           "ros-noetic-xgc2-ros1-utils"
         ],
@@ -567,78 +616,35 @@
       },
       "id": "xgc2-estimator-rigid-state",
       "kind": "ros1-apt",
-      "name": "XGC2 Rigid State Estimator",
+      "name": "XGC2 Rigid State Estimators",
       "ownership": {
         "paths": [
-          "/opt/ros/noetic/share/estimator_rigid_state",
-          "/opt/ros/noetic/include/estimator_rigid_state",
-          "/opt/ros/noetic/lib/estimator_rigid_state",
-          "/opt/ros/noetic/lib/libestimator_rigid_state_core.so",
-          "/opt/ros/noetic/lib/libestimator_rigid_state_ros.so"
+          "/opt/ros/noetic/share/estimator_vrpn_px4_rotor_state",
+          "/opt/ros/noetic/include/estimator_vrpn_px4_rotor_state",
+          "/opt/ros/noetic/lib/estimator_vrpn_px4_rotor_state",
+          "/opt/ros/noetic/lib/libestimator_vrpn_px4_rotor_state_core.so",
+          "/opt/ros/noetic/lib/libestimator_vrpn_px4_rotor_state_ros.so",
+          "/opt/ros/noetic/share/estimator_vrpn_ugv_state",
+          "/opt/ros/noetic/include/estimator_vrpn_ugv_state",
+          "/opt/ros/noetic/lib/estimator_vrpn_ugv_state",
+          "/opt/ros/noetic/lib/libestimator_vrpn_ugv_state_core.so",
+          "/opt/ros/noetic/lib/libestimator_vrpn_ugv_state_ros.so"
         ]
       },
       "ros": {
         "distro": "noetic",
         "packages": [
-          "estimator_rigid_state"
+          "estimator_vrpn_px4_rotor_state",
+          "estimator_vrpn_ugv_state"
         ]
       },
       "schema": "xgc2.product.v1",
-      "summary": "Rigid-body state estimation package for PX4/MAVROS UAV controllers.",
+      "summary": "VRPN/IMU rigid state estimation packages for PX4 rotor UAVs and UGVs.",
       "usage": {
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-estimator-rigid-state\n",
-        "smoke_test": "roslaunch --files estimator_rigid_state rigid_state_estimator.launch\n"
+        "smoke_test": "roslaunch --files estimator_vrpn_px4_rotor_state vrpn_px4_rotor_state_estimator.launch\nroslaunch --files estimator_vrpn_ugv_state vrpn_ugv_state_estimator.launch\n"
       },
-      "version": "1.0.3-1"
-    },
-    {
-      "_source": "products/ros1/perception/sensor-calibration/.xgc2/product.yml",
-      "apt": {
-        "depends": [
-          "libceres-dev",
-          "python3-yaml",
-          "ros-noetic-roscpp",
-          "ros-noetic-rospy",
-          "ros-noetic-roslaunch",
-          "ros-noetic-geometry-msgs"
-        ],
-        "distribution": "focal",
-        "install": [
-          "ros-noetic-xgc2-sensor-calibration"
-        ],
-        "packages": [
-          "ros-noetic-xgc2-sensor-calibration"
-        ]
-      },
-      "id": "xgc2-sensor-calibration",
-      "kind": "ros1-apt",
-      "name": "XGC2 Sensor Calibration",
-      "ownership": {
-        "paths": [
-          "/opt/ros/noetic/share/sensor_calibration",
-          "/opt/ros/noetic/include/sensor_calibration",
-          "/opt/ros/noetic/lib/sensor_calibration",
-          "/opt/ros/noetic/lib/libsensor_calibration_ugv_vrpn_cmd_vel.so",
-          "/opt/ros/noetic/lib/libsensor_calibration_uav_vrpn_mavros_px4.so",
-          "/opt/ros/noetic/lib/libsensor_calibration_uav_vrpn_mavros_px4_session.so",
-          "/opt/ros/noetic/lib/libsensor_calibration_uav_vrpn_mavros_px4_runtime.so",
-          "/opt/ros/noetic/lib/libsensor_calibration_uav_vrpn_mavros_px4_ros.so",
-          "/opt/ros/noetic/lib/libsensor_calibration_core_io.so"
-        ]
-      },
-      "ros": {
-        "distro": "noetic",
-        "packages": [
-          "sensor_calibration"
-        ]
-      },
-      "schema": "xgc2.product.v1",
-      "summary": "Sensor calibration core libraries, MATLAB references, and ROS adapters.",
-      "usage": {
-        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-sensor-calibration\n",
-        "smoke_test": "roslaunch --files sensor_calibration ugv_vrpn_cmd_vel_calibration.launch\nroslaunch --files sensor_calibration uav_vrpn_mavros_px4_calibration.launch\nroslaunch --files sensor_calibration upload_calibration_params.launch\n"
-      },
-      "version": "1.2.9-1"
+      "version": "1.1.0-1"
     },
     {
       "_source": "products/ros1/perception/slam/.xgc2/product.yml",
@@ -709,48 +715,6 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-slam\n",
         "smoke_test": "rospack find fast_lio\nrospack find swarm_lio\nrospack find point_lio\nrospack find lio_sam\nrospack find voxel_slam\nrospack find voxelslam_pointcloud2\n"
       }
-    },
-    {
-      "_source": "products/ros1/perception/vrpn-router/.xgc2/product.yml",
-      "apt": {
-        "depends": [
-          "ros-noetic-diagnostic-msgs",
-          "ros-noetic-vrpn-client-ros",
-          "ros-noetic-mavros"
-        ],
-        "distribution": "focal",
-        "install": [
-          "ros-noetic-xgc2-vrpn-router"
-        ],
-        "packages": [
-          "ros-noetic-xgc2-vrpn-router"
-        ]
-      },
-      "id": "xgc2-vrpn-router",
-      "kind": "ros1-apt",
-      "name": "XGC2 VRPN Router",
-      "ownership": {
-        "paths": [
-          "/opt/ros/noetic/share/vrpn_router",
-          "/opt/ros/noetic/include/vrpn_router",
-          "/opt/ros/noetic/lib/vrpn_router",
-          "/opt/ros/noetic/lib/libvrpn_router_core.so",
-          "/opt/ros/noetic/lib/libvrpn_router_ros.so"
-        ]
-      },
-      "ros": {
-        "distro": "noetic",
-        "packages": [
-          "vrpn_router"
-        ]
-      },
-      "schema": "xgc2.product.v1",
-      "summary": "Route VRPN tracker poses into MAVROS vision pose inputs.",
-      "usage": {
-        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-vrpn-router\n",
-        "smoke_test": "roslaunch --files vrpn_router vrpn_router.launch\n"
-      },
-      "version": "1.0.18-1"
     },
     {
       "_source": "products/ros1/planner/planner/.xgc2/product.yml",
@@ -895,7 +859,7 @@
       "_source": "products/ros1/simulator/convex_geometry/.xgc2/product.yml",
       "apt": {
         "depends": [
-          "libxgc2-geometry-dev",
+          "libxgc2-math-dev",
           "ros-noetic-xgc2-geometry-msgs",
           "ros-noetic-xgc2-cluttered-environment",
           "ros-noetic-xgc2-mockamap"
@@ -945,9 +909,9 @@
       "_source": "products/ros1/simulator/gazebo-sim/.xgc2/product.yml",
       "apt": {
         "depends": [
-          "ros-noetic-xgc2-gazebo-sim-manager (>= 1.0.23-1)",
-          "ros-noetic-xgc2-gazebo-sim-examples (>= 1.0.24-1)",
-          "ros-noetic-xgc2-gazebo-sim-vrpn-bridge (>= 1.0.24-1)",
+          "ros-noetic-xgc2-gazebo-sim-manager (>= 1.0.32-1)",
+          "ros-noetic-xgc2-gazebo-sim-examples (>= 1.0.32-1)",
+          "ros-noetic-xgc2-gazebo-sim-vrpn-bridge (>= 1.0.32-1)",
           "ros-noetic-xgc2-gazebo-sim-worlds (>= 1.0.21-1)",
           "ros-noetic-xgc2-gazebo-sim-scout (>= 0.4.9-1)",
           "ros-noetic-xgc2-gazebo-sim-px4-1-12 (>= 1.12.3-7)",
@@ -984,7 +948,7 @@
         "notes": "This repository is the verified Gazebo simulation suite entrypoint. Source packages live in child product repositories.\nThe aggregate package uses minimum child package versions so apt upgrades stale installed children when a quickstart requires newer launch assets.\nChild repositories may publish compatible packaging revisions independently; bump this product version only when the aggregate dependency set or compatibility contract changes.\n",
         "smoke_test": "dpkg -s ros-noetic-xgc2-gazebo-sim\nroslaunch --files gazebo_sim_examples fs150_ugv_vrpn_stack.launch\nroslaunch --files gazebo_sim_scout simple.launch rviz:=false\nroslaunch --files gazebo_sim_px4_1_12 iris.launch gui:=false\nroslaunch --files gazebo_sim_px4_1_14 iris.launch gui:=false\nroslaunch --files gazebo_sim_fs150_sitl fs150.launch gui:=false\n"
       },
-      "version": "1.0.44-1"
+      "version": "1.0.52-1"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/agilex/.xgc2/product.yml",
@@ -1122,10 +1086,11 @@
           "ros-noetic-xgc2-gazebo-sim-fs150-sitl",
           "ros-noetic-xgc2-gazebo-sim-scout",
           "ros-noetic-xgc2-gazebo-sim-worlds (>= 1.0.21-1)",
-          "ros-noetic-xgc2-controller (>= 1.0.8-1)",
+          "ros-noetic-xgc2-multirotor-controller (>= 1.0.0-1)",
+          "ros-noetic-xgc2-ugv-controller (>= 1.0.0-1)",
           "ros-noetic-xgc2-estimator-hover-thrust (>= 1.1.21-1)",
-          "ros-noetic-xgc2-estimator-rigid-state (>= 1.0.3-1)",
-          "ros-noetic-xgc2-vrpn-router"
+          "ros-noetic-xgc2-estimator-rigid-state (>= 1.1.0-1)",
+          "libxgc2-math-dev (>= 0.5.1-1)"
         ],
         "distribution": "focal",
         "install": [
@@ -1168,7 +1133,7 @@
         "notes": "These are Gazebo Classic simulation tools. The full suite is installed through ros-noetic-xgc2-gazebo-sim-all from xgc2-gazebo-sim.\n",
         "smoke_test": "roslaunch --files gazebo_session_manager session_manager.launch world_name:=/tmp/xgc2-empty.world\nroslaunch --files gazebo_sim_examples fs150_ugv_vrpn_stack.launch\nroslaunch --files gazebo_sim_examples fs150_uav1_nmpc_tracking.launch\nroslaunch --files gazebo_sim_vrpn_bridge vrpn_server.launch auto_track_known_models:=true\nroslaunch --files gazebo_sim_vrpn_bridge vrpn_client.launch trackers:=[uav1]\n"
       },
-      "version": "1.0.24-1"
+      "version": "1.0.32-1"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/px4-sitl-112/.xgc2/product.yml",
