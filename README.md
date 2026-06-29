@@ -39,9 +39,7 @@ Every product repository that participates in generated catalogs should include:
 Validate and collect metadata:
 
 ```bash
-python3 scripts/collect-products.py \
-  --root . \
-  --output catalog/generated/products.json
+scripts/docker-ci-local.sh
 ```
 
 The validator rejects duplicate active ownership of:
@@ -57,6 +55,16 @@ metadata instead of letting two active products claim the same ROS package or
 file paths.
 
 ## APT Bootstrap
+
+The following command shape is for target machines and release smoke tests. For
+development workstations, prefer Docker-based validation so product packages do
+not pollute the host ROS prefix:
+
+```bash
+scripts/docker-apt-smoke.sh ros-noetic-xgc2-swarm-sync-sim
+scripts/docker-upgrade-xgc2-apt.sh --dry-run
+scripts/docker-upgrade-xgc2-apt.sh --exclude-file products/ros1_dev/config/pre_product_apt_excludes.txt
+```
 
 ```bash
 curl -fsSL https://xgc2.apt.xiaokang.ink/xgc2-archive-keyring.gpg -o /tmp/xgc2-archive-keyring.gpg

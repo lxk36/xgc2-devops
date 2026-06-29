@@ -34,10 +34,6 @@
 	path = products/common/tbb
 	url = git@github.com:lxk36/xgc2-tbb.git
 	branch = master
-[submodule "products/ros1/perception/estimator-hover-thrust"]
-	path = products/ros1/perception/estimator-hover-thrust
-	url = git@github.com:lxk36/xgc2-estimator-hover-thrust.git
-	branch = noetic
 [submodule "products/common/state-machine"]
 	path = products/common/state-machine
 	url = git@github.com:lxk36/xgc2-state-machine.git
@@ -61,10 +57,6 @@
 [submodule "products/ros1/planner/planner"]
 	path = products/ros1/planner/planner
 	url = git@github.com:lxk36/xgc2-planner.git
-	branch = noetic
-[submodule "products/ros1/controller"]
-	path = products/ros1/controller
-	url = git@github.com:lxk36/xgc2-controller.git
 	branch = noetic
 [submodule "products/common/mavlink-router"]
 	path = products/common/mavlink-router
@@ -100,8 +92,4 @@
 [submodule "products/ros1/driver/livox_ros_driver2"]
 	path = products/ros1/driver/livox_ros_driver2
 	url = git@github.com:lxk36/livox_ros_driver2.git
-	branch = noetic
-[submodule "products/ros1/perception/estimator-rigid-state"]
-	path = products/ros1/perception/estimator-rigid-state
-	url = git@github.com:lxk36/xgc2-estimator-rigid-state.git
 	branch = noetic
