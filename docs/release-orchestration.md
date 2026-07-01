@@ -47,8 +47,8 @@ deb packaging, publish, and APT index verification remain required.
 ## GitHub Actions
 
 Use the `release-orchestrator` workflow in `xgc2-devops` for manual releases.
-The top-level `xgc2-vibe-coding` workflow is a thin dispatcher to that devops
-workflow.
+Release orchestration remains owned by `xgc2-devops`; the top-level workspace
+should only point to the devops revision that contains the orchestration system.
 
 Executing cross-repository workflows requires a token with Actions write access
 to the product repositories. Store it as `XGC2_RELEASE_ORCHESTRATOR_TOKEN`.
