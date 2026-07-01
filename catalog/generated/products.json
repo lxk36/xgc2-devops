@@ -38,6 +38,13 @@
           "/etc/ld.so.conf.d/xgc2-acados.conf"
         ]
       },
+      "release": {
+        "apt_versions": {
+          "focal": "0.1.0-3~focal",
+          "jammy": "0.1.0-3~jammy",
+          "noble": "0.1.0-3~noble"
+        }
+      },
       "schema": "xgc2.product.v1",
       "summary": "System-level acados solver stack and Python code-generation dependencies for XGC2 projects on Ubuntu 20.04, 22.04, and 24.04.",
       "usage": {
