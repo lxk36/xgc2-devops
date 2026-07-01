@@ -11,9 +11,6 @@ jobs:
   validate:
     name: catalog / validate
     runs-on: ubuntu-latest
-    outputs:
-      products_count: ${{ steps.catalog_outputs.outputs.products_count }}
-      products_matrix: ${{ steps.catalog_outputs.outputs.products_matrix }}
     defaults:
       run:
         shell: bash
@@ -35,7 +32,6 @@ jobs:
           python3 -m py_compile \
             scripts/apply-release-version-bumps.py \
             scripts/audit-product-workflows.py \
-            scripts/catalog-github-outputs.py \
             scripts/orchestrate-apt-release.py \
             scripts/release-plan-github-outputs.py \
             scripts/run-release-plan-product.py \
@@ -65,13 +61,6 @@ jobs:
             --output-json .work/product-workflow-audit.json \
             --output-md .work/product-workflow-audit.md
 
-      - name: Build product module matrix
-        id: catalog_outputs
-        run: |
-          python3 scripts/catalog-github-outputs.py \
-            --root . \
-            --catalog .work/products-ci.json >> "${GITHUB_OUTPUT}"
-
       - name: Show product module catalog
         run: |
           cat .work/product-module-catalog.md >> "${GITHUB_STEP_SUMMARY}"
@@ -93,24 +82,3 @@ jobs:
             .work/release-plan-uav-tracking.md
             .work/product-workflow-audit.json
             .work/product-workflow-audit.md
-
-  product-modules:
-    name: module / ${{ matrix.product_id }}
-    needs: validate
-    if: ${{ needs.validate.outputs.products_count != '0' }}
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      max-parallel: 12
-      matrix: ${{ fromJson(needs.validate.outputs.products_matrix) }}
-    steps:
-      - name: Show module
-        run: |
-          cat <<'EOF'
-          product:    ${{ matrix.product_id }}
-          kind:       ${{ matrix.kind }}
-          version:    ${{ matrix.version }}
-          repository: ${{ matrix.repository }}
-          ref:        ${{ matrix.ref }}
-          source:     ${{ matrix.source }}
-          EOF
