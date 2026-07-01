@@ -69,10 +69,6 @@
 [submodule "products/xgc1"]
 	path = products/xgc1
 	url = git@github.com:lxk36/xgc1.git
-[submodule "products/ros1_dev"]
-	path = products/ros1_dev
-	url = git@github.com:lxk36/alg_ros1_ws.git
-	branch = dev-open
 [submodule "products/ros1/perception/slam"]
 	path = products/ros1/perception/slam
 	url = git@github.com:lxk36/xgc2-slam.git
@@ -92,4 +88,20 @@
 [submodule "products/ros1/driver/livox_ros_driver2"]
 	path = products/ros1/driver/livox_ros_driver2
 	url = git@github.com:lxk36/livox_ros_driver2.git
+	branch = noetic
+[submodule "products/ros1/controller"]
+	path = products/ros1/controller
+	url = git@github.com:lxk36/xgc2-controller.git
+	branch = noetic
+[submodule "products/ros1/perception/hover-thrust"]
+	path = products/ros1/perception/hover-thrust
+	url = git@github.com:lxk36/xgc2-estimator-hover-thrust.git
+	branch = noetic
+[submodule "products/ros1/perception/rigid-state"]
+	path = products/ros1/perception/rigid-state
+	url = git@github.com:lxk36/xgc2-estimator-rigid-state.git
+	branch = noetic
+[submodule "products/ros1/simulator/gazebo-sim-tools"]
+	path = products/ros1/simulator/gazebo-sim-tools
+	url = git@github.com:lxk36/xgc2-gazebo-sim-tools.git
 	branch = noetic

@@ -1,0 +1,76 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="ns" default="uav1"/>
+  <arg name="vrpn_rigid_body" default="$(arg ns)"/>
+  <arg name="fs150_id" default="4"/>
+  <arg name="takeoff_altitude" default="3.0"/>
+  <arg name="reference_config_file" default="$(find multirotor_reference_trajectory)/config/multirotor_reference_trajectory.yaml"/>
+  <arg name="controller_config_file" default="$(find px4_multirotor_controller)/config/uav_nmpc.yaml"/>
+  <arg name="tracking_backend" default="dfbc_attitude_rate"/>
+  <arg name="hover_thrust_config_file" default="$(find hover_thrust_estimator)/config/hover_thrust_estimator.yaml"/>
+  <arg name="vrpn_px4_rotor_state_config_file" default="$(find gazebo_sim_examples)/config/vrpn_px4_rotor_state_estimator_fs150_tracking.yaml"/>
+  <arg name="debug_print" default="false"/>
+
+  <arg name="enable_yaw_control" default="false"/>
+  <arg name="reference_start_delay" default="0.2"/>
+  <arg name="reference_duration" default="60.0"/>
+  <arg name="reference_radius" default="3.0"/>
+  <arg name="reference_line_speed" default="1.0"/>
+  <arg name="reference_height" default="3.0"/>
+  <arg name="reference_z_amplitude" default="0.0"/>
+  <arg name="reference_z_frequency" default="0.5"/>
+  <arg name="reference_entry_duration" default="5.0"/>
+  <arg name="reference_analytic_type" default="3"/>
+  <arg name="reference_torus_omega" default="0.3"/>
+  <arg name="reference_torus_scale" default="0.3"/>
+  <arg name="reference_path_sample_dt" default="0.02"/>
+  <arg name="reference_path_preview_duration" default="$(arg reference_duration)"/>
+
+  <arg name="gui" default="true"/>
+  <arg name="rviz" default="true"/>
+  <arg name="rviz_config" default="$(find gazebo_sim_visualization)/rviz/gazebo_auto_visualization.rviz"/>
+  <arg name="debug" default="false"/>
+  <arg name="verbose" default="false"/>
+  <arg name="paused" default="false"/>
+  <arg name="interactive" default="false"/>
+  <arg name="world" default="$(find gazebo_sim_worlds)/worlds/weston_robot_empty/weston_robot_empty.world"/>
+
+  <include file="$(find gazebo_sim_examples)/launch/fs150_uav1_nmpc_tracking.launch">
+    <arg name="ns" value="$(arg ns)"/>
+    <arg name="vrpn_rigid_body" value="$(arg vrpn_rigid_body)"/>
+    <arg name="fs150_id" value="$(arg fs150_id)"/>
+    <arg name="takeoff_altitude" value="$(arg takeoff_altitude)"/>
+    <arg name="reference_config_file" value="$(arg reference_config_file)"/>
+    <arg name="controller_config_file" value="$(arg controller_config_file)"/>
+    <arg name="tracking_backend" value="$(arg tracking_backend)"/>
+    <arg name="hover_thrust_config_file" value="$(arg hover_thrust_config_file)"/>
+    <arg name="vrpn_px4_rotor_state_config_file" value="$(arg vrpn_px4_rotor_state_config_file)"/>
+    <arg name="debug_print" value="$(arg debug_print)"/>
+    <arg name="enable_yaw_control" value="$(arg enable_yaw_control)"/>
+    <arg name="reference_start_delay" value="$(arg reference_start_delay)"/>
+    <arg name="reference_duration" value="$(arg reference_duration)"/>
+    <arg name="reference_radius" value="$(arg reference_radius)"/>
+    <arg name="reference_line_speed" value="$(arg reference_line_speed)"/>
+    <arg name="reference_height" value="$(arg reference_height)"/>
+    <arg name="reference_z_amplitude" value="$(arg reference_z_amplitude)"/>
+    <arg name="reference_z_frequency" value="$(arg reference_z_frequency)"/>
+    <arg name="reference_entry_duration" value="$(arg reference_entry_duration)"/>
+    <arg name="reference_analytic_type" value="$(arg reference_analytic_type)"/>
+    <arg name="reference_torus_omega" value="$(arg reference_torus_omega)"/>
+    <arg name="reference_torus_scale" value="$(arg reference_torus_scale)"/>
+    <arg name="reference_path_sample_dt" value="$(arg reference_path_sample_dt)"/>
+    <arg name="reference_path_preview_duration" value="$(arg reference_path_preview_duration)"/>
+    <arg name="gui" value="$(arg gui)"/>
+    <arg name="debug" value="$(arg debug)"/>
+    <arg name="verbose" value="$(arg verbose)"/>
+    <arg name="paused" value="$(arg paused)"/>
+    <arg name="interactive" value="$(arg interactive)"/>
+    <arg name="world" value="$(arg world)"/>
+  </include>
+
+  <include file="$(find gazebo_sim_visualization)/launch/gazebo_auto_visualization_rviz.launch">
+    <arg name="frame_id" value="world"/>
+    <arg name="rviz" value="$(arg rviz)"/>
+    <arg name="rviz_config" value="$(arg rviz_config)"/>
+  </include>
+</launch>

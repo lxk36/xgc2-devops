@@ -2,13 +2,16 @@
 
 `products/` stores XGC2 deliverable repositories. A product is a component that can be built, tested, packaged, released, or deployed with a clear ownership boundary.
 
-This directory is not a dumping ground for active workspace source. Active ROS1 development belongs in `products/ros1_dev`; stable or reusable components should be promoted into a product directory and consumed through its released package.
+This directory is not a dumping ground for ad hoc workspace source. ROS1 source
+truth belongs under `products/ros1` as real product repositories; local catkin
+workspaces are disposable Docker build views over those repositories.
 
 ## Directory Classes
 
 - `common/`: system-level libraries and tools that are not tied to ROS, such as `xgc2-acados`, `xgc2-tbb`, `libxgc2-state-machine-dev`, and `mavlink-routerd`.
-- `ros1/`: productized ROS Noetic packages released as apt packages, grouped by domain.
-- `ros1_dev/`: high-frequency ROS1 development workspace. Stable dependencies come from container APT; pre-product source repositories live under `ros1_dev/src/pre_product` as real child repositories, not copied package trees.
+- `ros1/`: ROS Noetic products, grouped by domain. High-frequency source
+  iteration still happens here; Docker decides which repositories are mounted
+  into a temporary catkin workspace.
 - `ros2/`: ROS2 or Gazebo Sim generation products.
 - `webui/`: frontend or visualization products.
 - `xgc1/`, `xgc2/`: application-level products.
@@ -17,19 +20,34 @@ This directory is not a dumping ground for active workspace source. Active ROS1 
 
 Development workstations should not install XGC2 product packages directly into
 the host ROS prefix. Use Docker for both APT smoke tests and local ROS1
-iteration:
+iteration.
+
+For source iteration, refresh the Aliyun runtime image tag and recreate the
+development container:
+
+```bash
+helper/update-image.sh
+helper/start-ros1-container.sh
+```
+
+The update helper only pulls the image and tags the source basename locally. It
+does not install APT packages, build derived images, or modify the image. The
+container helper mounts the real source tree and recreates an existing container
+by default so mount, GPU, and environment changes take effect.
+
+Both helpers default to the Aliyun ACR mirror of the app-store ROS1 runtime
+image and local tag:
+
+```text
+crpi-pest1z0t9z6yd8c6.cn-beijing.personal.cr.aliyuncs.com/xgc2-app-store/xgc-ros1-runtime:latest
+xgc-ros1-runtime:latest
+```
+
+For published package smoke tests, use a disposable APT test container:
 
 ```bash
 scripts/docker-apt-smoke.sh ros-noetic-xgc2-ros1-utils
 scripts/docker-upgrade-xgc2-apt.sh --dry-run
-products/ros1_dev/scripts/docker-catkin-make.sh -DCATKIN_WHITELIST_PACKAGES=hover_thrust_estimator
-```
-
-Both wrappers default to the Aliyun ACR mirror of the app-store ROS1 runtime
-image:
-
-```text
-crpi-pest1z0t9z6yd8c6.cn-beijing.personal.cr.aliyuncs.com/xgc2-app-store/xgc-ros1-runtime:latest
 ```
 
 Host `sudo apt install` commands in product READMEs are target-machine install
@@ -143,9 +161,9 @@ Downstream packages should depend on `<published package>` instead of copying th
 - Apt repository: `https://xgc2.apt.xiaokang.ink`
 ````
 
-## Promotion Rule
+## Productization Rule
 
-Before moving a package from `ros1_dev` or another development workspace into `products/`, confirm:
+Before adding or reorganizing a ROS1 repository under `products/ros1`, confirm:
 
 - the package has a stable responsibility boundary;
 - downstream users can depend on a package name instead of a source path;
@@ -153,14 +171,11 @@ Before moving a package from `ros1_dev` or another development workspace into `p
 - headers, launch files, config, and binaries needed by downstream users are installed;
 - CI can build and smoke-test the package for the intended distro and architecture set;
 - `.xgc2/product.yml` and the product README describe the same package names.
-- `scripts/check-ros1-dev-boundaries.py --root .` does not report a duplicate ROS package name across `products/ros1` and `products/ros1_dev/src`.
+- duplicate ROS package names are not introduced under `products/ros1`.
 
-## Dev Demotion Rule
+## Local Iteration Rule
 
-If a product package becomes high-frequency enough that local source iteration is
-more important than immediate APT consumption, make the real source repository a
-child under `products/ros1_dev/src/pre_product`. A pre-product repository may
-contain multiple ROS packages, but it should not contain a root workspace
-`CMakeLists.txt`. Do not copy package source trees or maintain a second active
-version of the same ROS package. Other dev packages should still consume stable
-product dependencies through Docker APT installs.
+High-frequency work should not create a second source tree. Mount the real
+repositories from `products/ros1` and `products/common` into a Docker catkin
+workspace, build there, and run Gazebo/RViz/SITL there. Use APT only when testing
+published products or release DAGs.

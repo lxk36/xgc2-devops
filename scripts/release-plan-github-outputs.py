@@ -36,6 +36,7 @@ def main() -> int:
                 "repository": str(item["repository"]),
                 "ref": str(item["ref"]),
                 "workflow": str(item["workflow"]),
+                "action": str(item.get("action", "release")),
             }
             for item in layer
         ]

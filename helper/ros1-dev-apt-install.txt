@@ -1,0 +1,45 @@
+# Stable development baseline installed into the local ROS1 runtime tag by
+# helper/update-image.sh.
+#
+# Keep high-frequency products out of this list when possible and overlay them
+# from /ros1_ws/src instead.
+
+# General build/debug tools.
+build-essential
+clang-format
+cmake
+g++
+gdb
+git
+libeigen3-dev
+libgtest-dev
+libgoogle-glog-dev
+libyaml-cpp-dev
+make
+mesa-utils
+python3-catkin-tools
+python3-numpy
+python3-pip
+python3-rosdep
+python3-vcstool
+python3-yaml
+
+# Stable ROS/Gazebo runtime dependencies used by SITL, RViz, VRPN and local
+# catkin builds.
+gazebo11
+ros-noetic-gazebo-plugins
+ros-noetic-gazebo-ros
+ros-noetic-gazebo-ros-pkgs
+ros-noetic-mavros
+ros-noetic-mavros-extras
+ros-noetic-robot-state-publisher
+ros-noetic-roslaunch
+ros-noetic-rviz
+ros-noetic-tf2-ros
+ros-noetic-topic-tools
+ros-noetic-vrpn-client-ros
+ros-noetic-xacro
+
+# Mature XGC2 simulation baseline. Source workspaces overlay the controller,
+# estimator, trajectory, and math packages during active development.
+ros-noetic-xgc2-gazebo-sim

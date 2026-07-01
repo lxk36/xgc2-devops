@@ -19,13 +19,15 @@ from typing import Any
 DEFAULT_APT_BASE_URL = "https://xgc2.apt.xiaokang.ink"
 DEFAULT_ARCHES = ("amd64", "arm64")
 PREFERRED_WORKFLOWS = (
+    "release.yml",
+    "release.yaml",
     "build-debs.yml",
     "build-debs.yaml",
     "ci.yml",
     "ci.yaml",
-    "release.yml",
-    "release.yaml",
 )
+RELEASE_ACTION = "release"
+VERIFY_ACTION = "verify"
 
 
 def run(
@@ -73,6 +75,35 @@ def parse_dep_package(dependency: str) -> str:
     return dependency.split(" ", 1)[0].strip()
 
 
+def bump_debian_revision(version: str) -> str:
+    match = re.match(r"^(?P<prefix>.+-)(?P<revision>\d+)(?P<suffix>(?:[~+][A-Za-z0-9._:+~-]+)?)$", version)
+    if not match:
+        raise ValueError(f"cannot bump Debian revision for version: {version}")
+    return (
+        f"{match.group('prefix')}"
+        f"{int(match.group('revision')) + 1}"
+        f"{match.group('suffix')}"
+    )
+
+
+def bump_or_promote_version(version: str, version_series: str) -> str:
+    if not version_series:
+        return bump_debian_revision(version)
+    match = re.match(
+        r"^(?P<series>\d+\.\d+)\.(?P<patch>\d+)-(?P<revision>\d+)"
+        r"(?P<suffix>(?:[~+][A-Za-z0-9._:+~-]+)?)$",
+        version,
+    )
+    if not match:
+        return bump_debian_revision(version)
+    current_series = match.group("series")
+    if current_series == version_series:
+        return bump_debian_revision(version)
+    if current_series == "1.0" and version_series == "1.1":
+        return f"{version_series}.{match.group('patch')}-1{match.group('suffix')}"
+    return bump_debian_revision(version)
+
+
 def normalize_github_repo(url: str) -> str:
     def strip_dot_git(value: str) -> str:
         return value[:-4] if value.endswith(".git") else value
@@ -104,6 +135,7 @@ class Product:
     apt_install: tuple[str, ...]
     apt_packages: tuple[str, ...]
     apt_depends: tuple[str, ...]
+    groups: tuple[str, ...]
     release: dict[str, Any]
 
     @property
@@ -139,6 +171,10 @@ class ReleaseTarget:
     workflow: str
     workflow_path: Path | None
     dispatch_inputs: dict[str, str]
+    action: str
+    source_sha: str
+    expected_version: str
+    expected_apt_versions: dict[str, str]
 
 
 def load_catalog(root: Path, catalog_path: Path | None) -> list[Product]:
@@ -179,6 +215,7 @@ def load_catalog(root: Path, catalog_path: Path | None) -> list[Product]:
                 apt_install=tuple(list_field(item, "apt", "install")),
                 apt_packages=tuple(list_field(item, "apt", "packages")),
                 apt_depends=tuple(list_field(item, "apt", "depends")),
+                groups=tuple(list_field(item, "groups")),
                 release=release,
             )
         )
@@ -232,7 +269,50 @@ def group_products(root: Path, products: list[Product], group: str) -> set[str]:
     selected: set[str] = set()
     for product in products:
         source = product.source_file.relative_to(root).as_posix()
-        if normalized in ("gazebo", "gazebo-sim"):
+        metadata_groups = {item.lower().replace("_", "-") for item in product.groups}
+        if normalized in metadata_groups:
+            selected.add(product.product_id)
+        elif normalized in ("toolchain", "base"):
+            if product.kind == "toolchain-apt":
+                selected.add(product.product_id)
+        elif normalized in ("uav-tracking", "multirotor-tracking"):
+            if product.product_id in {
+                "xgc2-tbb",
+                "xgc2-acados",
+                "libxgc2-math-dev",
+                "libxgc2-state-machine-dev",
+                "xgc2-ros1-utils",
+                "xgc2-estimator-hover-thrust",
+                "xgc2-estimator-rigid-state",
+                "xgc2-multirotor-controller",
+                "xgc2-gazebo-sim-worlds",
+                "xgc2-gazebo-sim-vrpn-bridge",
+                "xgc2-px4-sitl-112",
+                "xgc2-px4-sitl-114",
+                "xgc2-gazebo-sim-fs150-sitl",
+                "xgc2-gazebo-sim-visualization",
+                "xgc2-gazebo-sim-tools",
+                "xgc2-gazebo-sim",
+            }:
+                selected.add(product.product_id)
+        elif normalized in ("ugv-tracking", "unicycle-tracking"):
+            if product.product_id in {
+                "xgc2-tbb",
+                "xgc2-acados",
+                "libxgc2-math-dev",
+                "libxgc2-state-machine-dev",
+                "xgc2-ros1-utils",
+                "xgc2-estimator-rigid-state",
+                "xgc2-ugv-controller",
+                "xgc2-gazebo-sim-worlds",
+                "xgc2-gazebo-sim-vrpn-bridge",
+                "xgc2-gazebo-sim-scout",
+                "xgc2-gazebo-sim-visualization",
+                "xgc2-gazebo-sim-tools",
+                "xgc2-gazebo-sim",
+            }:
+                selected.add(product.product_id)
+        elif normalized in ("gazebo", "gazebo-sim"):
             if (
                 source.startswith("products/ros1/simulator/gazebo-sim/")
                 or source == "products/ros1/simulator/gazebo-sim/.xgc2/product.yml"
@@ -251,21 +331,31 @@ def group_products(root: Path, products: list[Product], group: str) -> set[str]:
                 selected.add(product.product_id)
         else:
             raise ValueError(
-                f"unknown group '{group}'; supported groups: gazebo-sim, simulator, sitl"
+                "unknown group "
+                f"'{group}'; supported groups: gazebo-sim, simulator, sitl, "
+                "toolchain, uav-tracking, ugv-tracking"
             )
     return selected
 
 
-def downstream_closure(initial: set[str], downstream: dict[str, set[str]]) -> set[str]:
+def graph_closure(initial: set[str], graph: dict[str, set[str]]) -> set[str]:
     selected = set(initial)
     queue = list(sorted(initial))
     while queue:
         current = queue.pop(0)
-        for child in sorted(downstream.get(current, ())):
-            if child not in selected:
-                selected.add(child)
-                queue.append(child)
+        for neighbor in sorted(graph.get(current, ())):
+            if neighbor not in selected:
+                selected.add(neighbor)
+                queue.append(neighbor)
     return selected
+
+
+def downstream_closure(initial: set[str], downstream: dict[str, set[str]]) -> set[str]:
+    return graph_closure(initial, downstream)
+
+
+def upstream_closure(initial: set[str], upstream: dict[str, set[str]]) -> set[str]:
+    return graph_closure(initial, upstream)
 
 
 def topo_layers(selected: set[str], downstream: dict[str, set[str]]) -> list[list[str]]:
@@ -366,6 +456,48 @@ def apt_version_plan(product: Product) -> dict[str, str]:
     }
 
 
+def planned_product_version(
+    product: Product,
+    action: str,
+    *,
+    bump_release_versions: bool,
+    version_series: str,
+) -> str:
+    if action != RELEASE_ACTION or not bump_release_versions:
+        return product.version
+    if not product.version:
+        return product.version
+    if product.apt_version_template:
+        return product.version
+    return bump_or_promote_version(product.version, version_series)
+
+
+def planned_apt_versions(
+    product: Product,
+    action: str,
+    *,
+    bump_release_versions: bool,
+    version_series: str,
+) -> dict[str, str]:
+    versions = apt_version_plan(product)
+    if action != RELEASE_ACTION or not bump_release_versions:
+        return versions
+    if product.apt_version_template:
+        return versions
+    if product.apt_version_overrides:
+        return {
+            distribution: bump_or_promote_version(version, version_series)
+            for distribution, version in versions.items()
+        }
+    planned_version = planned_product_version(
+        product,
+        action,
+        bump_release_versions=bump_release_versions,
+        version_series=version_series,
+    )
+    return {distribution: planned_version for distribution in product.apt_distributions}
+
+
 def version_summary(product: Product) -> str:
     versions = apt_version_plan(product)
     if versions:
@@ -432,17 +564,52 @@ def infer_ref(product: Product) -> str:
     )
 
 
-def build_targets(products_by_id: dict[str, Product], selected: set[str]) -> dict[str, ReleaseTarget]:
+def source_sha(product: Product) -> str:
+    sha = git(["rev-parse", "HEAD"], product.source_dir)
+    if not sha:
+        raise ValueError(f"{product.product_id}: cannot infer source SHA for {product.source_dir}")
+    return sha
+
+
+def build_targets(
+    products_by_id: dict[str, Product],
+    selected: set[str],
+    action_by_id: dict[str, str],
+    *,
+    bump_release_versions: bool,
+    version_series: str,
+) -> dict[str, ReleaseTarget]:
     targets: dict[str, ReleaseTarget] = {}
     for product_id in sorted(selected):
         product = products_by_id[product_id]
         workflow, workflow_path = infer_workflow(product)
         if workflow_path is not None and not workflow_has_dispatch(workflow_path):
             raise ValueError(f"{product_id}: {workflow_path} does not expose workflow_dispatch")
+        input_names = workflow_input_names(workflow_path)
+        target_can_validate_version = "expected_version" in input_names
+        target_bump_versions = bump_release_versions and target_can_validate_version
         dispatch_inputs: dict[str, str] = {}
         raw_inputs = product.release.get("inputs")
         if isinstance(raw_inputs, dict):
             dispatch_inputs = {str(key): str(value) for key, value in raw_inputs.items()}
+        action = action_by_id.get(product_id, RELEASE_ACTION)
+        expected_versions = planned_apt_versions(
+            product,
+            action,
+            bump_release_versions=target_bump_versions,
+            version_series=version_series,
+        )
+        unique_versions = sorted(set(expected_versions.values()))
+        expected_version = (
+            unique_versions[0]
+            if len(unique_versions) == 1
+            else planned_product_version(
+                product,
+                action,
+                bump_release_versions=target_bump_versions,
+                version_series=version_series,
+            )
+        )
         targets[product_id] = ReleaseTarget(
             product=product,
             repository=infer_repository(product),
@@ -450,8 +617,37 @@ def build_targets(products_by_id: dict[str, Product], selected: set[str]) -> dic
             workflow=workflow,
             workflow_path=workflow_path,
             dispatch_inputs=dispatch_inputs,
+            action=action,
+            source_sha=source_sha(product),
+            expected_version=expected_version,
+            expected_apt_versions=expected_versions,
         )
     return targets
+
+
+def target_plan_item(product_id: str, layer_index: int, target: ReleaseTarget) -> dict[str, Any]:
+    product = target.product
+    return {
+        "id": product_id,
+        "action": target.action,
+        "layer": layer_index,
+        "version": product.version,
+        "expected_version": target.expected_version,
+        "apt_versions": target.expected_apt_versions,
+        "apt_version_template": product.apt_version_template,
+        "skip_apt_verify": product.skip_apt_verify,
+        "repository": target.repository,
+        "ref": target.ref,
+        "source": product.source_dir.as_posix(),
+        "source_sha": target.source_sha,
+        "expected_source_sha": target.source_sha,
+        "workflow": target.workflow,
+        "workflow_inputs": sorted(workflow_input_names(target.workflow_path)),
+        "inputs": target.dispatch_inputs,
+        "apt_packages": list(product.apt_packages or product.apt_install),
+        "apt_install": list(product.apt_install),
+        "apt_distributions": list(product.apt_distributions),
+    }
 
 
 def product_plan_json(layers: list[list[str]], targets: dict[str, ReleaseTarget]) -> dict[str, Any]:
@@ -459,28 +655,10 @@ def product_plan_json(layers: list[list[str]], targets: dict[str, ReleaseTarget]
         "schema": "xgc2.release-plan.v1",
         "layers": [
             [
-                {
-                    "id": product_id,
-                    "version": targets[product_id].product.version,
-                    "apt_versions": apt_version_plan(targets[product_id].product),
-                    "apt_version_template": targets[product_id].product.apt_version_template,
-                    "skip_apt_verify": targets[product_id].product.skip_apt_verify,
-                    "repository": targets[product_id].repository,
-                    "ref": targets[product_id].ref,
-                    "workflow": targets[product_id].workflow,
-                    "workflow_inputs": sorted(
-                        workflow_input_names(targets[product_id].workflow_path)
-                    ),
-                    "inputs": targets[product_id].dispatch_inputs,
-                    "apt_packages": list(
-                        targets[product_id].product.apt_packages
-                        or targets[product_id].product.apt_install
-                    ),
-                    "apt_distributions": list(targets[product_id].product.apt_distributions),
-                }
+                target_plan_item(product_id, layer_index, targets[product_id])
                 for product_id in layer
             ]
-            for layer in layers
+            for layer_index, layer in enumerate(layers, start=1)
         ],
     }
 
@@ -499,7 +677,11 @@ def selected_edges(selected: set[str], downstream: dict[str, set[str]]) -> list[
 
 
 def product_label(target: ReleaseTarget) -> str:
-    label = f"{target.product.product_id}\\n{version_summary(target.product)}"
+    label = (
+        f"{target.product.product_id}\\n"
+        f"{target.action}\\n"
+        f"{target.expected_version or version_summary(target.product)}"
+    )
     return label.replace('"', "'")
 
 
@@ -516,7 +698,9 @@ def plan_summary_markdown(
         "",
     ]
     for index, layer in enumerate(layers, start=1):
-        items = ", ".join(f"`{product_id}`" for product_id in layer)
+        items = ", ".join(
+            f"`{product_id}` ({targets[product_id].action})" for product_id in layer
+        )
         lines.append(f"- Layer {index}: {items}")
 
     lines.extend(
@@ -544,16 +728,39 @@ def write_plan_outputs(
     root: Path,
     plan_output: str,
     summary_output: str | None,
+    lock_output: str | None,
     layers: list[list[str]],
     targets: dict[str, ReleaseTarget],
     downstream: dict[str, set[str]],
 ) -> None:
+    plan = product_plan_json(layers, targets)
     plan_path = root / plan_output
     plan_path.parent.mkdir(parents=True, exist_ok=True)
     with plan_path.open("w", encoding="utf-8") as handle:
-        json.dump(product_plan_json(layers, targets), handle, indent=2, sort_keys=True)
+        json.dump(plan, handle, indent=2, sort_keys=True)
         handle.write("\n")
     print(f"wrote {plan_path.relative_to(root)}")
+
+    if lock_output:
+        lock_path = root / lock_output
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        lock_products = [
+            item
+            for layer in plan["layers"]
+            for item in layer
+        ]
+        with lock_path.open("w", encoding="utf-8") as handle:
+            json.dump(
+                {
+                    "schema": "xgc2.release-lock.v1",
+                    "products": lock_products,
+                },
+                handle,
+                indent=2,
+                sort_keys=True,
+            )
+            handle.write("\n")
+        print(f"wrote {lock_path.relative_to(root)}")
 
     if summary_output:
         summary_path = root / summary_output
@@ -573,7 +780,8 @@ def print_plan(layers: list[list[str]], targets: dict[str, ReleaseTarget]) -> No
             target = targets[product_id]
             print(
                 "    "
-                f"{product_id} {version_summary(target.product)} "
+                f"{product_id} action={target.action} "
+                f"expected={target.expected_version or version_summary(target.product)} "
                 f"repo={target.repository} ref={target.ref} workflow={target.workflow}"
             )
 
@@ -596,7 +804,11 @@ def trigger_workflow(
         target.ref,
     ]
     if "publish_apt" in inputs:
-        command.extend(["-f", "publish_apt=true"])
+        command.extend(["-f", f"publish_apt={str(target.action == RELEASE_ACTION).lower()}"])
+    if "expected_version" in inputs and target.expected_version:
+        command.extend(["-f", f"expected_version={target.expected_version}"])
+    if "expected_source_sha" in inputs and target.source_sha:
+        command.extend(["-f", f"expected_source_sha={target.source_sha}"])
     if "run_cpp_quality" in inputs:
         command.extend(["-f", f"run_cpp_quality={str(quality_required).lower()}"])
     if "run_source_tests" in inputs:
@@ -745,7 +957,9 @@ def verify_apt_product(
     deadline = time.time() + timeout_seconds
     pending: set[tuple[str, str, str, str]] = set()
     for distribution in product.apt_distributions:
-        version = expected_apt_version(product, distribution, run_number=run_number)
+        version = target.expected_apt_versions.get(distribution)
+        if not version:
+            version = expected_apt_version(product, distribution, run_number=run_number)
         if not version:
             raise RuntimeError(
                 f"{product.product_id}: apt version is required for {distribution}; "
@@ -791,11 +1005,22 @@ def main() -> int:
         "--group",
         action="append",
         default=[],
-        help="seed product group; supported: gazebo-sim, simulator, sitl",
+        help="seed product group; supported: uav-tracking, ugv-tracking, gazebo-sim, simulator, sitl, toolchain",
     )
     parser.add_argument("--changed-from", help="git base ref for changed product detection")
     parser.add_argument("--changed-to", default="HEAD", help="git head ref for changed product detection")
+    parser.add_argument("--no-upstream", action="store_true", help="do not include prerequisite dependency closure")
     parser.add_argument("--no-downstream", action="store_true", help="do not include reverse dependency closure")
+    parser.add_argument(
+        "--bump-release-versions",
+        action="store_true",
+        help="plan release actions with the next Debian revision",
+    )
+    parser.add_argument(
+        "--release-version-series",
+        default="",
+        help="optional target series for 1.0.x release products, e.g. 1.1",
+    )
     parser.add_argument("--execute", action="store_true", help="trigger and monitor GitHub release workflows")
     parser.add_argument("--no-wait", action="store_true", help="trigger workflows without waiting")
     parser.add_argument("--skip-apt-verify", action="store_true", help="skip APT Packages index verification")
@@ -807,6 +1032,7 @@ def main() -> int:
     parser.add_argument("--apt-timeout-seconds", type=int, default=900)
     parser.add_argument("--poll-seconds", type=int, default=15)
     parser.add_argument("--plan-output", default=".work/release-plan.json")
+    parser.add_argument("--lock-output", default=".work/release-lock.json")
     parser.add_argument("--summary-output", help="write a Markdown DAG summary")
     args = parser.parse_args()
 
@@ -814,35 +1040,62 @@ def main() -> int:
     catalog_path = Path(args.catalog).resolve() if args.catalog else None
     products = [product for product in load_catalog(root, catalog_path) if product.is_apt]
     products_by_id = {product.product_id: product for product in products}
-    downstream, _ = build_graph(products)
+    downstream, upstream = build_graph(products)
 
-    selected = {
+    explicit_seed = {
         product_id
         for item in args.product
         for product_id in split_csv(item)
     }
+    changed_seed: set[str] = set()
     if args.changed_from:
-        selected.update(changed_products(root, products, args.changed_from, args.changed_to))
+        changed_seed.update(changed_products(root, products, args.changed_from, args.changed_to))
+    group_seed: set[str] = set()
     for item in args.group:
         for group in split_csv(item):
-            selected.update(group_products(root, products, group))
-    if not selected:
-        selected = set(products_by_id)
+            group_seed.update(group_products(root, products, group))
 
-    unknown = sorted(product_id for product_id in selected if product_id not in products_by_id)
+    seed = set(explicit_seed | changed_seed | group_seed)
+    if not seed:
+        seed = set(products_by_id)
+        explicit_seed = set(seed)
+
+    unknown = sorted(product_id for product_id in seed if product_id not in products_by_id)
     if unknown:
         raise SystemExit(f"unknown product id(s): {', '.join(unknown)}")
 
+    selected = set(seed)
+    prerequisite_ids: set[str] = set()
+    downstream_ids: set[str] = set()
+    if not args.no_upstream:
+        prerequisite_ids = upstream_closure(seed, upstream) - seed
+        selected.update(prerequisite_ids)
     if not args.no_downstream:
-        selected = downstream_closure(selected, downstream)
+        downstream_roots = explicit_seed | changed_seed
+        downstream_ids = downstream_closure(downstream_roots, downstream) - seed
+        selected.update(downstream_ids)
+
+    action_by_id = {
+        product_id: (VERIFY_ACTION if product_id in prerequisite_ids else RELEASE_ACTION)
+        for product_id in selected
+    }
+    for product_id in downstream_ids:
+        action_by_id[product_id] = RELEASE_ACTION
 
     layers = topo_layers(selected, downstream)
-    targets = build_targets(products_by_id, selected)
+    targets = build_targets(
+        products_by_id,
+        selected,
+        action_by_id,
+        bump_release_versions=args.bump_release_versions,
+        version_series=args.release_version_series,
+    )
     print_plan(layers, targets)
     write_plan_outputs(
         root=root,
         plan_output=args.plan_output,
         summary_output=args.summary_output,
+        lock_output=args.lock_output,
         layers=layers,
         targets=targets,
         downstream=downstream,
@@ -860,6 +1113,18 @@ def main() -> int:
         run_ids: dict[str, int] = {}
         for product_id in layer:
             target = targets[product_id]
+            if target.action == VERIFY_ACTION:
+                print(f"{product_id}: verify-only target; no workflow dispatch")
+                if not args.skip_apt_verify:
+                    verify_apt_product(
+                        target,
+                        base_url=args.apt_base_url,
+                        arches=arches,
+                        timeout_seconds=args.apt_timeout_seconds,
+                        poll_seconds=args.poll_seconds,
+                        run_number=None,
+                    )
+                continue
             run_ids[product_id] = trigger_workflow(
                 target,
                 quality_required=args.quality_required,
@@ -872,6 +1137,8 @@ def main() -> int:
 
         for product_id in layer:
             target = targets[product_id]
+            if target.action == VERIFY_ACTION:
+                continue
             run_data = wait_for_run(
                 target,
                 run_ids[product_id],

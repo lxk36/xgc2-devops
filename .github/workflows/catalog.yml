@@ -31,8 +31,10 @@ jobs:
       - name: Run lightweight repository validation
         run: |
           set -euo pipefail
-          bash -n scripts/*.sh products/ros1_dev/scripts/*.sh
+          bash -n scripts/*.sh helper/*.sh
           python3 -m py_compile \
+            scripts/apply-release-version-bumps.py \
+            scripts/audit-product-workflows.py \
             scripts/catalog-github-outputs.py \
             scripts/orchestrate-apt-release.py \
             scripts/release-plan-github-outputs.py \
@@ -48,8 +50,20 @@ jobs:
             --catalog .work/products-ci.json \
             --group gazebo-sim \
             --plan-output .work/release-plan-gazebo-sim.json \
+            --lock-output .work/release-lock-gazebo-sim.json \
             --summary-output .work/release-plan-gazebo-sim.md
-          python3 scripts/check-ros1-dev-boundaries.py --root .
+          python3 scripts/orchestrate-apt-release.py \
+            --root . \
+            --catalog .work/products-ci.json \
+            --group uav-tracking \
+            --plan-output .work/release-plan-uav-tracking.json \
+            --lock-output .work/release-lock-uav-tracking.json \
+            --summary-output .work/release-plan-uav-tracking.md
+          python3 scripts/audit-product-workflows.py \
+            --root . \
+            --catalog .work/products-ci.json \
+            --output-json .work/product-workflow-audit.json \
+            --output-md .work/product-workflow-audit.md
 
       - name: Build product module matrix
         id: catalog_outputs
@@ -59,7 +73,10 @@ jobs:
             --catalog .work/products-ci.json >> "${GITHUB_OUTPUT}"
 
       - name: Show product module catalog
-        run: cat .work/product-module-catalog.md >> "${GITHUB_STEP_SUMMARY}"
+        run: |
+          cat .work/product-module-catalog.md >> "${GITHUB_STEP_SUMMARY}"
+          cat .work/release-plan-uav-tracking.md >> "${GITHUB_STEP_SUMMARY}"
+          cat .work/product-workflow-audit.md >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Upload catalog plans
         uses: actions/upload-artifact@v4
@@ -69,7 +86,13 @@ jobs:
             .work/products-ci.json
             .work/product-module-catalog.md
             .work/release-plan-gazebo-sim.json
+            .work/release-lock-gazebo-sim.json
             .work/release-plan-gazebo-sim.md
+            .work/release-plan-uav-tracking.json
+            .work/release-lock-uav-tracking.json
+            .work/release-plan-uav-tracking.md
+            .work/product-workflow-audit.json
+            .work/product-workflow-audit.md
 
   product-modules:
     name: module / ${{ matrix.product_id }}

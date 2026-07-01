@@ -63,7 +63,8 @@ not pollute the host ROS prefix:
 ```bash
 scripts/docker-apt-smoke.sh ros-noetic-xgc2-swarm-sync-sim
 scripts/docker-upgrade-xgc2-apt.sh --dry-run
-scripts/docker-upgrade-xgc2-apt.sh --exclude-file products/ros1_dev/config/pre_product_apt_excludes.txt
+helper/update-image.sh
+helper/start-ros1-container.sh
 ```
 
 ```bash

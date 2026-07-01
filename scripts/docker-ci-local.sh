@@ -15,7 +15,6 @@ Default validation:
   - install PyYAML/jsonschema inside the container
   - bash -n shell scripts
   - collect product metadata
-  - check ROS1 product/dev boundaries
 USAGE
 }
 
@@ -71,10 +70,9 @@ apt-get update
 apt-get install -y --no-install-recommends git python3-pip
 git config --file "${HOME}/.gitconfig" --add safe.directory "*"
 python3 -m pip install --no-cache-dir PyYAML jsonschema
-bash -n scripts/*.sh products/ros1_dev/scripts/*.sh
+bash -n scripts/*.sh helper/*.sh
 python3 scripts/collect-products.py --root . --output .work/products-container-ci.json
 python3 scripts/orchestrate-apt-release.py --root . --catalog .work/products-container-ci.json --product libxgc2-math-dev --no-downstream --plan-output .work/release-plan-smoke.json
-python3 scripts/check-ros1-dev-boundaries.py --root .
 '
 fi
 

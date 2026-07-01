@@ -27,16 +27,19 @@ submodules=(
   products/common/tbb
   products/ros1/common/ros1-utils
   products/ros1/communication/runtime-sync
+  products/ros1/controller
   products/ros1/driver/livox_ros_driver
   products/ros1/driver/livox_ros_driver2
   products/ros1/manager/linux-utils
   products/ros1/perception/detection
+  products/ros1/perception/hover-thrust
+  products/ros1/perception/rigid-state
   products/ros1/perception/slam
   products/ros1/planner/planner
   products/ros1/simulator/convex_geometry
   products/ros1/simulator/gazebo-sim
+  products/ros1/simulator/gazebo-sim-tools
   products/ros1/simulator/swarm-sync-sim
-  products/ros1_dev
   products/ros2/simulator/px4-sitl-116
 )
 

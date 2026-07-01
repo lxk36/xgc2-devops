@@ -1,0 +1,26 @@
+# Source overlay used by helper/prepare-ros1-overlay.sh and
+# helper/build-ros1-overlay.sh.
+#
+# Format:
+#   cmake  <repo-relative-source-dir>
+#   catkin <repo-relative-ros-package-dir>
+#
+# CMake libraries are installed into /ros1_ws/devel before catkin_make so
+# find_package() prefers source-built configs over /opt/ros/noetic.
+cmake products/common/math
+cmake products/common/state-machine
+
+catkin products/ros1/controller/multirotor-controller/multirotor_reference_trajectory
+catkin products/ros1/controller/multirotor-controller/px4_multirotor_controller
+catkin products/ros1/controller/ugv-controller/unicycle_reference_trajectory
+catkin products/ros1/controller/ugv-controller/unicycle_ugv_controller
+catkin products/ros1/perception/hover-thrust
+catkin products/ros1/perception/rigid-state/estimator_vrpn_px4_rotor_state
+catkin products/ros1/perception/rigid-state/estimator_vrpn_ugv_state
+catkin products/ros1/simulator/gazebo-sim/fs150-sitl
+catkin products/ros1/simulator/gazebo-sim/px4-sitl-112
+catkin products/ros1/simulator/gazebo-sim/px4-sitl-114
+catkin products/ros1/simulator/gazebo-sim/visualization
+catkin products/ros1/simulator/gazebo-sim/vrpn_bridge
+catkin products/ros1/simulator/gazebo-sim-tools/gazebo_session_manager
+catkin products/ros1/simulator/gazebo-sim-tools/gazebo_sim_examples

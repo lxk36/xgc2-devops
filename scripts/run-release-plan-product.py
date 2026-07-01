@@ -15,6 +15,8 @@ from typing import Any
 
 DEFAULT_APT_BASE_URL = "https://xgc2.apt.xiaokang.ink"
 DEFAULT_ARCHES = ("amd64", "arm64")
+RELEASE_ACTION = "release"
+VERIFY_ACTION = "verify"
 
 
 def run(args: list[str], *, check: bool = True) -> subprocess.CompletedProcess[str]:
@@ -48,7 +50,11 @@ def trigger(product: dict[str, Any], *, quality_required: bool, source_tests: bo
     ]
     workflow_inputs = set(product.get("workflow_inputs", []))
     if "publish_apt" in workflow_inputs:
-        command.extend(["-f", "publish_apt=true"])
+        command.extend(["-f", f"publish_apt={str(product.get('action') == RELEASE_ACTION).lower()}"])
+    if "expected_version" in workflow_inputs and product.get("expected_version"):
+        command.extend(["-f", f"expected_version={product['expected_version']}"])
+    if "expected_source_sha" in workflow_inputs and product.get("expected_source_sha"):
+        command.extend(["-f", f"expected_source_sha={product['expected_source_sha']}"])
     if "run_cpp_quality" in workflow_inputs:
         command.extend(["-f", f"run_cpp_quality={str(quality_required).lower()}"])
     if "run_source_tests" in workflow_inputs:
@@ -182,6 +188,15 @@ def expected_version(product: dict[str, Any], distribution: str, run_number: int
     return str(product.get("version", "")) or None
 
 
+def expected_versions(product: dict[str, Any], run_number: int | None) -> dict[str, str]:
+    result: dict[str, str] = {}
+    for distribution in product.get("apt_distributions", []):
+        version = expected_version(product, str(distribution), run_number)
+        if version:
+            result[str(distribution)] = version
+    return result
+
+
 def verify_apt(
     product: dict[str, Any],
     *,
@@ -232,6 +247,71 @@ def verify_apt(
     print(f"{product['id']}: apt index contains expected version(s)")
 
 
+def manifest_urls(
+    product: dict[str, Any],
+    *,
+    manifest_base_url: str,
+    distribution: str,
+    arch: str,
+    package: str,
+    version: str,
+) -> list[str]:
+    base = manifest_base_url.rstrip("/")
+    product_id = str(product["id"])
+    return [
+        f"{base}/{product_id}/{distribution}/{arch}/{package}_{version}.json",
+        f"{base}/{product_id}/{distribution}/{arch}/{version}.json",
+        f"{base}/{product_id}/{version}.json",
+    ]
+
+
+def manifest_matches_source_sha(url: str, expected_source_sha: str) -> bool:
+    try:
+        with urllib.request.urlopen(url, timeout=15) as response:
+            data = json.loads(response.read().decode("utf-8", errors="replace"))
+    except Exception:
+        return False
+    return str(data.get("source_sha") or data.get("expected_source_sha")) == expected_source_sha
+
+
+def fast_pass_ready(
+    product: dict[str, Any],
+    *,
+    apt_base_url: str,
+    manifest_base_url: str,
+    arches: tuple[str, ...],
+) -> bool:
+    expected_source_sha = str(product.get("expected_source_sha", ""))
+    if not expected_source_sha:
+        return False
+    versions = expected_versions(product, None)
+    if not versions:
+        return False
+    packages = product.get("apt_packages", [])
+    if not packages:
+        return False
+
+    for distribution, version in sorted(versions.items()):
+        for arch in arches:
+            for package in packages:
+                if not any(
+                    stanza.get("Package") == package and stanza.get("Version") == version
+                    for stanza in apt_stanzas(apt_base_url, distribution, arch)
+                ):
+                    return False
+                urls = manifest_urls(
+                    product,
+                    manifest_base_url=manifest_base_url,
+                    distribution=distribution,
+                    arch=arch,
+                    package=str(package),
+                    version=version,
+                )
+                if not any(manifest_matches_source_sha(url, expected_source_sha) for url in urls):
+                    return False
+    return True
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--plan", required=True)
@@ -239,7 +319,13 @@ def main() -> int:
     parser.add_argument("--quality-required", action="store_true")
     parser.add_argument("--source-tests", action="store_true")
     parser.add_argument("--skip-apt-verify", action="store_true")
+    parser.add_argument("--no-fast-pass", action="store_true")
     parser.add_argument("--apt-base-url", default=DEFAULT_APT_BASE_URL)
+    parser.add_argument(
+        "--manifest-base-url",
+        default=f"{DEFAULT_APT_BASE_URL}/manifests",
+        help="Base URL for release manifest source-SHA checks",
+    )
     parser.add_argument("--apt-arch", action="append", default=[])
     parser.add_argument("--timeout-seconds", type=int, default=3600)
     parser.add_argument("--apt-timeout-seconds", type=int, default=900)
@@ -252,6 +338,37 @@ def main() -> int:
     with Path(args.plan).open("r", encoding="utf-8") as handle:
         plan = json.load(handle)
     product = find_product(plan, args.product)
+
+    arches = tuple(args.apt_arch or DEFAULT_ARCHES)
+    if product.get("action") == VERIFY_ACTION:
+        print(f"{product['id']}: verify-only target; no workflow dispatch")
+        if not args.skip_apt_verify:
+            verify_apt(
+                product,
+                base_url=args.apt_base_url,
+                arches=arches,
+                timeout_seconds=args.apt_timeout_seconds,
+                poll_seconds=args.poll_seconds,
+                run_number=None,
+            )
+        return 0
+
+    if not args.no_fast_pass and fast_pass_ready(
+        product,
+        apt_base_url=args.apt_base_url,
+        manifest_base_url=args.manifest_base_url,
+        arches=arches,
+    ):
+        print(f"{product['id']}: FAST-PASS apt package and source manifest already match")
+        summary = os.environ.get("GITHUB_STEP_SUMMARY")
+        if summary:
+            with Path(summary).open("a", encoding="utf-8") as handle:
+                handle.write(
+                    f"### {product['id']}\\n\\n"
+                    "FAST-PASS: expected APT versions and source manifest are already present.\\n"
+                )
+        return 0
+
     run_id = trigger(
         product,
         quality_required=args.quality_required,
@@ -270,7 +387,7 @@ def main() -> int:
         verify_apt(
             product,
             base_url=args.apt_base_url,
-            arches=tuple(args.apt_arch or DEFAULT_ARCHES),
+            arches=arches,
             timeout_seconds=args.apt_timeout_seconds,
             poll_seconds=args.poll_seconds,
             run_number=run_number if isinstance(run_number, int) else None,
