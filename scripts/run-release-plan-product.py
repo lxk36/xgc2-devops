@@ -8,6 +8,7 @@ import json
 import os
 import subprocess
 import time
+import urllib.parse
 import urllib.request
 from pathlib import Path
 from typing import Any
@@ -78,6 +79,37 @@ def trigger(product: dict[str, Any], *, quality_required: bool, source_tests: bo
             f"{product['workflow']} at {product['ref']}: {details}"
         )
     return find_workflow_run(product, triggered_after)
+
+
+def current_ref_sha(product: dict[str, Any]) -> str:
+    repo = str(product["repository"])
+    ref = urllib.parse.quote(str(product["ref"]), safe="")
+    result = run(
+        ["gh", "api", f"repos/{repo}/commits/{ref}", "--jq", ".sha"],
+        check=False,
+    )
+    if result.returncode != 0:
+        details = "\n".join(
+            part
+            for part in (result.stdout.strip(), result.stderr.strip())
+            if part
+        )
+        raise RuntimeError(f"{product['id']}: cannot resolve {repo}@{product['ref']}: {details}")
+    return result.stdout.strip()
+
+
+def verify_release_lock_is_current(product: dict[str, Any]) -> None:
+    expected_source_sha = str(product.get("expected_source_sha", "")).strip()
+    if not expected_source_sha:
+        return
+    actual_source_sha = current_ref_sha(product)
+    if actual_source_sha != expected_source_sha:
+        raise RuntimeError(
+            f"{product['id']}: stale release lock for "
+            f"{product['repository']}@{product['ref']}; "
+            f"expected {expected_source_sha}, current head is {actual_source_sha}. "
+            "Re-run release-orchestrator from the latest xgc2-devops commit."
+        )
 
 
 def find_workflow_run(product: dict[str, Any], triggered_after: str) -> int:
@@ -365,6 +397,8 @@ def main() -> int:
                 run_number=None,
             )
         return 0
+
+    verify_release_lock_is_current(product)
 
     if not args.no_fast_pass and fast_pass_ready(
         product,

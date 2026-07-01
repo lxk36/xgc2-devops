@@ -10,6 +10,7 @@ import re
 import subprocess
 import sys
 import time
+import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
@@ -797,6 +798,7 @@ def trigger_workflow(
     quality_required: bool,
     source_tests: bool,
 ) -> int:
+    verify_release_lock_is_current(target)
     inputs = workflow_input_names(target.workflow_path)
     command = [
         "gh",
@@ -857,6 +859,36 @@ def find_workflow_run(target: ReleaseTarget, triggered_after: str) -> int:
                         return run_id
         time.sleep(5)
     raise RuntimeError(f"{target.product.product_id}: could not find dispatched workflow run")
+
+
+def current_ref_sha(target: ReleaseTarget) -> str:
+    ref = urllib.parse.quote(target.ref, safe="")
+    result = run(
+        ["gh", "api", f"repos/{target.repository}/commits/{ref}", "--jq", ".sha"],
+        check=False,
+    )
+    if result.returncode != 0:
+        details = "\n".join(
+            part
+            for part in (result.stdout.strip(), result.stderr.strip())
+            if part
+        )
+        raise RuntimeError(
+            f"{target.product.product_id}: cannot resolve "
+            f"{target.repository}@{target.ref}: {details}"
+        )
+    return result.stdout.strip()
+
+
+def verify_release_lock_is_current(target: ReleaseTarget) -> None:
+    actual_source_sha = current_ref_sha(target)
+    if actual_source_sha != target.source_sha:
+        raise RuntimeError(
+            f"{target.product.product_id}: stale release lock for "
+            f"{target.repository}@{target.ref}; expected {target.source_sha}, "
+            f"current head is {actual_source_sha}. "
+            "Re-run release-orchestrator from the latest xgc2-devops commit."
+        )
 
 
 def run_completed_successfully(
