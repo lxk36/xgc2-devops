@@ -28,8 +28,14 @@ jobs:
         run: |
           set -euo pipefail
           bash -n scripts/*.sh products/ros1_dev/scripts/*.sh
-          python3 -m py_compile scripts/orchestrate-apt-release.py
+          python3 -m py_compile \
+            scripts/orchestrate-apt-release.py \
+            scripts/summarize-product-catalog.py
           python3 scripts/collect-products.py --root . --output .work/products-ci.json
+          python3 scripts/summarize-product-catalog.py \
+            --root . \
+            --catalog .work/products-ci.json \
+            --output .work/product-module-catalog.md
           python3 scripts/orchestrate-apt-release.py \
             --root . \
             --catalog .work/products-ci.json \
@@ -38,13 +44,15 @@ jobs:
             --summary-output .work/release-plan-gazebo-sim.md
           python3 scripts/check-ros1-dev-boundaries.py --root .
 
-      - name: Show release DAG
-        run: cat .work/release-plan-gazebo-sim.md >> "${GITHUB_STEP_SUMMARY}"
+      - name: Show product module catalog
+        run: cat .work/product-module-catalog.md >> "${GITHUB_STEP_SUMMARY}"
 
-      - name: Upload release DAG plan
+      - name: Upload catalog plans
         uses: actions/upload-artifact@v4
         with:
-          name: xgc2-release-dag-smoke
+          name: xgc2-catalog-summary
           path: |
+            .work/products-ci.json
+            .work/product-module-catalog.md
             .work/release-plan-gazebo-sim.json
             .work/release-plan-gazebo-sim.md
