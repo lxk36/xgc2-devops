@@ -1,0 +1,1189 @@
+{
+  "products": [
+    {
+      "action": "release",
+      "apt_distributions": [
+        "focal",
+        "jammy",
+        "noble"
+      ],
+      "apt_install": [
+        "libxgc2-math-dev"
+      ],
+      "apt_packages": [
+        "libxgc2-math-algebra-dev",
+        "libxgc2-math-utils-dev",
+        "libxgc2-math-geometry-dev",
+        "libxgc2-math-filter-dev",
+        "libxgc2-math-observer-dev",
+        "libxgc2-math-estimation-dev",
+        "libxgc2-math-optimization-dev",
+        "libxgc2-math-trajectory-dev",
+        "libxgc2-math-control-dev",
+        "libxgc2-math-dev"
+      ],
+      "apt_version_template": "",
+      "apt_versions": {
+        "focal": "0.5.5-2",
+        "jammy": "0.5.5-2",
+        "noble": "0.5.5-2"
+      },
+      "expected_source_sha": "ad0adb84e861a40bca08baa9185b85b832a7115f",
+      "expected_version": "0.5.5-2",
+      "id": "libxgc2-math-dev",
+      "inputs": {},
+      "layer": 1,
+      "ref": "master",
+      "repository": "lxk36/xgc2-math",
+      "skip_apt_verify": false,
+      "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/common/math",
+      "source_sha": "ad0adb84e861a40bca08baa9185b85b832a7115f",
+      "version": "0.5.5-2",
+      "workflow": "release.yml",
+      "workflow_inputs": [
+        "expected_source_sha",
+        "expected_version",
+        "publish_apt",
+        "run_cpp_quality",
+        "run_source_tests"
+      ]
+    },
+    {
+      "action": "release",
+      "apt_distributions": [
+        "focal",
+        "jammy",
+        "noble"
+      ],
+      "apt_install": [
+        "libxgc2-state-machine-dev"
+      ],
+      "apt_packages": [
+        "libxgc2-state-machine-dev"
+      ],
+      "apt_version_template": "",
+      "apt_versions": {
+        "focal": "0.1.2-2~focal",
+        "jammy": "0.1.2-2~jammy",
+        "noble": "0.1.2-2~noble"
+      },
+      "expected_source_sha": "dc50d91aa5e0e86d3ab2fa328a648451c470e1d6",
+      "expected_version": "0.1.2-2",
+      "id": "libxgc2-state-machine-dev",
+      "inputs": {},
+      "layer": 1,
+      "ref": "master",
+      "repository": "lxk36/xgc2-state-machine",
+      "skip_apt_verify": false,
+      "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/common/state-machine",
+      "source_sha": "dc50d91aa5e0e86d3ab2fa328a648451c470e1d6",
+      "version": "0.1.2-2",
+      "workflow": "release.yml",
+      "workflow_inputs": [
+        "expected_source_sha",
+        "expected_version",
+        "publish_apt",
+        "run_cpp_quality",
+        "run_source_tests"
+      ]
+    },
+    {
+      "action": "release",
+      "apt_distributions": [
+        "focal"
+      ],
+      "apt_install": [
+        "ros-noetic-livox-ros-driver"
+      ],
+      "apt_packages": [
+        "ros-noetic-livox-ros-driver"
+      ],
+      "apt_version_template": "",
+      "apt_versions": {
+        "focal": "2.6.0-2"
+      },
+      "expected_source_sha": "fd25efbd8e4c1db72a0b4f0025e988dd90d7c832",
+      "expected_version": "2.6.0-2",
+      "id": "livox-ros-driver",
+      "inputs": {},
+      "layer": 1,
+      "ref": "noetic",
+      "repository": "lxk36/livox_ros_driver",
+      "skip_apt_verify": false,
+      "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/driver/livox_ros_driver",
+      "source_sha": "fd25efbd8e4c1db72a0b4f0025e988dd90d7c832",
+      "version": "2.6.0-2",
+      "workflow": "release.yml",
+      "workflow_inputs": [
+        "expected_source_sha",
+        "expected_version",
+        "publish_apt",
+        "run_cpp_quality",
+        "run_source_tests"
+      ]
+    },
+    {
+      "action": "release",
+      "apt_distributions": [
+        "focal"
+      ],
+      "apt_install": [
+        "ros-noetic-livox-ros-driver2"
+      ],
+      "apt_packages": [
+        "ros-noetic-livox-ros-driver2"
+      ],
+      "apt_version_template": "",
+      "apt_versions": {
+        "focal": "1.2.6-2"
+      },
+      "expected_source_sha": "5efe1a1c6217f853d0e055882195dff005020957",
+      "expected_version": "1.2.6-2",
+      "id": "livox-ros-driver2",
+      "inputs": {},
+      "layer": 1,
+      "ref": "noetic",
+      "repository": "lxk36/livox_ros_driver2",
+      "skip_apt_verify": false,
+      "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/driver/livox_ros_driver2",
+      "source_sha": "5efe1a1c6217f853d0e055882195dff005020957",
+      "version": "1.2.6-2",
+      "workflow": "release.yml",
+      "workflow_inputs": [
+        "expected_source_sha",
+        "expected_version",
+        "publish_apt",
+        "run_cpp_quality",
+        "run_source_tests"
+      ]
+    },
+    {
+      "action": "release",
+      "apt_distributions": [
+        "focal"
+      ],
+      "apt_install": [
+        "xgc1"
+      ],
+      "apt_packages": [
+        "xgc1",
+        "xgc1-qt-runtime"
+      ],
+      "apt_version_template": "1.1.0-1",
+      "apt_versions": {},
+      "expected_source_sha": "70af863fb474ab699d5559bb5fc84358e93119ca",
+      "expected_version": "1.1.0-1",
+      "id": "xgc1",
+      "inputs": {},
+      "layer": 1,
+      "ref": "master",
+      "repository": "lxk36/xgc1",
+      "skip_apt_verify": false,
+      "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/xgc1",
+      "source_sha": "70af863fb474ab699d5559bb5fc84358e93119ca",
+      "version": "1.1.0-1",
+      "workflow": "release.yml",
+      "workflow_inputs": [
+        "expected_source_sha",
+        "expected_version",
+        "publish_apt",
+        "run_cpp_quality",
+        "run_source_tests"
+      ]
+    },
+    {
+      "action": "release",
+      "apt_distributions": [
+        "focal",
+        "jammy",
+        "noble"
+      ],
+      "apt_install": [
+        "xgc2-acados"
+      ],
+      "apt_packages": [
+        "xgc2-acados"
+      ],
+      "apt_version_template": "",
+      "apt_versions": {
+        "focal": "0.1.0-4~focal",
+        "jammy": "0.1.0-4~jammy",
+        "noble": "0.1.0-4~noble"
+      },
+      "expected_source_sha": "a4b60b3f92730ec4fad52d7cdaf482b8561c9e4a",
+      "expected_version": "0.1.0-4",
+      "id": "xgc2-acados",
+      "inputs": {},
+      "layer": 1,
+      "ref": "master",
+      "repository": "lxk36/xgc2-acados",
+      "skip_apt_verify": false,
+      "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/common/acados",
+      "source_sha": "a4b60b3f92730ec4fad52d7cdaf482b8561c9e4a",
+      "version": "0.1.0-4",
+      "workflow": "release.yml",
+      "workflow_inputs": [
+        "expected_source_sha",
+        "expected_version",
+        "publish_apt",
+        "run_cpp_quality",
+        "run_source_tests"
+      ]
+    },
+    {
+      "action": "release",
+      "apt_distributions": [
+        "focal"
+      ],
+      "apt_install": [
+        "ros-noetic-xgc2-detection"
+      ],
+      "apt_packages": [
+        "ros-noetic-xgc2-detection",
+        "ros-noetic-xgc2-onboard-detector-lv",
+        "ros-noetic-xgc2-fapp-obj-state-msgs",
+        "ros-noetic-xgc2-fapp-mot-mapping"
+      ],
+      "apt_version_template": "",
+      "apt_versions": {
+        "focal": "1.1.0-2"
+      },
+      "expected_source_sha": "e50a5a2ad7623575863385e0ea6533bee65a6ecc",
+      "expected_version": "1.1.0-2",
+      "id": "xgc2-detection",
+      "inputs": {},
+      "layer": 1,
+      "ref": "noetic",
+      "repository": "lxk36/xgc2-detection",
+      "skip_apt_verify": false,
+      "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/perception/detection",
+      "source_sha": "e50a5a2ad7623575863385e0ea6533bee65a6ecc",
+      "version": "1.1.0-2",
+      "workflow": "release.yml",
+      "workflow_inputs": [
+        "expected_source_sha",
+        "expected_version",
+        "publish_apt",
+        "run_cpp_quality",
+        "run_source_tests"
+      ]
+    },
+    {
+      "action": "release",
+      "apt_distributions": [
+        "focal"
+      ],
+      "apt_install": [
+        "ros-noetic-xgc2-gazebo-sim-worlds"
+      ],
+      "apt_packages": [
+        "ros-noetic-xgc2-gazebo-sim-worlds"
+      ],
+      "apt_version_template": "",
+      "apt_versions": {
+        "focal": "1.1.0-4"
+      },
+      "expected_source_sha": "f5b2f67b00252579d312fc8b21da91b7b4bc5e40",
+      "expected_version": "1.1.0-4",
+      "id": "xgc2-gazebo-sim-worlds",
+      "inputs": {},
+      "layer": 1,
+      "ref": "noetic",
+      "repository": "lxk36/xgc2-gazebo-sim-worlds",
+      "skip_apt_verify": false,
+      "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/simulator/gazebo-sim/worlds",
+      "source_sha": "f5b2f67b00252579d312fc8b21da91b7b4bc5e40",
+      "version": "1.1.0-4",
+      "workflow": "release.yml",
+      "workflow_inputs": [
+        "expected_source_sha",
+        "expected_version",
+        "publish_apt",
+        "run_cpp_quality",
+        "run_source_tests"
+      ]
+    },
+    {
+      "action": "release",
+      "apt_distributions": [
+        "focal"
+      ],
+      "apt_install": [
+        "ros-noetic-xgc2-linux-utils"
+      ],
+      "apt_packages": [
+        "ros-noetic-xgc2-linux-utils"
+      ],
+      "apt_version_template": "",
+      "apt_versions": {
+        "focal": "1.1.0-2"
+      },
+      "expected_source_sha": "1611923349fa3580c65c8fa37d32c2f30095ecbf",
+      "expected_version": "1.1.0-2",
+      "id": "xgc2-linux-utils",
+      "inputs": {},
+      "layer": 1,
+      "ref": "noetic",
+      "repository": "lxk36/xgc2-linux-utils",
+      "skip_apt_verify": false,
+      "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/manager/linux-utils",
+      "source_sha": "1611923349fa3580c65c8fa37d32c2f30095ecbf",
+      "version": "1.1.0-2",
+      "workflow": "release.yml",
+      "workflow_inputs": [
+        "expected_source_sha",
+        "expected_version",
+        "publish_apt",
+        "run_cpp_quality",
+        "run_source_tests"
+      ]
+    },
+    {
+      "action": "release",
+      "apt_distributions": [
+        "focal",
+        "jammy",
+        "noble"
+      ],
+      "apt_install": [
+        "xgc2-mavlink-router"
+      ],
+      "apt_packages": [
+        "xgc2-mavlink-router"
+      ],
+      "apt_version_template": "",
+      "apt_versions": {
+        "focal": "3.0.0-2+focal",
+        "jammy": "3.0.0-2+jammy",
+        "noble": "3.0.0-2+noble"
+      },
+      "expected_source_sha": "959c8102fd2136b0d99950e45c0eaeffda5fb32c",
+      "expected_version": "3.0.0-2",
+      "id": "xgc2-mavlink-router",
+      "inputs": {},
+      "layer": 1,
+      "ref": "master",
+      "repository": "lxk36/xgc2-mavlink-router",
+      "skip_apt_verify": false,
+      "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/common/mavlink-router",
+      "source_sha": "959c8102fd2136b0d99950e45c0eaeffda5fb32c",
+      "version": "3.0.0-2",
+      "workflow": "release.yml",
+      "workflow_inputs": [
+        "expected_source_sha",
+        "expected_version",
+        "publish_apt",
+        "run_cpp_quality",
+        "run_source_tests"
+      ]
+    },
+    {
+      "action": "release",
+      "apt_distributions": [
+        "focal"
+      ],
+      "apt_install": [
+        "ros-noetic-xgc2-gazebo-sim-px4-1-12"
+      ],
+      "apt_packages": [
+        "ros-noetic-xgc2-px4-sitl-1-12",
+        "ros-noetic-xgc2-gazebo-sim-px4-1-12"
+      ],
+      "apt_version_template": "",
+      "apt_versions": {
+        "focal": "1.12.3-8"
+      },
+      "expected_source_sha": "d179910c0a24f6fc81ba495d4ec159fb54eb8258",
+      "expected_version": "1.12.3-8",
+      "id": "xgc2-px4-sitl-112",
+      "inputs": {},
+      "layer": 1,
+      "ref": "v1.12-noetic",
+      "repository": "lxk36/xgc2-px4-sitl",
+      "skip_apt_verify": false,
+      "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/simulator/gazebo-sim/px4-sitl-112",
+      "source_sha": "d179910c0a24f6fc81ba495d4ec159fb54eb8258",
+      "version": "1.12.3-8",
+      "workflow": "release.yml",
+      "workflow_inputs": [
+        "expected_source_sha",
+        "expected_version",
+        "publish_apt",
+        "run_cpp_quality",
+        "run_source_tests"
+      ]
+    },
+    {
+      "action": "release",
+      "apt_distributions": [
+        "focal"
+      ],
+      "apt_install": [
+        "ros-noetic-xgc2-gazebo-sim-px4-1-14"
+      ],
+      "apt_packages": [
+        "ros-noetic-xgc2-px4-sitl-1-14",
+        "ros-noetic-xgc2-gazebo-sim-px4-1-14"
+      ],
+      "apt_version_template": "",
+      "apt_versions": {
+        "focal": "1.14.4-7"
+      },
+      "expected_source_sha": "f9903f23a606f86ebf22b1b90ee7eb4bb6fa29d4",
+      "expected_version": "1.14.4-7",
+      "id": "xgc2-px4-sitl-114",
+      "inputs": {},
+      "layer": 1,
+      "ref": "v1.14-noetic",
+      "repository": "lxk36/xgc2-px4-sitl",
+      "skip_apt_verify": false,
+      "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/simulator/gazebo-sim/px4-sitl-114",
+      "source_sha": "f9903f23a606f86ebf22b1b90ee7eb4bb6fa29d4",
+      "version": "1.14.4-7",
+      "workflow": "release.yml",
+      "workflow_inputs": [
+        "expected_source_sha",
+        "expected_version",
+        "publish_apt",
+        "run_cpp_quality",
+        "run_source_tests"
+      ]
+    },
+    {
+      "action": "release",
+      "apt_distributions": [
+        "noble"
+      ],
+      "apt_install": [
+        "ros-jazzy-xgc2-gz-harmonic-px4-1-16"
+      ],
+      "apt_packages": [
+        "ros-jazzy-xgc2-px4-sitl-1-16",
+        "ros-jazzy-xgc2-gz-harmonic-px4-1-16"
+      ],
+      "apt_version_template": "",
+      "apt_versions": {
+        "noble": "1.16.2-2"
+      },
+      "expected_source_sha": "bb06eb871a8141f7a323c955821e851e75862e01",
+      "expected_version": "1.16.2-2",
+      "id": "xgc2-px4-sitl-116",
+      "inputs": {},
+      "layer": 1,
+      "ref": "v1.16-jazzy",
+      "repository": "lxk36/xgc2-px4-sitl",
+      "skip_apt_verify": false,
+      "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros2/simulator/px4-sitl-116",
+      "source_sha": "bb06eb871a8141f7a323c955821e851e75862e01",
+      "version": "1.16.2-2",
+      "workflow": "release.yml",
+      "workflow_inputs": [
+        "expected_source_sha",
+        "expected_version",
+        "publish_apt",
+        "run_cpp_quality",
+        "run_source_tests"
+      ]
+    },
+    {
+      "action": "release",
+      "apt_distributions": [
+        "focal"
+      ],
+      "apt_install": [
+        "ros-noetic-xgc2-ros1-utils"
+      ],
+      "apt_packages": [
+        "ros-noetic-xgc2-ros1-utils"
+      ],
+      "apt_version_template": "",
+      "apt_versions": {
+        "focal": "1.1.0-2"
+      },
+      "expected_source_sha": "7eadde71abb9eba56731b26986c7c28ff3a8a631",
+      "expected_version": "1.1.0-2",
+      "id": "xgc2-ros1-utils",
+      "inputs": {},
+      "layer": 1,
+      "ref": "noetic",
+      "repository": "lxk36/xgc2-ros1-utils",
+      "skip_apt_verify": false,
+      "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/common/ros1-utils",
+      "source_sha": "7eadde71abb9eba56731b26986c7c28ff3a8a631",
+      "version": "1.1.0-2",
+      "workflow": "release.yml",
+      "workflow_inputs": [
+        "expected_source_sha",
+        "expected_version",
+        "publish_apt",
+        "run_cpp_quality",
+        "run_source_tests"
+      ]
+    },
+    {
+      "action": "release",
+      "apt_distributions": [
+        "focal"
+      ],
+      "apt_install": [
+        "ros-noetic-xgc2-runtime-sync"
+      ],
+      "apt_packages": [
+        "ros-noetic-xgc2-runtime-sync"
+      ],
+      "apt_version_template": "",
+      "apt_versions": {
+        "focal": "1.6.2-2"
+      },
+      "expected_source_sha": "f3781325fce7a79d27c2bef33621a1318cc02ffc",
+      "expected_version": "1.6.2-2",
+      "id": "xgc2-runtime-sync",
+      "inputs": {},
+      "layer": 1,
+      "ref": "noetic",
+      "repository": "lxk36/xgc2-runtime-sync",
+      "skip_apt_verify": false,
+      "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/communication/runtime-sync",
+      "source_sha": "f3781325fce7a79d27c2bef33621a1318cc02ffc",
+      "version": "1.6.2-2",
+      "workflow": "release.yml",
+      "workflow_inputs": [
+        "expected_source_sha",
+        "expected_version",
+        "publish_apt",
+        "run_cpp_quality",
+        "run_source_tests"
+      ]
+    },
+    {
+      "action": "release",
+      "apt_distributions": [
+        "focal"
+      ],
+      "apt_install": [
+        "ros-noetic-swarm-sync-sim"
+      ],
+      "apt_packages": [
+        "ros-noetic-swarm-sync-sim",
+        "ros-noetic-sss-sim-env (>= 1.1.0-1)",
+        "ros-noetic-sss-px4-rotor-sim (>= 1.1.0-1)",
+        "ros-noetic-sss-tello-sim (>= 1.1.0-1)",
+        "ros-noetic-sss-ugv-sim (>= 1.1.0-1)",
+        "ros-noetic-sss-fw-plane-sim (>= 1.1.0-1)"
+      ],
+      "apt_version_template": "",
+      "apt_versions": {
+        "focal": "1.1.0-2"
+      },
+      "expected_source_sha": "ea5691ad4fa741619fbbe665fc6ab008a524a53f",
+      "expected_version": "1.1.0-2",
+      "id": "xgc2-swarm-sync-sim",
+      "inputs": {},
+      "layer": 1,
+      "ref": "master",
+      "repository": "lxk36/xgc2-swarm-sync-sim",
+      "skip_apt_verify": false,
+      "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/simulator/swarm-sync-sim",
+      "source_sha": "ea5691ad4fa741619fbbe665fc6ab008a524a53f",
+      "version": "1.1.0-2",
+      "workflow": "release.yml",
+      "workflow_inputs": [
+        "expected_source_sha",
+        "expected_version",
+        "publish_apt",
+        "run_cpp_quality",
+        "run_source_tests"
+      ]
+    },
+    {
+      "action": "release",
+      "apt_distributions": [
+        "focal",
+        "jammy",
+        "noble"
+      ],
+      "apt_install": [
+        "xgc2-tbb"
+      ],
+      "apt_packages": [
+        "xgc2-tbb"
+      ],
+      "apt_version_template": "",
+      "apt_versions": {
+        "focal": "0.1.0-2",
+        "jammy": "0.1.0-2",
+        "noble": "0.1.0-2"
+      },
+      "expected_source_sha": "cdeafbbba11f702df6db4825380d70b1e8b37597",
+      "expected_version": "0.1.0-2",
+      "id": "xgc2-tbb",
+      "inputs": {},
+      "layer": 1,
+      "ref": "master",
+      "repository": "lxk36/xgc2-tbb",
+      "skip_apt_verify": false,
+      "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/common/tbb",
+      "source_sha": "cdeafbbba11f702df6db4825380d70b1e8b37597",
+      "version": "0.1.0-2",
+      "workflow": "release.yml",
+      "workflow_inputs": [
+        "expected_source_sha",
+        "expected_version",
+        "publish_apt",
+        "run_cpp_quality",
+        "run_source_tests"
+      ]
+    },
+    {
+      "action": "release",
+      "apt_distributions": [
+        "focal"
+      ],
+      "apt_install": [
+        "ros-noetic-xgc2-estimator-hover-thrust"
+      ],
+      "apt_packages": [
+        "ros-noetic-xgc2-estimator-hover-thrust"
+      ],
+      "apt_version_template": "",
+      "apt_versions": {
+        "focal": "1.1.22-3"
+      },
+      "expected_source_sha": "120875e0ba13239f22d1101eb9b06bcc3ac0a71f",
+      "expected_version": "1.1.22-3",
+      "id": "xgc2-estimator-hover-thrust",
+      "inputs": {},
+      "layer": 2,
+      "ref": "noetic",
+      "repository": "lxk36/xgc2-estimator-hover-thrust",
+      "skip_apt_verify": false,
+      "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/perception/hover-thrust",
+      "source_sha": "120875e0ba13239f22d1101eb9b06bcc3ac0a71f",
+      "version": "1.1.22-3",
+      "workflow": "release.yml",
+      "workflow_inputs": [
+        "expected_source_sha",
+        "expected_version",
+        "publish_apt",
+        "run_cpp_quality",
+        "run_source_tests"
+      ]
+    },
+    {
+      "action": "release",
+      "apt_distributions": [
+        "focal"
+      ],
+      "apt_install": [
+        "ros-noetic-xgc2-estimator-rigid-state"
+      ],
+      "apt_packages": [
+        "ros-noetic-xgc2-estimator-rigid-state"
+      ],
+      "apt_version_template": "",
+      "apt_versions": {
+        "focal": "1.1.3-3"
+      },
+      "expected_source_sha": "98799879db4843b128e6a4fc32df1f7836635e65",
+      "expected_version": "1.1.3-3",
+      "id": "xgc2-estimator-rigid-state",
+      "inputs": {},
+      "layer": 2,
+      "ref": "noetic",
+      "repository": "lxk36/xgc2-estimator-rigid-state",
+      "skip_apt_verify": false,
+      "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/perception/rigid-state",
+      "source_sha": "98799879db4843b128e6a4fc32df1f7836635e65",
+      "version": "1.1.3-3",
+      "workflow": "release.yml",
+      "workflow_inputs": [
+        "expected_source_sha",
+        "expected_version",
+        "publish_apt",
+        "run_cpp_quality",
+        "run_source_tests"
+      ]
+    },
+    {
+      "action": "release",
+      "apt_distributions": [
+        "focal"
+      ],
+      "apt_install": [
+        "ros-noetic-xgc2-gazebo-sim-cerlab-uav"
+      ],
+      "apt_packages": [
+        "ros-noetic-xgc2-gazebo-sim-cerlab-uav"
+      ],
+      "apt_version_template": "",
+      "apt_versions": {
+        "focal": "1.1.0-2"
+      },
+      "expected_source_sha": "271d26e75ef1cdb3404ee9223d675584479bec62",
+      "expected_version": "1.1.0-2",
+      "id": "xgc2-gazebo-sim-cerlab-uav",
+      "inputs": {},
+      "layer": 2,
+      "ref": "noetic",
+      "repository": "lxk36/xgc2-cerlab-uav-sim",
+      "skip_apt_verify": false,
+      "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/simulator/gazebo-sim/cerlab-uav-sim",
+      "source_sha": "271d26e75ef1cdb3404ee9223d675584479bec62",
+      "version": "1.1.0-2",
+      "workflow": "release.yml",
+      "workflow_inputs": [
+        "expected_source_sha",
+        "expected_version",
+        "publish_apt",
+        "run_cpp_quality",
+        "run_source_tests"
+      ]
+    },
+    {
+      "action": "release",
+      "apt_distributions": [
+        "focal"
+      ],
+      "apt_install": [
+        "ros-noetic-xgc2-gazebo-sim-fs150-sitl"
+      ],
+      "apt_packages": [
+        "ros-noetic-xgc2-gazebo-sim-fs150-sitl"
+      ],
+      "apt_version_template": "",
+      "apt_versions": {
+        "focal": "1.1.0-2"
+      },
+      "expected_source_sha": "cc25614e7fec43e23af4576a02e2f5b8f90db7f3",
+      "expected_version": "1.1.0-2",
+      "id": "xgc2-gazebo-sim-fs150-sitl",
+      "inputs": {},
+      "layer": 2,
+      "ref": "noetic",
+      "repository": "lxk36/xgc2-fs150-sitl",
+      "skip_apt_verify": false,
+      "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/simulator/gazebo-sim/fs150-sitl",
+      "source_sha": "cc25614e7fec43e23af4576a02e2f5b8f90db7f3",
+      "version": "1.1.0-2",
+      "workflow": "release.yml",
+      "workflow_inputs": [
+        "expected_source_sha",
+        "expected_version",
+        "publish_apt",
+        "run_cpp_quality",
+        "run_source_tests"
+      ]
+    },
+    {
+      "action": "release",
+      "apt_distributions": [
+        "focal"
+      ],
+      "apt_install": [
+        "ros-noetic-xgc2-gazebo-sim-vrpn-bridge"
+      ],
+      "apt_packages": [
+        "ros-noetic-xgc2-gazebo-sim-vrpn-bridge"
+      ],
+      "apt_version_template": "",
+      "apt_versions": {
+        "focal": "1.1.0-3"
+      },
+      "expected_source_sha": "2030e11867c53f9a5cf2a417ba90002f680f19a0",
+      "expected_version": "1.1.0-3",
+      "id": "xgc2-gazebo-sim-vrpn-bridge",
+      "inputs": {},
+      "layer": 2,
+      "ref": "noetic",
+      "repository": "lxk36/xgc2-gazebo-sim-vrpn-bridge",
+      "skip_apt_verify": false,
+      "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/simulator/gazebo-sim/vrpn_bridge",
+      "source_sha": "2030e11867c53f9a5cf2a417ba90002f680f19a0",
+      "version": "1.1.0-3",
+      "workflow": "release.yml",
+      "workflow_inputs": [
+        "expected_source_sha",
+        "expected_version",
+        "publish_apt",
+        "run_cpp_quality",
+        "run_source_tests"
+      ]
+    },
+    {
+      "action": "release",
+      "apt_distributions": [
+        "focal"
+      ],
+      "apt_install": [
+        "ros-noetic-xgc2-scene-generation"
+      ],
+      "apt_packages": [
+        "ros-noetic-xgc2-scene-generation",
+        "ros-noetic-xgc2-geometry-msgs",
+        "ros-noetic-xgc2-cluttered-environment",
+        "ros-noetic-xgc2-mockamap"
+      ],
+      "apt_version_template": "",
+      "apt_versions": {
+        "focal": "1.1.4-2"
+      },
+      "expected_source_sha": "294f71c9750fc140e875bb57964235a33c973b94",
+      "expected_version": "1.1.4-2",
+      "id": "xgc2-scene-generation",
+      "inputs": {},
+      "layer": 2,
+      "ref": "noetic",
+      "repository": "lxk36/xgc2-scene-generation",
+      "skip_apt_verify": false,
+      "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/simulator/convex_geometry",
+      "source_sha": "294f71c9750fc140e875bb57964235a33c973b94",
+      "version": "1.1.4-2",
+      "workflow": "release.yml",
+      "workflow_inputs": [
+        "expected_source_sha",
+        "expected_version",
+        "publish_apt",
+        "run_cpp_quality",
+        "run_source_tests"
+      ]
+    },
+    {
+      "action": "release",
+      "apt_distributions": [
+        "focal"
+      ],
+      "apt_install": [
+        "ros-noetic-xgc2-slam"
+      ],
+      "apt_packages": [
+        "ros-noetic-xgc2-slam",
+        "ros-noetic-xgc2-fast-lio2",
+        "ros-noetic-xgc2-swarm-lio2",
+        "ros-noetic-xgc2-swarm-msgs",
+        "ros-noetic-xgc2-udp-bridge",
+        "ros-noetic-xgc2-point-lio",
+        "ros-noetic-xgc2-lio-sam",
+        "ros-noetic-xgc2-voxel-slam",
+        "ros-noetic-xgc2-voxelslam-pointcloud2"
+      ],
+      "apt_version_template": "",
+      "apt_versions": {
+        "focal": "1.1.0-2"
+      },
+      "expected_source_sha": "97afc208968c6763ecb0de1dc9514605a171200d",
+      "expected_version": "1.1.0-2",
+      "id": "xgc2-slam",
+      "inputs": {},
+      "layer": 2,
+      "ref": "noetic",
+      "repository": "lxk36/xgc2-slam",
+      "skip_apt_verify": false,
+      "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/perception/slam",
+      "source_sha": "97afc208968c6763ecb0de1dc9514605a171200d",
+      "version": "1.1.0-2",
+      "workflow": "release.yml",
+      "workflow_inputs": [
+        "expected_source_sha",
+        "expected_version",
+        "publish_apt",
+        "run_cpp_quality",
+        "run_source_tests"
+      ]
+    },
+    {
+      "action": "release",
+      "apt_distributions": [
+        "focal"
+      ],
+      "apt_install": [
+        "ros-noetic-xgc2-gazebo-sim-scout"
+      ],
+      "apt_packages": [
+        "ros-noetic-xgc2-scout-description",
+        "ros-noetic-xgc2-gazebo-sim-scout"
+      ],
+      "apt_version_template": "",
+      "apt_versions": {
+        "focal": "0.4.9-2"
+      },
+      "expected_source_sha": "8eb4a9d89f338bded71db64520f7d79c8774cc92",
+      "expected_version": "0.4.9-2",
+      "id": "xgc2-gazebo-sim-scout",
+      "inputs": {},
+      "layer": 3,
+      "ref": "xgc2-noetic",
+      "repository": "lxk36/xgc2-agilex",
+      "skip_apt_verify": false,
+      "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/simulator/gazebo-sim/agilex",
+      "source_sha": "8eb4a9d89f338bded71db64520f7d79c8774cc92",
+      "version": "0.4.9-2",
+      "workflow": "release.yml",
+      "workflow_inputs": [
+        "expected_source_sha",
+        "expected_version",
+        "publish_apt",
+        "run_cpp_quality",
+        "run_source_tests"
+      ]
+    },
+    {
+      "action": "release",
+      "apt_distributions": [
+        "focal"
+      ],
+      "apt_install": [
+        "ros-noetic-xgc2-multirotor-controller"
+      ],
+      "apt_packages": [
+        "ros-noetic-xgc2-multirotor-controller"
+      ],
+      "apt_version_template": "",
+      "apt_versions": {
+        "focal": "1.1.15-2"
+      },
+      "expected_source_sha": "7d84bcb9212aabfbd7135bf8ca48c31d1b2b0970",
+      "expected_version": "1.1.15-2",
+      "id": "xgc2-multirotor-controller",
+      "inputs": {},
+      "layer": 3,
+      "ref": "noetic",
+      "repository": "lxk36/xgc2-multirotor-controller",
+      "skip_apt_verify": false,
+      "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/controller/multirotor-controller",
+      "source_sha": "7d84bcb9212aabfbd7135bf8ca48c31d1b2b0970",
+      "version": "1.1.15-2",
+      "workflow": "release.yml",
+      "workflow_inputs": [
+        "expected_source_sha",
+        "expected_version",
+        "publish_apt",
+        "run_cpp_quality",
+        "run_source_tests"
+      ]
+    },
+    {
+      "action": "release",
+      "apt_distributions": [
+        "focal"
+      ],
+      "apt_install": [
+        "ros-noetic-xgc2-planner"
+      ],
+      "apt_packages": [
+        "ros-noetic-xgc2-planner",
+        "ros-noetic-xgc2-planner-all",
+        "ros-noetic-xgc2-planner-common",
+        "ros-noetic-xgc2-gcopter",
+        "ros-noetic-xgc2-jps3d",
+        "ros-noetic-xgc2-cerlab-planner",
+        "ros-noetic-xgc2-intent-mpc",
+        "ros-noetic-xgc2-mader",
+        "ros-noetic-xgc2-robust-mader",
+        "ros-noetic-xgc2-ego-planner",
+        "ros-noetic-xgc2-fast-planner"
+      ],
+      "apt_version_template": "",
+      "apt_versions": {
+        "focal": "1.1.0-2"
+      },
+      "expected_source_sha": "15127f7fcb67173649391ffc375aa9d567676d94",
+      "expected_version": "1.1.0-2",
+      "id": "xgc2-planner",
+      "inputs": {},
+      "layer": 3,
+      "ref": "noetic",
+      "repository": "lxk36/xgc2-planner",
+      "skip_apt_verify": false,
+      "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/planner/planner",
+      "source_sha": "15127f7fcb67173649391ffc375aa9d567676d94",
+      "version": "1.1.0-2",
+      "workflow": "release.yml",
+      "workflow_inputs": [
+        "expected_source_sha",
+        "expected_version",
+        "publish_apt",
+        "run_cpp_quality",
+        "run_source_tests"
+      ]
+    },
+    {
+      "action": "release",
+      "apt_distributions": [
+        "focal"
+      ],
+      "apt_install": [
+        "ros-noetic-xgc2-ugv-controller"
+      ],
+      "apt_packages": [
+        "ros-noetic-xgc2-ugv-controller"
+      ],
+      "apt_version_template": "",
+      "apt_versions": {
+        "focal": "1.1.1-2"
+      },
+      "expected_source_sha": "1ee447593b0344192d7406db9c81f11722588fd7",
+      "expected_version": "1.1.1-2",
+      "id": "xgc2-ugv-controller",
+      "inputs": {},
+      "layer": 3,
+      "ref": "noetic",
+      "repository": "lxk36/xgc2-ugv-controller",
+      "skip_apt_verify": false,
+      "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/controller/ugv-controller",
+      "source_sha": "1ee447593b0344192d7406db9c81f11722588fd7",
+      "version": "1.1.1-2",
+      "workflow": "release.yml",
+      "workflow_inputs": [
+        "expected_source_sha",
+        "expected_version",
+        "publish_apt",
+        "run_cpp_quality",
+        "run_source_tests"
+      ]
+    },
+    {
+      "action": "release",
+      "apt_distributions": [
+        "focal"
+      ],
+      "apt_install": [
+        "ros-noetic-xgc2-controller"
+      ],
+      "apt_packages": [
+        "ros-noetic-xgc2-controller"
+      ],
+      "apt_version_template": "",
+      "apt_versions": {
+        "focal": "1.3.14-2"
+      },
+      "expected_source_sha": "1a7d17171f2645a1bc4a64c989bf20aa96278007",
+      "expected_version": "1.3.14-2",
+      "id": "xgc2-controller",
+      "inputs": {},
+      "layer": 4,
+      "ref": "noetic",
+      "repository": "lxk36/xgc2-controller",
+      "skip_apt_verify": false,
+      "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/controller",
+      "source_sha": "1a7d17171f2645a1bc4a64c989bf20aa96278007",
+      "version": "1.3.14-2",
+      "workflow": "release.yml",
+      "workflow_inputs": [
+        "expected_source_sha",
+        "expected_version",
+        "publish_apt",
+        "run_cpp_quality",
+        "run_source_tests"
+      ]
+    },
+    {
+      "action": "release",
+      "apt_distributions": [
+        "focal"
+      ],
+      "apt_install": [
+        "ros-noetic-xgc2-gazebo-sim-visualization"
+      ],
+      "apt_packages": [
+        "ros-noetic-xgc2-gazebo-sim-visualization"
+      ],
+      "apt_version_template": "",
+      "apt_versions": {
+        "focal": "1.1.0-3"
+      },
+      "expected_source_sha": "fd7f8302bea5c2188c1b4da441a771d71e96cb7c",
+      "expected_version": "1.1.0-3",
+      "id": "xgc2-gazebo-sim-visualization",
+      "inputs": {},
+      "layer": 4,
+      "ref": "noetic",
+      "repository": "lxk36/xgc2-gazebo-sim-visualization",
+      "skip_apt_verify": false,
+      "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/simulator/gazebo-sim/visualization",
+      "source_sha": "fd7f8302bea5c2188c1b4da441a771d71e96cb7c",
+      "version": "1.1.0-3",
+      "workflow": "release.yml",
+      "workflow_inputs": [
+        "expected_source_sha",
+        "expected_version",
+        "publish_apt",
+        "run_cpp_quality",
+        "run_source_tests"
+      ]
+    },
+    {
+      "action": "release",
+      "apt_distributions": [
+        "focal"
+      ],
+      "apt_install": [
+        "ros-noetic-xgc2-gazebo-sim-manager",
+        "ros-noetic-xgc2-gazebo-sim-examples"
+      ],
+      "apt_packages": [
+        "ros-noetic-xgc2-gazebo-sim-manager",
+        "ros-noetic-xgc2-gazebo-sim-examples"
+      ],
+      "apt_version_template": "",
+      "apt_versions": {
+        "focal": "1.1.0-4"
+      },
+      "expected_source_sha": "4a68c5106cbff9129134bb3cd3bf74d2c3f88911",
+      "expected_version": "1.1.0-4",
+      "id": "xgc2-gazebo-sim-tools",
+      "inputs": {},
+      "layer": 5,
+      "ref": "noetic",
+      "repository": "lxk36/xgc2-gazebo-sim-tools",
+      "skip_apt_verify": false,
+      "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/simulator/gazebo-sim-tools",
+      "source_sha": "4a68c5106cbff9129134bb3cd3bf74d2c3f88911",
+      "version": "1.1.0-4",
+      "workflow": "release.yml",
+      "workflow_inputs": [
+        "expected_source_sha",
+        "expected_version",
+        "publish_apt",
+        "run_cpp_quality",
+        "run_source_tests"
+      ]
+    },
+    {
+      "action": "release",
+      "apt_distributions": [
+        "focal"
+      ],
+      "apt_install": [
+        "ros-noetic-xgc2-gazebo-sim"
+      ],
+      "apt_packages": [
+        "ros-noetic-xgc2-gazebo-sim",
+        "ros-noetic-xgc2-gazebo-sim-all"
+      ],
+      "apt_version_template": "",
+      "apt_versions": {
+        "focal": "1.1.0-6"
+      },
+      "expected_source_sha": "aa71210a39b301762f602197a180e4ae2f0e77d6",
+      "expected_version": "1.1.0-6",
+      "id": "xgc2-gazebo-sim",
+      "inputs": {},
+      "layer": 6,
+      "ref": "noetic",
+      "repository": "lxk36/xgc2-gazebo-sim",
+      "skip_apt_verify": false,
+      "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/simulator/gazebo-sim",
+      "source_sha": "aa71210a39b301762f602197a180e4ae2f0e77d6",
+      "version": "1.1.0-6",
+      "workflow": "release.yml",
+      "workflow_inputs": [
+        "expected_source_sha",
+        "expected_version",
+        "publish_apt",
+        "run_cpp_quality",
+        "run_source_tests"
+      ]
+    }
+  ],
+  "schema": "xgc2.release-lock.v1"
+}
