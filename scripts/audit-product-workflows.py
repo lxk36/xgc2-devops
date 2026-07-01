@@ -29,6 +29,12 @@ PUSH_QUALITY_GATE_JOBS = {
     "formatting-check",
     "package-compliance",
 }
+BUILD_ARTIFACT_JOB_MARKERS = {
+    "actions/upload-artifact",
+    "build_deb.sh",
+    "package_debs.sh",
+    "dpkg-deb",
+}
 
 
 def workflow_has_event(text: str, event: str) -> bool:
@@ -105,7 +111,49 @@ def workflow_input_defaults(text: str) -> dict[str, str]:
     return defaults
 
 
-def workflow_quality_needs(text: str) -> set[str]:
+def workflow_job_blocks(text: str) -> dict[str, str]:
+    jobs: dict[str, str] = {}
+    lines = text.splitlines()
+    in_jobs = False
+    current_job = ""
+    current_lines: list[str] = []
+    for line in lines:
+        if re.match(r"^jobs\s*:", line):
+            in_jobs = True
+            continue
+        if not in_jobs:
+            continue
+        if line and not line.startswith(" "):
+            break
+        match = re.match(r"^  ([A-Za-z_][A-Za-z0-9_-]*)\s*:\s*$", line)
+        if match:
+            if current_job:
+                jobs[current_job] = "\n".join(current_lines)
+            current_job = match.group(1)
+            current_lines = [line]
+            continue
+        if current_job:
+            current_lines.append(line)
+    if current_job:
+        jobs[current_job] = "\n".join(current_lines)
+    return jobs
+
+
+def workflow_pure_quality_jobs(text: str) -> set[str]:
+    jobs = workflow_job_blocks(text)
+    pure_quality_jobs: set[str] = set()
+    for name, body in jobs.items():
+        if name not in PUSH_QUALITY_GATE_JOBS:
+            continue
+        if any(marker in body for marker in BUILD_ARTIFACT_JOB_MARKERS):
+            continue
+        pure_quality_jobs.add(name)
+    return pure_quality_jobs
+
+
+def workflow_quality_needs(text: str, quality_jobs: set[str] | None = None) -> set[str]:
+    if quality_jobs is None:
+        quality_jobs = workflow_pure_quality_jobs(text)
     matches: set[str] = set()
     lines = text.splitlines()
     index = 0
@@ -120,7 +168,7 @@ def workflow_quality_needs(text: str) -> set[str]:
         value = stripped.split(":", 1)[1].strip()
         if value:
             for item in re.findall(r"[A-Za-z0-9_-]+", value):
-                if item in PUSH_QUALITY_GATE_JOBS:
+                if item in quality_jobs:
                     matches.add(item)
             index += 1
             continue
@@ -133,7 +181,7 @@ def workflow_quality_needs(text: str) -> set[str]:
             if child_stripped and child_indent <= indent:
                 break
             item_match = re.match(r"^\s*-\s*([A-Za-z0-9_-]+)\s*$", child)
-            if item_match and item_match.group(1) in PUSH_QUALITY_GATE_JOBS:
+            if item_match and item_match.group(1) in quality_jobs:
                 matches.add(item_match.group(1))
             index += 1
     return matches
@@ -176,16 +224,11 @@ def push_runs_cpp_quality(root: Path, source_dir: Path) -> bool:
     return "check_cpp_quality.sh" in text
 
 
-def push_quality_gates_other_jobs(source_dir: Path) -> set[str]:
-    ci_workflow = source_dir / ".github" / "workflows" / "ci.yml"
-    if not ci_workflow.exists():
-        ci_workflow = source_dir / ".github" / "workflows" / "ci.yaml"
-    if not ci_workflow.exists():
+def workflow_quality_gates_other_jobs(workflow: Path) -> set[str]:
+    if not workflow.exists():
         return set()
 
-    text = ci_workflow.read_text(encoding="utf-8", errors="ignore")
-    if not workflow_has_event(text, "push"):
-        return set()
+    text = workflow.read_text(encoding="utf-8", errors="ignore")
     return workflow_quality_needs(text)
 
 
@@ -241,20 +284,6 @@ def audit_product(root: Path, product: dict[str, Any]) -> list[dict[str, str]]:
                 "message": "push CI must run .xgc2/scripts/check_cpp_quality.sh",
             }
         )
-    quality_needs = push_quality_gates_other_jobs(source_dir)
-    if quality_needs:
-        issues.append(
-            {
-                "product": str(product["id"]),
-                "severity": "error",
-                "code": "push-quality-gates-build",
-                "path": (workflow_dir / "ci.yml").relative_to(root).as_posix(),
-                "message": (
-                    "push quality/compliance jobs must run in parallel, not as another "
-                    "job's needs: " + ", ".join(sorted(quality_needs))
-                ),
-            }
-        )
     if push_requires_version_bump(source_dir):
         issues.append(
             {
@@ -280,6 +309,20 @@ def audit_product(root: Path, product: dict[str, Any]) -> list[dict[str, str]]:
 
     for workflow in workflows:
         text = workflow.read_text(encoding="utf-8", errors="ignore")
+        quality_needs = workflow_quality_gates_other_jobs(workflow)
+        if quality_needs:
+            issues.append(
+                {
+                    "product": str(product["id"]),
+                    "severity": "error",
+                    "code": "workflow-quality-gates-build",
+                    "path": workflow.relative_to(root).as_posix(),
+                    "message": (
+                        "pure quality/compliance jobs must run in parallel, not as another "
+                        "job's needs: " + ", ".join(sorted(quality_needs))
+                    ),
+                }
+            )
         if push_can_publish_apt(text):
             issues.append(
                 {

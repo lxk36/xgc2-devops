@@ -28,7 +28,7 @@
         "jammy": "0.5.5-2",
         "noble": "0.5.5-2"
       },
-      "expected_source_sha": "ad0adb84e861a40bca08baa9185b85b832a7115f",
+      "expected_source_sha": "b58b48a9a904228a45be2c7cf6bbe5484b234399",
       "expected_version": "0.5.5-2",
       "id": "libxgc2-math-dev",
       "inputs": {},
@@ -37,7 +37,7 @@
       "repository": "lxk36/xgc2-math",
       "skip_apt_verify": false,
       "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/common/math",
-      "source_sha": "ad0adb84e861a40bca08baa9185b85b832a7115f",
+      "source_sha": "b58b48a9a904228a45be2c7cf6bbe5484b234399",
       "version": "0.5.5-2",
       "workflow": "release.yml",
       "workflow_inputs": [
@@ -67,7 +67,7 @@
         "jammy": "0.1.2-2~jammy",
         "noble": "0.1.2-2~noble"
       },
-      "expected_source_sha": "dc50d91aa5e0e86d3ab2fa328a648451c470e1d6",
+      "expected_source_sha": "282e705cab0bac92c216fae2449eb9a30e2b4d3b",
       "expected_version": "0.1.2-2",
       "id": "libxgc2-state-machine-dev",
       "inputs": {},
@@ -76,7 +76,7 @@
       "repository": "lxk36/xgc2-state-machine",
       "skip_apt_verify": false,
       "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/common/state-machine",
-      "source_sha": "dc50d91aa5e0e86d3ab2fa328a648451c470e1d6",
+      "source_sha": "282e705cab0bac92c216fae2449eb9a30e2b4d3b",
       "version": "0.1.2-2",
       "workflow": "release.yml",
       "workflow_inputs": [
@@ -102,7 +102,7 @@
       "apt_versions": {
         "focal": "2.6.0-2"
       },
-      "expected_source_sha": "fd25efbd8e4c1db72a0b4f0025e988dd90d7c832",
+      "expected_source_sha": "468dc29bc9a16ef53b752fc7e015c9b908616d39",
       "expected_version": "2.6.0-2",
       "id": "livox-ros-driver",
       "inputs": {},
@@ -111,7 +111,7 @@
       "repository": "lxk36/livox_ros_driver",
       "skip_apt_verify": false,
       "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/driver/livox_ros_driver",
-      "source_sha": "fd25efbd8e4c1db72a0b4f0025e988dd90d7c832",
+      "source_sha": "468dc29bc9a16ef53b752fc7e015c9b908616d39",
       "version": "2.6.0-2",
       "workflow": "release.yml",
       "workflow_inputs": [
@@ -137,7 +137,7 @@
       "apt_versions": {
         "focal": "1.2.6-2"
       },
-      "expected_source_sha": "5efe1a1c6217f853d0e055882195dff005020957",
+      "expected_source_sha": "95caa2cb233ef859d1fa05a919685df9b26b2f44",
       "expected_version": "1.2.6-2",
       "id": "livox-ros-driver2",
       "inputs": {},
@@ -146,7 +146,7 @@
       "repository": "lxk36/livox_ros_driver2",
       "skip_apt_verify": false,
       "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/driver/livox_ros_driver2",
-      "source_sha": "5efe1a1c6217f853d0e055882195dff005020957",
+      "source_sha": "95caa2cb233ef859d1fa05a919685df9b26b2f44",
       "version": "1.2.6-2",
       "workflow": "release.yml",
       "workflow_inputs": [
@@ -210,7 +210,7 @@
         "jammy": "0.1.0-4~jammy",
         "noble": "0.1.0-4~noble"
       },
-      "expected_source_sha": "a4b60b3f92730ec4fad52d7cdaf482b8561c9e4a",
+      "expected_source_sha": "cf37278131eb016603fcd487532f91dc0e50d18f",
       "expected_version": "0.1.0-4",
       "id": "xgc2-acados",
       "inputs": {},
@@ -219,7 +219,7 @@
       "repository": "lxk36/xgc2-acados",
       "skip_apt_verify": false,
       "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/common/acados",
-      "source_sha": "a4b60b3f92730ec4fad52d7cdaf482b8561c9e4a",
+      "source_sha": "cf37278131eb016603fcd487532f91dc0e50d18f",
       "version": "0.1.0-4",
       "workflow": "release.yml",
       "workflow_inputs": [
@@ -248,7 +248,7 @@
       "apt_versions": {
         "focal": "1.1.0-2"
       },
-      "expected_source_sha": "e50a5a2ad7623575863385e0ea6533bee65a6ecc",
+      "expected_source_sha": "60c52be07e793db851921e95edac0d63b572fcb7",
       "expected_version": "1.1.0-2",
       "id": "xgc2-detection",
       "inputs": {},
@@ -257,7 +257,7 @@
       "repository": "lxk36/xgc2-detection",
       "skip_apt_verify": false,
       "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/perception/detection",
-      "source_sha": "e50a5a2ad7623575863385e0ea6533bee65a6ecc",
+      "source_sha": "60c52be07e793db851921e95edac0d63b572fcb7",
       "version": "1.1.0-2",
       "workflow": "release.yml",
       "workflow_inputs": [
@@ -318,7 +318,7 @@
       "apt_versions": {
         "focal": "1.1.0-2"
       },
-      "expected_source_sha": "1611923349fa3580c65c8fa37d32c2f30095ecbf",
+      "expected_source_sha": "3f29e7c1e73a6c42abc1828c3a9dcda015c2f5d8",
       "expected_version": "1.1.0-2",
       "id": "xgc2-linux-utils",
       "inputs": {},
@@ -327,7 +327,7 @@
       "repository": "lxk36/xgc2-linux-utils",
       "skip_apt_verify": false,
       "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/manager/linux-utils",
-      "source_sha": "1611923349fa3580c65c8fa37d32c2f30095ecbf",
+      "source_sha": "3f29e7c1e73a6c42abc1828c3a9dcda015c2f5d8",
       "version": "1.1.0-2",
       "workflow": "release.yml",
       "workflow_inputs": [
@@ -357,7 +357,7 @@
         "jammy": "3.0.0-2+jammy",
         "noble": "3.0.0-2+noble"
       },
-      "expected_source_sha": "959c8102fd2136b0d99950e45c0eaeffda5fb32c",
+      "expected_source_sha": "43af8fe3a38a4586a6ffab5658c7e8e967559bcb",
       "expected_version": "3.0.0-2",
       "id": "xgc2-mavlink-router",
       "inputs": {},
@@ -366,7 +366,7 @@
       "repository": "lxk36/xgc2-mavlink-router",
       "skip_apt_verify": false,
       "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/common/mavlink-router",
-      "source_sha": "959c8102fd2136b0d99950e45c0eaeffda5fb32c",
+      "source_sha": "43af8fe3a38a4586a6ffab5658c7e8e967559bcb",
       "version": "3.0.0-2",
       "workflow": "release.yml",
       "workflow_inputs": [
@@ -535,7 +535,7 @@
       "apt_versions": {
         "focal": "1.6.2-2"
       },
-      "expected_source_sha": "f3781325fce7a79d27c2bef33621a1318cc02ffc",
+      "expected_source_sha": "fcb5cf48ce0e5bb3e1657646e89f2a3724617f96",
       "expected_version": "1.6.2-2",
       "id": "xgc2-runtime-sync",
       "inputs": {},
@@ -544,7 +544,7 @@
       "repository": "lxk36/xgc2-runtime-sync",
       "skip_apt_verify": false,
       "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/communication/runtime-sync",
-      "source_sha": "f3781325fce7a79d27c2bef33621a1318cc02ffc",
+      "source_sha": "fcb5cf48ce0e5bb3e1657646e89f2a3724617f96",
       "version": "1.6.2-2",
       "workflow": "release.yml",
       "workflow_inputs": [
@@ -575,7 +575,7 @@
       "apt_versions": {
         "focal": "1.1.0-2"
       },
-      "expected_source_sha": "ea5691ad4fa741619fbbe665fc6ab008a524a53f",
+      "expected_source_sha": "38057efbfd6038056f1178bf06d9549185ecb8e1",
       "expected_version": "1.1.0-2",
       "id": "xgc2-swarm-sync-sim",
       "inputs": {},
@@ -584,7 +584,7 @@
       "repository": "lxk36/xgc2-swarm-sync-sim",
       "skip_apt_verify": false,
       "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/simulator/swarm-sync-sim",
-      "source_sha": "ea5691ad4fa741619fbbe665fc6ab008a524a53f",
+      "source_sha": "38057efbfd6038056f1178bf06d9549185ecb8e1",
       "version": "1.1.0-2",
       "workflow": "release.yml",
       "workflow_inputs": [
@@ -614,7 +614,7 @@
         "jammy": "0.1.0-2",
         "noble": "0.1.0-2"
       },
-      "expected_source_sha": "cdeafbbba11f702df6db4825380d70b1e8b37597",
+      "expected_source_sha": "e25ad63f0fb0dbd3a3784109156a6f7660078ecb",
       "expected_version": "0.1.0-2",
       "id": "xgc2-tbb",
       "inputs": {},
@@ -623,7 +623,7 @@
       "repository": "lxk36/xgc2-tbb",
       "skip_apt_verify": false,
       "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/common/tbb",
-      "source_sha": "cdeafbbba11f702df6db4825380d70b1e8b37597",
+      "source_sha": "e25ad63f0fb0dbd3a3784109156a6f7660078ecb",
       "version": "0.1.0-2",
       "workflow": "release.yml",
       "workflow_inputs": [
@@ -649,7 +649,7 @@
       "apt_versions": {
         "focal": "1.1.22-3"
       },
-      "expected_source_sha": "120875e0ba13239f22d1101eb9b06bcc3ac0a71f",
+      "expected_source_sha": "48e413fad67bbf360ecda6499ad8ac616f5bdb7a",
       "expected_version": "1.1.22-3",
       "id": "xgc2-estimator-hover-thrust",
       "inputs": {},
@@ -658,7 +658,7 @@
       "repository": "lxk36/xgc2-estimator-hover-thrust",
       "skip_apt_verify": false,
       "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/perception/hover-thrust",
-      "source_sha": "120875e0ba13239f22d1101eb9b06bcc3ac0a71f",
+      "source_sha": "48e413fad67bbf360ecda6499ad8ac616f5bdb7a",
       "version": "1.1.22-3",
       "workflow": "release.yml",
       "workflow_inputs": [
@@ -684,7 +684,7 @@
       "apt_versions": {
         "focal": "1.1.3-3"
       },
-      "expected_source_sha": "98799879db4843b128e6a4fc32df1f7836635e65",
+      "expected_source_sha": "3ab1e0d412d2b56f023f7037cadc8fd3fb0997ab",
       "expected_version": "1.1.3-3",
       "id": "xgc2-estimator-rigid-state",
       "inputs": {},
@@ -693,7 +693,7 @@
       "repository": "lxk36/xgc2-estimator-rigid-state",
       "skip_apt_verify": false,
       "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/perception/rigid-state",
-      "source_sha": "98799879db4843b128e6a4fc32df1f7836635e65",
+      "source_sha": "3ab1e0d412d2b56f023f7037cadc8fd3fb0997ab",
       "version": "1.1.3-3",
       "workflow": "release.yml",
       "workflow_inputs": [
@@ -827,7 +827,7 @@
       "apt_versions": {
         "focal": "1.1.4-2"
       },
-      "expected_source_sha": "294f71c9750fc140e875bb57964235a33c973b94",
+      "expected_source_sha": "a43a30d7c1c4ce686b8e6046db39ed61a579703b",
       "expected_version": "1.1.4-2",
       "id": "xgc2-scene-generation",
       "inputs": {},
@@ -836,7 +836,7 @@
       "repository": "lxk36/xgc2-scene-generation",
       "skip_apt_verify": false,
       "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/simulator/convex_geometry",
-      "source_sha": "294f71c9750fc140e875bb57964235a33c973b94",
+      "source_sha": "a43a30d7c1c4ce686b8e6046db39ed61a579703b",
       "version": "1.1.4-2",
       "workflow": "release.yml",
       "workflow_inputs": [
@@ -870,7 +870,7 @@
       "apt_versions": {
         "focal": "1.1.0-2"
       },
-      "expected_source_sha": "97afc208968c6763ecb0de1dc9514605a171200d",
+      "expected_source_sha": "837e71aa59ea1f72e4c8d6a95675471b1c3208eb",
       "expected_version": "1.1.0-2",
       "id": "xgc2-slam",
       "inputs": {},
@@ -879,7 +879,7 @@
       "repository": "lxk36/xgc2-slam",
       "skip_apt_verify": false,
       "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/perception/slam",
-      "source_sha": "97afc208968c6763ecb0de1dc9514605a171200d",
+      "source_sha": "837e71aa59ea1f72e4c8d6a95675471b1c3208eb",
       "version": "1.1.0-2",
       "workflow": "release.yml",
       "workflow_inputs": [
@@ -941,7 +941,7 @@
       "apt_versions": {
         "focal": "1.1.15-2"
       },
-      "expected_source_sha": "7d84bcb9212aabfbd7135bf8ca48c31d1b2b0970",
+      "expected_source_sha": "ade325b55608a782897d9c8931e755e0539b6981",
       "expected_version": "1.1.15-2",
       "id": "xgc2-multirotor-controller",
       "inputs": {},
@@ -950,7 +950,7 @@
       "repository": "lxk36/xgc2-multirotor-controller",
       "skip_apt_verify": false,
       "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/controller/multirotor-controller",
-      "source_sha": "7d84bcb9212aabfbd7135bf8ca48c31d1b2b0970",
+      "source_sha": "ade325b55608a782897d9c8931e755e0539b6981",
       "version": "1.1.15-2",
       "workflow": "release.yml",
       "workflow_inputs": [
@@ -986,7 +986,7 @@
       "apt_versions": {
         "focal": "1.1.0-2"
       },
-      "expected_source_sha": "15127f7fcb67173649391ffc375aa9d567676d94",
+      "expected_source_sha": "a08321e8954adb8d153ef8f709f3ba76cc85ccdc",
       "expected_version": "1.1.0-2",
       "id": "xgc2-planner",
       "inputs": {},
@@ -995,7 +995,7 @@
       "repository": "lxk36/xgc2-planner",
       "skip_apt_verify": false,
       "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/planner/planner",
-      "source_sha": "15127f7fcb67173649391ffc375aa9d567676d94",
+      "source_sha": "a08321e8954adb8d153ef8f709f3ba76cc85ccdc",
       "version": "1.1.0-2",
       "workflow": "release.yml",
       "workflow_inputs": [
@@ -1021,7 +1021,7 @@
       "apt_versions": {
         "focal": "1.1.1-2"
       },
-      "expected_source_sha": "1ee447593b0344192d7406db9c81f11722588fd7",
+      "expected_source_sha": "fe46a0ed67c9210c53b5a3d8545d5b4a60b1d67e",
       "expected_version": "1.1.1-2",
       "id": "xgc2-ugv-controller",
       "inputs": {},
@@ -1030,7 +1030,7 @@
       "repository": "lxk36/xgc2-ugv-controller",
       "skip_apt_verify": false,
       "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/controller/ugv-controller",
-      "source_sha": "1ee447593b0344192d7406db9c81f11722588fd7",
+      "source_sha": "fe46a0ed67c9210c53b5a3d8545d5b4a60b1d67e",
       "version": "1.1.1-2",
       "workflow": "release.yml",
       "workflow_inputs": [
@@ -1056,7 +1056,7 @@
       "apt_versions": {
         "focal": "1.3.14-2"
       },
-      "expected_source_sha": "1a7d17171f2645a1bc4a64c989bf20aa96278007",
+      "expected_source_sha": "4cb769be88a5abc774db3a35c65a3d7ae388ca0e",
       "expected_version": "1.3.14-2",
       "id": "xgc2-controller",
       "inputs": {},
@@ -1065,7 +1065,7 @@
       "repository": "lxk36/xgc2-controller",
       "skip_apt_verify": false,
       "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/controller",
-      "source_sha": "1a7d17171f2645a1bc4a64c989bf20aa96278007",
+      "source_sha": "4cb769be88a5abc774db3a35c65a3d7ae388ca0e",
       "version": "1.3.14-2",
       "workflow": "release.yml",
       "workflow_inputs": [
