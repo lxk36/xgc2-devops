@@ -12,6 +12,9 @@ if [[ -n "${SUBMODULE_SSH_KEY:-}" ]]; then
   ssh-keyscan github.com >> "${HOME}/.ssh/known_hosts"
   git config --global core.sshCommand \
     "ssh -i ${key_file} -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
+elif [[ -n "${GH_TOKEN:-}" ]]; then
+  git config --global \
+    url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf git@github.com:
 else
   git config --global url."https://github.com/".insteadOf git@github.com:
 fi
