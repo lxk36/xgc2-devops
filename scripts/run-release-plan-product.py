@@ -63,7 +63,20 @@ def trigger(product: dict[str, Any], *, quality_required: bool, source_tests: bo
         command.extend(["-f", f"{name}={value}"])
 
     triggered_after = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time() - 10))
-    run(command, check=True)
+    result = run(command, check=False)
+    if result.returncode != 0:
+        details = "\n".join(
+            part
+            for part in (
+                result.stdout.strip(),
+                result.stderr.strip(),
+            )
+            if part
+        )
+        raise RuntimeError(
+            f"{product['id']}: failed to dispatch {product['repository']} "
+            f"{product['workflow']} at {product['ref']}: {details}"
+        )
     return find_workflow_run(product, triggered_after)
 
 
