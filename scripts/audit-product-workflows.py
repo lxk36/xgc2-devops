@@ -77,6 +77,33 @@ def push_can_publish_apt(text: str) -> bool:
     return not guarded_dispatch
 
 
+def push_runs_cpp_quality(root: Path, source_dir: Path) -> bool:
+    ci_workflow = source_dir / ".github" / "workflows" / "ci.yml"
+    if not ci_workflow.exists():
+        ci_workflow = source_dir / ".github" / "workflows" / "ci.yaml"
+    if not ci_workflow.exists():
+        return False
+
+    text = ci_workflow.read_text(encoding="utf-8", errors="ignore")
+    if not workflow_has_event(text, "push"):
+        return False
+    return "check_cpp_quality.sh" in text
+
+
+def push_cpp_quality_gates_other_jobs(source_dir: Path) -> bool:
+    ci_workflow = source_dir / ".github" / "workflows" / "ci.yml"
+    if not ci_workflow.exists():
+        ci_workflow = source_dir / ".github" / "workflows" / "ci.yaml"
+    if not ci_workflow.exists():
+        return False
+
+    text = ci_workflow.read_text(encoding="utf-8", errors="ignore")
+    return bool(
+        re.search(r"(?m)^\s*needs:\s*cpp-quality\s*$", text)
+        or re.search(r"(?m)^\s*-\s*cpp-quality\s*$", text)
+    )
+
+
 def list_field(data: dict[str, Any], *path: str) -> list[str]:
     value: Any = data
     for key in path:
@@ -107,6 +134,27 @@ def audit_product(root: Path, product: dict[str, Any]) -> list[dict[str, str]]:
 
     workflows = sorted(workflow_dir.glob("*.yml")) + sorted(workflow_dir.glob("*.yaml"))
     release_workflow = workflow_dir / "release.yml"
+    cpp_quality_script = source_dir / ".xgc2" / "scripts" / "check_cpp_quality.sh"
+    if cpp_quality_script.exists() and not push_runs_cpp_quality(root, source_dir):
+        issues.append(
+            {
+                "product": str(product["id"]),
+                "severity": "error",
+                "code": "push-cpp-quality-disabled",
+                "path": (workflow_dir / "ci.yml").relative_to(root).as_posix(),
+                "message": "push CI must run .xgc2/scripts/check_cpp_quality.sh",
+            }
+        )
+    if cpp_quality_script.exists() and push_cpp_quality_gates_other_jobs(source_dir):
+        issues.append(
+            {
+                "product": str(product["id"]),
+                "severity": "error",
+                "code": "push-cpp-quality-gates-build",
+                "path": (workflow_dir / "ci.yml").relative_to(root).as_posix(),
+                "message": "push C++ quality must run in parallel, not as another job's needs",
+            }
+        )
     release_config = product.get("release") if isinstance(product.get("release"), dict) else {}
     has_configured_workflow = bool(release_config.get("workflow"))
     if not has_configured_workflow and not release_workflow.exists():
