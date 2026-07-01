@@ -311,8 +311,30 @@ def workflow_input_names(path: Path | None) -> set[str]:
         return set()
     text = path.read_text(encoding="utf-8", errors="ignore")
     names: set[str] = set()
-    for match in re.finditer(r"^\s{6}([A-Za-z_][A-Za-z0-9_-]*):", text, flags=re.MULTILINE):
-        names.add(match.group(1))
+    in_dispatch = False
+    dispatch_indent = 0
+    in_inputs = False
+    inputs_indent = 0
+    for line in text.splitlines():
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        indent = len(line) - len(line.lstrip(" "))
+        if in_inputs and indent <= inputs_indent:
+            in_inputs = False
+        if in_dispatch and indent <= dispatch_indent:
+            in_dispatch = False
+        if not in_dispatch and re.match(r"^\s*workflow_dispatch\s*:", line):
+            in_dispatch = True
+            dispatch_indent = indent
+            continue
+        if in_dispatch and not in_inputs and re.match(r"^\s*inputs\s*:", line):
+            in_inputs = True
+            inputs_indent = indent
+            continue
+        if in_inputs and indent == inputs_indent + 2:
+            match = re.match(r"^\s*([A-Za-z_][A-Za-z0-9_-]*)\s*:", line)
+            if match:
+                names.add(match.group(1))
     return names
 
 
@@ -446,8 +468,14 @@ def product_plan_json(layers: list[list[str]], targets: dict[str, ReleaseTarget]
                     "repository": targets[product_id].repository,
                     "ref": targets[product_id].ref,
                     "workflow": targets[product_id].workflow,
+                    "workflow_inputs": sorted(
+                        workflow_input_names(targets[product_id].workflow_path)
+                    ),
                     "inputs": targets[product_id].dispatch_inputs,
-                    "apt_packages": list(targets[product_id].product.apt_packages),
+                    "apt_packages": list(
+                        targets[product_id].product.apt_packages
+                        or targets[product_id].product.apt_install
+                    ),
                     "apt_distributions": list(targets[product_id].product.apt_distributions),
                 }
                 for product_id in layer

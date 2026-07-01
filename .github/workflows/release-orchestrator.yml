@@ -41,8 +41,27 @@ on:
         type: boolean
 
 jobs:
-  orchestrate:
+  plan:
+    name: release / plan
     runs-on: ubuntu-latest
+    outputs:
+      layer_count: ${{ steps.layer_outputs.outputs.layer_count }}
+      layer_1_count: ${{ steps.layer_outputs.outputs.layer_1_count }}
+      layer_1_matrix: ${{ steps.layer_outputs.outputs.layer_1_matrix }}
+      layer_2_count: ${{ steps.layer_outputs.outputs.layer_2_count }}
+      layer_2_matrix: ${{ steps.layer_outputs.outputs.layer_2_matrix }}
+      layer_3_count: ${{ steps.layer_outputs.outputs.layer_3_count }}
+      layer_3_matrix: ${{ steps.layer_outputs.outputs.layer_3_matrix }}
+      layer_4_count: ${{ steps.layer_outputs.outputs.layer_4_count }}
+      layer_4_matrix: ${{ steps.layer_outputs.outputs.layer_4_matrix }}
+      layer_5_count: ${{ steps.layer_outputs.outputs.layer_5_count }}
+      layer_5_matrix: ${{ steps.layer_outputs.outputs.layer_5_matrix }}
+      layer_6_count: ${{ steps.layer_outputs.outputs.layer_6_count }}
+      layer_6_matrix: ${{ steps.layer_outputs.outputs.layer_6_matrix }}
+      layer_7_count: ${{ steps.layer_outputs.outputs.layer_7_count }}
+      layer_7_matrix: ${{ steps.layer_outputs.outputs.layer_7_matrix }}
+      layer_8_count: ${{ steps.layer_outputs.outputs.layer_8_count }}
+      layer_8_matrix: ${{ steps.layer_outputs.outputs.layer_8_matrix }}
     defaults:
       run:
         shell: bash
@@ -62,9 +81,7 @@ jobs:
         run: |
           python3 scripts/collect-products.py --root . --output .work/release-products.json
 
-      - name: Plan or execute release DAG
-        env:
-          GH_TOKEN: ${{ secrets.XGC2_RELEASE_ORCHESTRATOR_TOKEN }}
+      - name: Plan release DAG
         run: |
           set -euo pipefail
           args=(
@@ -86,21 +103,15 @@ jobs:
           if [[ "${{ inputs.include_downstream }}" != "true" ]]; then
             args+=(--no-downstream)
           fi
-          if [[ "${{ inputs.execute }}" == "true" ]]; then
-            if [[ -z "${GH_TOKEN:-}" ]]; then
-              echo "XGC2_RELEASE_ORCHESTRATOR_TOKEN is required when execute=true" >&2
-              exit 1
-            fi
-            args+=(--execute)
-          fi
-          if [[ "${{ inputs.quality_required }}" == "true" ]]; then
-            args+=(--quality-required)
-          fi
-          if [[ "${{ inputs.source_tests }}" == "true" ]]; then
-            args+=(--source-tests)
-          fi
 
           python3 scripts/orchestrate-apt-release.py "${args[@]}"
+
+      - name: Build layer matrices
+        id: layer_outputs
+        run: |
+          python3 scripts/release-plan-github-outputs.py \
+            --plan .work/release-plan.json \
+            --max-layers 8 >> "${GITHUB_OUTPUT}"
 
       - name: Show release DAG
         if: always() && hashFiles('.work/release-plan.md') != ''
@@ -113,3 +124,195 @@ jobs:
           path: |
             .work/release-plan.json
             .work/release-plan.md
+
+  release-layer-1:
+    name: layer 1 / ${{ matrix.product_id }}
+    needs: plan
+    if: ${{ inputs.execute && needs.plan.outputs.layer_1_count != '0' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.plan.outputs.layer_1_matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: xgc2-release-plan
+          path: .work
+      - name: Trigger and wait for product CI
+        env:
+          GH_TOKEN: ${{ secrets.XGC2_RELEASE_ORCHESTRATOR_TOKEN }}
+        run: |
+          python3 scripts/run-release-plan-product.py \
+            --plan .work/release-plan.json \
+            --product "${{ matrix.product_id }}" \
+            ${{ inputs.quality_required && '--quality-required' || '' }} \
+            ${{ inputs.source_tests && '--source-tests' || '' }}
+
+  release-layer-2:
+    name: layer 2 / ${{ matrix.product_id }}
+    needs: [plan, release-layer-1]
+    if: ${{ always() && inputs.execute && needs.plan.outputs.layer_2_count != '0' && (needs.release-layer-1.result == 'success' || needs.release-layer-1.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.plan.outputs.layer_2_matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: xgc2-release-plan
+          path: .work
+      - name: Trigger and wait for product CI
+        env:
+          GH_TOKEN: ${{ secrets.XGC2_RELEASE_ORCHESTRATOR_TOKEN }}
+        run: |
+          python3 scripts/run-release-plan-product.py \
+            --plan .work/release-plan.json \
+            --product "${{ matrix.product_id }}" \
+            ${{ inputs.quality_required && '--quality-required' || '' }} \
+            ${{ inputs.source_tests && '--source-tests' || '' }}
+
+  release-layer-3:
+    name: layer 3 / ${{ matrix.product_id }}
+    needs: [plan, release-layer-2]
+    if: ${{ always() && inputs.execute && needs.plan.outputs.layer_3_count != '0' && (needs.release-layer-2.result == 'success' || needs.release-layer-2.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.plan.outputs.layer_3_matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: xgc2-release-plan
+          path: .work
+      - name: Trigger and wait for product CI
+        env:
+          GH_TOKEN: ${{ secrets.XGC2_RELEASE_ORCHESTRATOR_TOKEN }}
+        run: |
+          python3 scripts/run-release-plan-product.py \
+            --plan .work/release-plan.json \
+            --product "${{ matrix.product_id }}" \
+            ${{ inputs.quality_required && '--quality-required' || '' }} \
+            ${{ inputs.source_tests && '--source-tests' || '' }}
+
+  release-layer-4:
+    name: layer 4 / ${{ matrix.product_id }}
+    needs: [plan, release-layer-3]
+    if: ${{ always() && inputs.execute && needs.plan.outputs.layer_4_count != '0' && (needs.release-layer-3.result == 'success' || needs.release-layer-3.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.plan.outputs.layer_4_matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: xgc2-release-plan
+          path: .work
+      - name: Trigger and wait for product CI
+        env:
+          GH_TOKEN: ${{ secrets.XGC2_RELEASE_ORCHESTRATOR_TOKEN }}
+        run: |
+          python3 scripts/run-release-plan-product.py \
+            --plan .work/release-plan.json \
+            --product "${{ matrix.product_id }}" \
+            ${{ inputs.quality_required && '--quality-required' || '' }} \
+            ${{ inputs.source_tests && '--source-tests' || '' }}
+
+  release-layer-5:
+    name: layer 5 / ${{ matrix.product_id }}
+    needs: [plan, release-layer-4]
+    if: ${{ always() && inputs.execute && needs.plan.outputs.layer_5_count != '0' && (needs.release-layer-4.result == 'success' || needs.release-layer-4.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.plan.outputs.layer_5_matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: xgc2-release-plan
+          path: .work
+      - name: Trigger and wait for product CI
+        env:
+          GH_TOKEN: ${{ secrets.XGC2_RELEASE_ORCHESTRATOR_TOKEN }}
+        run: |
+          python3 scripts/run-release-plan-product.py \
+            --plan .work/release-plan.json \
+            --product "${{ matrix.product_id }}" \
+            ${{ inputs.quality_required && '--quality-required' || '' }} \
+            ${{ inputs.source_tests && '--source-tests' || '' }}
+
+  release-layer-6:
+    name: layer 6 / ${{ matrix.product_id }}
+    needs: [plan, release-layer-5]
+    if: ${{ always() && inputs.execute && needs.plan.outputs.layer_6_count != '0' && (needs.release-layer-5.result == 'success' || needs.release-layer-5.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.plan.outputs.layer_6_matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: xgc2-release-plan
+          path: .work
+      - name: Trigger and wait for product CI
+        env:
+          GH_TOKEN: ${{ secrets.XGC2_RELEASE_ORCHESTRATOR_TOKEN }}
+        run: |
+          python3 scripts/run-release-plan-product.py \
+            --plan .work/release-plan.json \
+            --product "${{ matrix.product_id }}" \
+            ${{ inputs.quality_required && '--quality-required' || '' }} \
+            ${{ inputs.source_tests && '--source-tests' || '' }}
+
+  release-layer-7:
+    name: layer 7 / ${{ matrix.product_id }}
+    needs: [plan, release-layer-6]
+    if: ${{ always() && inputs.execute && needs.plan.outputs.layer_7_count != '0' && (needs.release-layer-6.result == 'success' || needs.release-layer-6.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.plan.outputs.layer_7_matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: xgc2-release-plan
+          path: .work
+      - name: Trigger and wait for product CI
+        env:
+          GH_TOKEN: ${{ secrets.XGC2_RELEASE_ORCHESTRATOR_TOKEN }}
+        run: |
+          python3 scripts/run-release-plan-product.py \
+            --plan .work/release-plan.json \
+            --product "${{ matrix.product_id }}" \
+            ${{ inputs.quality_required && '--quality-required' || '' }} \
+            ${{ inputs.source_tests && '--source-tests' || '' }}
+
+  release-layer-8:
+    name: layer 8 / ${{ matrix.product_id }}
+    needs: [plan, release-layer-7]
+    if: ${{ always() && inputs.execute && needs.plan.outputs.layer_8_count != '0' && (needs.release-layer-7.result == 'success' || needs.release-layer-7.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.plan.outputs.layer_8_matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: xgc2-release-plan
+          path: .work
+      - name: Trigger and wait for product CI
+        env:
+          GH_TOKEN: ${{ secrets.XGC2_RELEASE_ORCHESTRATOR_TOKEN }}
+        run: |
+          python3 scripts/run-release-plan-product.py \
+            --plan .work/release-plan.json \
+            --product "${{ matrix.product_id }}" \
+            ${{ inputs.quality_required && '--quality-required' || '' }} \
+            ${{ inputs.source_tests && '--source-tests' || '' }}
