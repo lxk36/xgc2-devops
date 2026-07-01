@@ -104,6 +104,17 @@ def push_cpp_quality_gates_other_jobs(source_dir: Path) -> bool:
     )
 
 
+def push_requires_version_bump(source_dir: Path) -> bool:
+    ci_workflow = source_dir / ".github" / "workflows" / "ci.yml"
+    if not ci_workflow.exists():
+        ci_workflow = source_dir / ".github" / "workflows" / "ci.yaml"
+    if not ci_workflow.exists():
+        return False
+
+    text = ci_workflow.read_text(encoding="utf-8", errors="ignore")
+    return workflow_has_event(text, "push") and "check_version_bump.sh --ci" in text
+
+
 def list_field(data: dict[str, Any], *path: str) -> list[str]:
     value: Any = data
     for key in path:
@@ -153,6 +164,16 @@ def audit_product(root: Path, product: dict[str, Any]) -> list[dict[str, str]]:
                 "code": "push-cpp-quality-gates-build",
                 "path": (workflow_dir / "ci.yml").relative_to(root).as_posix(),
                 "message": "push C++ quality must run in parallel, not as another job's needs",
+            }
+        )
+    if push_requires_version_bump(source_dir):
+        issues.append(
+            {
+                "product": str(product["id"]),
+                "severity": "error",
+                "code": "push-requires-version-bump",
+                "path": (workflow_dir / "ci.yml").relative_to(root).as_posix(),
+                "message": "ordinary push CI must not require product version bumps",
             }
         )
     release_config = product.get("release") if isinstance(product.get("release"), dict) else {}
