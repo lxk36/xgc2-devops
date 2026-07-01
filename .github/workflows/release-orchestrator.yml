@@ -59,6 +59,10 @@ on:
         default: false
         type: boolean
 
+permissions:
+  actions: read
+  contents: read
+
 jobs:
   plan:
     name: release / plan
@@ -191,6 +195,18 @@ jobs:
           git config --global user.name "xgc2-release-bot"
           git config --global user.email "xgc2-release-bot@users.noreply.github.com"
 
+      - name: Validate release dispatch token
+        if: ${{ inputs.execute }}
+        env:
+          GH_TOKEN: ${{ secrets.XGC2_RELEASE_ORCHESTRATOR_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${GH_TOKEN}" ]]; then
+            echo "::error::XGC2_RELEASE_ORCHESTRATOR_TOKEN is required to dispatch and watch child repository release workflows."
+            exit 1
+          fi
+          gh auth status >/dev/null
+
       - name: Apply release version bumps
         run: |
           set -euo pipefail
@@ -257,7 +273,13 @@ jobs:
   release-layer-2:
     name: layer 2 / ${{ matrix.product_id }} / ${{ matrix.action }}
     needs: [version-bump, release-layer-1]
-    if: ${{ always() && inputs.execute && needs.version-bump.outputs.layer_2_count != '0' && (needs.release-layer-1.result == 'success' || needs.release-layer-1.result == 'skipped') }}
+    if: >-
+      ${{
+        always() &&
+        inputs.execute &&
+        needs.version-bump.outputs.layer_2_count != '0' &&
+        (needs.version-bump.outputs.layer_1_count == '0' || needs.release-layer-1.result == 'success')
+      }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -280,8 +302,15 @@ jobs:
 
   release-layer-3:
     name: layer 3 / ${{ matrix.product_id }} / ${{ matrix.action }}
-    needs: [version-bump, release-layer-2]
-    if: ${{ always() && inputs.execute && needs.version-bump.outputs.layer_3_count != '0' && (needs.release-layer-2.result == 'success' || needs.release-layer-2.result == 'skipped') }}
+    needs: [version-bump, release-layer-1, release-layer-2]
+    if: >-
+      ${{
+        always() &&
+        inputs.execute &&
+        needs.version-bump.outputs.layer_3_count != '0' &&
+        (needs.version-bump.outputs.layer_1_count == '0' || needs.release-layer-1.result == 'success') &&
+        (needs.version-bump.outputs.layer_2_count == '0' || needs.release-layer-2.result == 'success')
+      }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -304,8 +333,16 @@ jobs:
 
   release-layer-4:
     name: layer 4 / ${{ matrix.product_id }} / ${{ matrix.action }}
-    needs: [version-bump, release-layer-3]
-    if: ${{ always() && inputs.execute && needs.version-bump.outputs.layer_4_count != '0' && (needs.release-layer-3.result == 'success' || needs.release-layer-3.result == 'skipped') }}
+    needs: [version-bump, release-layer-1, release-layer-2, release-layer-3]
+    if: >-
+      ${{
+        always() &&
+        inputs.execute &&
+        needs.version-bump.outputs.layer_4_count != '0' &&
+        (needs.version-bump.outputs.layer_1_count == '0' || needs.release-layer-1.result == 'success') &&
+        (needs.version-bump.outputs.layer_2_count == '0' || needs.release-layer-2.result == 'success') &&
+        (needs.version-bump.outputs.layer_3_count == '0' || needs.release-layer-3.result == 'success')
+      }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -328,8 +365,17 @@ jobs:
 
   release-layer-5:
     name: layer 5 / ${{ matrix.product_id }} / ${{ matrix.action }}
-    needs: [version-bump, release-layer-4]
-    if: ${{ always() && inputs.execute && needs.version-bump.outputs.layer_5_count != '0' && (needs.release-layer-4.result == 'success' || needs.release-layer-4.result == 'skipped') }}
+    needs: [version-bump, release-layer-1, release-layer-2, release-layer-3, release-layer-4]
+    if: >-
+      ${{
+        always() &&
+        inputs.execute &&
+        needs.version-bump.outputs.layer_5_count != '0' &&
+        (needs.version-bump.outputs.layer_1_count == '0' || needs.release-layer-1.result == 'success') &&
+        (needs.version-bump.outputs.layer_2_count == '0' || needs.release-layer-2.result == 'success') &&
+        (needs.version-bump.outputs.layer_3_count == '0' || needs.release-layer-3.result == 'success') &&
+        (needs.version-bump.outputs.layer_4_count == '0' || needs.release-layer-4.result == 'success')
+      }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -352,8 +398,18 @@ jobs:
 
   release-layer-6:
     name: layer 6 / ${{ matrix.product_id }} / ${{ matrix.action }}
-    needs: [version-bump, release-layer-5]
-    if: ${{ always() && inputs.execute && needs.version-bump.outputs.layer_6_count != '0' && (needs.release-layer-5.result == 'success' || needs.release-layer-5.result == 'skipped') }}
+    needs: [version-bump, release-layer-1, release-layer-2, release-layer-3, release-layer-4, release-layer-5]
+    if: >-
+      ${{
+        always() &&
+        inputs.execute &&
+        needs.version-bump.outputs.layer_6_count != '0' &&
+        (needs.version-bump.outputs.layer_1_count == '0' || needs.release-layer-1.result == 'success') &&
+        (needs.version-bump.outputs.layer_2_count == '0' || needs.release-layer-2.result == 'success') &&
+        (needs.version-bump.outputs.layer_3_count == '0' || needs.release-layer-3.result == 'success') &&
+        (needs.version-bump.outputs.layer_4_count == '0' || needs.release-layer-4.result == 'success') &&
+        (needs.version-bump.outputs.layer_5_count == '0' || needs.release-layer-5.result == 'success')
+      }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -376,8 +432,19 @@ jobs:
 
   release-layer-7:
     name: layer 7 / ${{ matrix.product_id }} / ${{ matrix.action }}
-    needs: [version-bump, release-layer-6]
-    if: ${{ always() && inputs.execute && needs.version-bump.outputs.layer_7_count != '0' && (needs.release-layer-6.result == 'success' || needs.release-layer-6.result == 'skipped') }}
+    needs: [version-bump, release-layer-1, release-layer-2, release-layer-3, release-layer-4, release-layer-5, release-layer-6]
+    if: >-
+      ${{
+        always() &&
+        inputs.execute &&
+        needs.version-bump.outputs.layer_7_count != '0' &&
+        (needs.version-bump.outputs.layer_1_count == '0' || needs.release-layer-1.result == 'success') &&
+        (needs.version-bump.outputs.layer_2_count == '0' || needs.release-layer-2.result == 'success') &&
+        (needs.version-bump.outputs.layer_3_count == '0' || needs.release-layer-3.result == 'success') &&
+        (needs.version-bump.outputs.layer_4_count == '0' || needs.release-layer-4.result == 'success') &&
+        (needs.version-bump.outputs.layer_5_count == '0' || needs.release-layer-5.result == 'success') &&
+        (needs.version-bump.outputs.layer_6_count == '0' || needs.release-layer-6.result == 'success')
+      }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -400,8 +467,20 @@ jobs:
 
   release-layer-8:
     name: layer 8 / ${{ matrix.product_id }} / ${{ matrix.action }}
-    needs: [version-bump, release-layer-7]
-    if: ${{ always() && inputs.execute && needs.version-bump.outputs.layer_8_count != '0' && (needs.release-layer-7.result == 'success' || needs.release-layer-7.result == 'skipped') }}
+    needs: [version-bump, release-layer-1, release-layer-2, release-layer-3, release-layer-4, release-layer-5, release-layer-6, release-layer-7]
+    if: >-
+      ${{
+        always() &&
+        inputs.execute &&
+        needs.version-bump.outputs.layer_8_count != '0' &&
+        (needs.version-bump.outputs.layer_1_count == '0' || needs.release-layer-1.result == 'success') &&
+        (needs.version-bump.outputs.layer_2_count == '0' || needs.release-layer-2.result == 'success') &&
+        (needs.version-bump.outputs.layer_3_count == '0' || needs.release-layer-3.result == 'success') &&
+        (needs.version-bump.outputs.layer_4_count == '0' || needs.release-layer-4.result == 'success') &&
+        (needs.version-bump.outputs.layer_5_count == '0' || needs.release-layer-5.result == 'success') &&
+        (needs.version-bump.outputs.layer_6_count == '0' || needs.release-layer-6.result == 'success') &&
+        (needs.version-bump.outputs.layer_7_count == '0' || needs.release-layer-7.result == 'success')
+      }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -424,8 +503,21 @@ jobs:
 
   release-layer-9:
     name: layer 9 / ${{ matrix.product_id }} / ${{ matrix.action }}
-    needs: [version-bump, release-layer-8]
-    if: ${{ always() && inputs.execute && needs.version-bump.outputs.layer_9_count != '0' && (needs.release-layer-8.result == 'success' || needs.release-layer-8.result == 'skipped') }}
+    needs: [version-bump, release-layer-1, release-layer-2, release-layer-3, release-layer-4, release-layer-5, release-layer-6, release-layer-7, release-layer-8]
+    if: >-
+      ${{
+        always() &&
+        inputs.execute &&
+        needs.version-bump.outputs.layer_9_count != '0' &&
+        (needs.version-bump.outputs.layer_1_count == '0' || needs.release-layer-1.result == 'success') &&
+        (needs.version-bump.outputs.layer_2_count == '0' || needs.release-layer-2.result == 'success') &&
+        (needs.version-bump.outputs.layer_3_count == '0' || needs.release-layer-3.result == 'success') &&
+        (needs.version-bump.outputs.layer_4_count == '0' || needs.release-layer-4.result == 'success') &&
+        (needs.version-bump.outputs.layer_5_count == '0' || needs.release-layer-5.result == 'success') &&
+        (needs.version-bump.outputs.layer_6_count == '0' || needs.release-layer-6.result == 'success') &&
+        (needs.version-bump.outputs.layer_7_count == '0' || needs.release-layer-7.result == 'success') &&
+        (needs.version-bump.outputs.layer_8_count == '0' || needs.release-layer-8.result == 'success')
+      }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -448,8 +540,22 @@ jobs:
 
   release-layer-10:
     name: layer 10 / ${{ matrix.product_id }} / ${{ matrix.action }}
-    needs: [version-bump, release-layer-9]
-    if: ${{ always() && inputs.execute && needs.version-bump.outputs.layer_10_count != '0' && (needs.release-layer-9.result == 'success' || needs.release-layer-9.result == 'skipped') }}
+    needs: [version-bump, release-layer-1, release-layer-2, release-layer-3, release-layer-4, release-layer-5, release-layer-6, release-layer-7, release-layer-8, release-layer-9]
+    if: >-
+      ${{
+        always() &&
+        inputs.execute &&
+        needs.version-bump.outputs.layer_10_count != '0' &&
+        (needs.version-bump.outputs.layer_1_count == '0' || needs.release-layer-1.result == 'success') &&
+        (needs.version-bump.outputs.layer_2_count == '0' || needs.release-layer-2.result == 'success') &&
+        (needs.version-bump.outputs.layer_3_count == '0' || needs.release-layer-3.result == 'success') &&
+        (needs.version-bump.outputs.layer_4_count == '0' || needs.release-layer-4.result == 'success') &&
+        (needs.version-bump.outputs.layer_5_count == '0' || needs.release-layer-5.result == 'success') &&
+        (needs.version-bump.outputs.layer_6_count == '0' || needs.release-layer-6.result == 'success') &&
+        (needs.version-bump.outputs.layer_7_count == '0' || needs.release-layer-7.result == 'success') &&
+        (needs.version-bump.outputs.layer_8_count == '0' || needs.release-layer-8.result == 'success') &&
+        (needs.version-bump.outputs.layer_9_count == '0' || needs.release-layer-9.result == 'success')
+      }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -472,8 +578,23 @@ jobs:
 
   release-layer-11:
     name: layer 11 / ${{ matrix.product_id }} / ${{ matrix.action }}
-    needs: [version-bump, release-layer-10]
-    if: ${{ always() && inputs.execute && needs.version-bump.outputs.layer_11_count != '0' && (needs.release-layer-10.result == 'success' || needs.release-layer-10.result == 'skipped') }}
+    needs: [version-bump, release-layer-1, release-layer-2, release-layer-3, release-layer-4, release-layer-5, release-layer-6, release-layer-7, release-layer-8, release-layer-9, release-layer-10]
+    if: >-
+      ${{
+        always() &&
+        inputs.execute &&
+        needs.version-bump.outputs.layer_11_count != '0' &&
+        (needs.version-bump.outputs.layer_1_count == '0' || needs.release-layer-1.result == 'success') &&
+        (needs.version-bump.outputs.layer_2_count == '0' || needs.release-layer-2.result == 'success') &&
+        (needs.version-bump.outputs.layer_3_count == '0' || needs.release-layer-3.result == 'success') &&
+        (needs.version-bump.outputs.layer_4_count == '0' || needs.release-layer-4.result == 'success') &&
+        (needs.version-bump.outputs.layer_5_count == '0' || needs.release-layer-5.result == 'success') &&
+        (needs.version-bump.outputs.layer_6_count == '0' || needs.release-layer-6.result == 'success') &&
+        (needs.version-bump.outputs.layer_7_count == '0' || needs.release-layer-7.result == 'success') &&
+        (needs.version-bump.outputs.layer_8_count == '0' || needs.release-layer-8.result == 'success') &&
+        (needs.version-bump.outputs.layer_9_count == '0' || needs.release-layer-9.result == 'success') &&
+        (needs.version-bump.outputs.layer_10_count == '0' || needs.release-layer-10.result == 'success')
+      }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -496,8 +617,24 @@ jobs:
 
   release-layer-12:
     name: layer 12 / ${{ matrix.product_id }} / ${{ matrix.action }}
-    needs: [version-bump, release-layer-11]
-    if: ${{ always() && inputs.execute && needs.version-bump.outputs.layer_12_count != '0' && (needs.release-layer-11.result == 'success' || needs.release-layer-11.result == 'skipped') }}
+    needs: [version-bump, release-layer-1, release-layer-2, release-layer-3, release-layer-4, release-layer-5, release-layer-6, release-layer-7, release-layer-8, release-layer-9, release-layer-10, release-layer-11]
+    if: >-
+      ${{
+        always() &&
+        inputs.execute &&
+        needs.version-bump.outputs.layer_12_count != '0' &&
+        (needs.version-bump.outputs.layer_1_count == '0' || needs.release-layer-1.result == 'success') &&
+        (needs.version-bump.outputs.layer_2_count == '0' || needs.release-layer-2.result == 'success') &&
+        (needs.version-bump.outputs.layer_3_count == '0' || needs.release-layer-3.result == 'success') &&
+        (needs.version-bump.outputs.layer_4_count == '0' || needs.release-layer-4.result == 'success') &&
+        (needs.version-bump.outputs.layer_5_count == '0' || needs.release-layer-5.result == 'success') &&
+        (needs.version-bump.outputs.layer_6_count == '0' || needs.release-layer-6.result == 'success') &&
+        (needs.version-bump.outputs.layer_7_count == '0' || needs.release-layer-7.result == 'success') &&
+        (needs.version-bump.outputs.layer_8_count == '0' || needs.release-layer-8.result == 'success') &&
+        (needs.version-bump.outputs.layer_9_count == '0' || needs.release-layer-9.result == 'success') &&
+        (needs.version-bump.outputs.layer_10_count == '0' || needs.release-layer-10.result == 'success') &&
+        (needs.version-bump.outputs.layer_11_count == '0' || needs.release-layer-11.result == 'success')
+      }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
