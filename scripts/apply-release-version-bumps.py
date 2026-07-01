@@ -145,8 +145,16 @@ def update_product_metadata(
     return changed
 
 
-def commit_repo(repo: Path, message: str, *, push_ref: str | None, push: bool) -> str:
-    run(["git", "add", ".xgc2/product.yml"], cwd=repo)
+def commit_repo(
+    repo: Path,
+    message: str,
+    *,
+    stage_paths: list[str],
+    push_ref: str | None,
+    push: bool,
+) -> str:
+    if stage_paths:
+        run(["git", "add", *stage_paths], cwd=repo)
     diff_result = run(["git", "diff", "--cached", "--quiet"], cwd=repo, check=False)
     if diff_result.returncode != 0:
         run(["git", "commit", "-m", message], cwd=repo)
@@ -157,6 +165,30 @@ def commit_repo(repo: Path, message: str, *, push_ref: str | None, push: bool) -
             raise RuntimeError(f"{repo}: cannot infer push ref")
         run(["git", "push", "origin", f"HEAD:{ref}"], cwd=repo)
     return sha
+
+
+def nearest_parent_git_repo(root: Path, repo: Path) -> Path | None:
+    current = repo.parent
+    while current != root and root in current.parents:
+        if git(["rev-parse", "--show-toplevel"], current) == current.as_posix():
+            return current
+        current = current.parent
+    return root if repo != root else None
+
+
+def direct_top_level_gitlink(root: Path, repo: Path) -> Path:
+    relative = repo.relative_to(root)
+    parts = relative.parts
+    for index in range(1, len(parts) + 1):
+        candidate = Path(*parts[:index])
+        candidate_text = candidate.as_posix()
+        lines = git(["ls-files", "-s", "--", candidate_text], root).splitlines()
+        if any(
+            line.startswith("160000 ") and line.rsplit("\t", 1)[-1] == candidate_text
+            for line in lines
+        ):
+            return root / candidate
+    return repo
 
 
 def write_lock(path: Path, plan: dict[str, Any]) -> None:
@@ -183,7 +215,8 @@ def commit_top_level(
     tracked_lock: Path | None,
     push: bool,
 ) -> None:
-    add_paths = [repo.relative_to(root).as_posix() for repo in touched_repos]
+    top_level_paths = sorted({direct_top_level_gitlink(root, repo) for repo in touched_repos})
+    add_paths = [repo.relative_to(root).as_posix() for repo in top_level_paths]
     if tracked_lock is not None:
         add_paths.append(tracked_lock.relative_to(root).as_posix())
     if not add_paths:
@@ -217,21 +250,42 @@ def main() -> int:
         plan = json.load(handle)
 
     touched_repos: dict[Path, list[dict[str, Any]]] = {}
+    plan_items_by_source: dict[Path, list[dict[str, Any]]] = {}
     owner_versions = package_owner_versions(plan)
     for item in plan_items(plan):
+        plan_items_by_source.setdefault(root / str(item["source"]), []).append(item)
         if update_product_metadata(root, item, owner_versions=owner_versions, apply=args.apply):
             touched_repos.setdefault(root / str(item["source"]), []).append(item)
 
+    top_level_touched_repos = sorted(touched_repos)
     if args.apply and args.commit:
-        for repo, items in sorted(touched_repos.items()):
+        stage_paths_by_repo: dict[Path, set[str]] = {
+            repo: {".xgc2/product.yml"}
+            for repo in touched_repos
+        }
+        changed_repos = set(touched_repos)
+        for repo in sorted(changed_repos, key=lambda item: len(item.parts), reverse=True):
+            parent = nearest_parent_git_repo(root, repo)
+            if parent is None or parent == root:
+                continue
+            stage_paths_by_repo.setdefault(parent, set()).add(
+                repo.relative_to(parent).as_posix()
+            )
+
+        top_level_touched_repos = sorted(stage_paths_by_repo)
+        for repo in sorted(stage_paths_by_repo, key=lambda item: len(item.parts), reverse=True):
+            items = touched_repos.get(repo, plan_items_by_source.get(repo, []))
             product_ids = ", ".join(str(item["id"]) for item in items)
+            if not product_ids:
+                product_ids = repo.relative_to(root).as_posix()
             sha = commit_repo(
                 repo,
                 f"chore: bump XGC2 release version for {product_ids}",
+                stage_paths=sorted(stage_paths_by_repo[repo]),
                 push_ref=str(items[0].get("ref", "")) or None,
                 push=args.push,
             )
-            for item in items:
+            for item in plan_items_by_source.get(repo, []):
                 item["source_sha"] = sha
                 item["expected_source_sha"] = sha
 
@@ -243,7 +297,7 @@ def main() -> int:
     if args.apply and args.commit:
         commit_top_level(
             root,
-            touched_repos=sorted(touched_repos),
+            touched_repos=top_level_touched_repos,
             tracked_lock=tracked_lock,
             push=args.push,
         )
