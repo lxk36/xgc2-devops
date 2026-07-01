@@ -457,6 +457,86 @@ def product_plan_json(layers: list[list[str]], targets: dict[str, ReleaseTarget]
     }
 
 
+def node_id(product_id: str) -> str:
+    return "p_" + re.sub(r"[^A-Za-z0-9_]", "_", product_id)
+
+
+def selected_edges(selected: set[str], downstream: dict[str, set[str]]) -> list[tuple[str, str]]:
+    return [
+        (provider, consumer)
+        for provider in sorted(selected)
+        for consumer in sorted(downstream.get(provider, ()))
+        if consumer in selected
+    ]
+
+
+def product_label(target: ReleaseTarget) -> str:
+    label = f"{target.product.product_id}\\n{version_summary(target.product)}"
+    return label.replace('"', "'")
+
+
+def plan_summary_markdown(
+    layers: list[list[str]],
+    targets: dict[str, ReleaseTarget],
+    downstream: dict[str, set[str]],
+) -> str:
+    selected = set(targets)
+    lines = [
+        "# XGC2 APT Release DAG",
+        "",
+        "## Parallel Layers",
+        "",
+    ]
+    for index, layer in enumerate(layers, start=1):
+        items = ", ".join(f"`{product_id}`" for product_id in layer)
+        lines.append(f"- Layer {index}: {items}")
+
+    lines.extend(
+        [
+            "",
+            "## Mermaid",
+            "",
+            "```mermaid",
+            "flowchart LR",
+        ]
+    )
+    for index, layer in enumerate(layers, start=1):
+        lines.append(f'  subgraph layer_{index}["Layer {index} - parallel"]')
+        for product_id in layer:
+            lines.append(f'    {node_id(product_id)}["{product_label(targets[product_id])}"]')
+        lines.append("  end")
+    for provider, consumer in selected_edges(selected, downstream):
+        lines.append(f"  {node_id(provider)} --> {node_id(consumer)}")
+    lines.extend(["```", ""])
+    return "\n".join(lines)
+
+
+def write_plan_outputs(
+    *,
+    root: Path,
+    plan_output: str,
+    summary_output: str | None,
+    layers: list[list[str]],
+    targets: dict[str, ReleaseTarget],
+    downstream: dict[str, set[str]],
+) -> None:
+    plan_path = root / plan_output
+    plan_path.parent.mkdir(parents=True, exist_ok=True)
+    with plan_path.open("w", encoding="utf-8") as handle:
+        json.dump(product_plan_json(layers, targets), handle, indent=2, sort_keys=True)
+        handle.write("\n")
+    print(f"wrote {plan_path.relative_to(root)}")
+
+    if summary_output:
+        summary_path = root / summary_output
+        summary_path.parent.mkdir(parents=True, exist_ok=True)
+        summary_path.write_text(
+            plan_summary_markdown(layers, targets, downstream),
+            encoding="utf-8",
+        )
+        print(f"wrote {summary_path.relative_to(root)}")
+
+
 def print_plan(layers: list[list[str]], targets: dict[str, ReleaseTarget]) -> None:
     print("Release plan:")
     for index, layer in enumerate(layers, start=1):
@@ -699,6 +779,7 @@ def main() -> int:
     parser.add_argument("--apt-timeout-seconds", type=int, default=900)
     parser.add_argument("--poll-seconds", type=int, default=15)
     parser.add_argument("--plan-output", default=".work/release-plan.json")
+    parser.add_argument("--summary-output", help="write a Markdown DAG summary")
     args = parser.parse_args()
 
     root = Path(args.root).resolve()
@@ -730,13 +811,14 @@ def main() -> int:
     layers = topo_layers(selected, downstream)
     targets = build_targets(products_by_id, selected)
     print_plan(layers, targets)
-
-    plan_path = root / args.plan_output
-    plan_path.parent.mkdir(parents=True, exist_ok=True)
-    with plan_path.open("w", encoding="utf-8") as handle:
-        json.dump(product_plan_json(layers, targets), handle, indent=2, sort_keys=True)
-        handle.write("\n")
-    print(f"wrote {plan_path.relative_to(root)}")
+    write_plan_outputs(
+        root=root,
+        plan_output=args.plan_output,
+        summary_output=args.summary_output,
+        layers=layers,
+        targets=targets,
+        downstream=downstream,
+    )
 
     if not args.execute:
         print("dry-run only; pass --execute to trigger workflows")
