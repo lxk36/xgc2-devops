@@ -21,6 +21,14 @@ USAGE
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "${script_dir}/.." && pwd)"
+mount_root="${repo_root}"
+container_workdir="/workspace"
+super_root="$(git -C "${repo_root}" rev-parse --show-superproject-working-tree 2>/dev/null || true)"
+if [[ -n "${super_root}" ]]; then
+  mount_root="${super_root}"
+  repo_relative="$(realpath --relative-to="${mount_root}" "${repo_root}")"
+  container_workdir="/workspace/${repo_relative}"
+fi
 image="${XGC2_ROS1_RUNTIME_IMAGE:-crpi-pest1z0t9z6yd8c6.cn-beijing.personal.cr.aliyuncs.com/xgc2-app-store/xgc-ros1-runtime:latest}"
 host_uid="$(id -u)"
 host_gid="$(id -g)"
@@ -60,10 +68,12 @@ else
   command_text='
 set -euo pipefail
 apt-get update
-apt-get install -y --no-install-recommends python3-pip
+apt-get install -y --no-install-recommends git python3-pip
+git config --file "${HOME}/.gitconfig" --add safe.directory "*"
 python3 -m pip install --no-cache-dir PyYAML jsonschema
 bash -n scripts/*.sh products/ros1_dev/scripts/*.sh
 python3 scripts/collect-products.py --root . --output .work/products-container-ci.json
+python3 scripts/orchestrate-apt-release.py --root . --catalog .work/products-container-ci.json --product libxgc2-math-dev --no-downstream --plan-output .work/release-plan-smoke.json
 python3 scripts/check-ros1-dev-boundaries.py --root .
 '
 fi
@@ -72,8 +82,8 @@ docker run --rm \
   --network host \
   -e "HOST_UID=${host_uid}" \
   -e "HOST_GID=${host_gid}" \
-  -v "${repo_root}:/workspace" \
-  -w /workspace \
+  -v "${mount_root}:/workspace" \
+  -w "${container_workdir}" \
   "${image}" \
   bash -lc "
     set -euo pipefail
