@@ -108,11 +108,16 @@ def normalize_github_repo(url: str) -> str:
     def strip_dot_git(value: str) -> str:
         return value[:-4] if value.endswith(".git") else value
 
+    def redact_credentials(value: str) -> str:
+        return re.sub(r"^(https://)[^/@]+@", r"\1***@", value)
+
     url = url.strip()
     if re.fullmatch(r"[\w.-]+/[\w.-]+", url):
         return strip_dot_git(url)
     patterns = (
         r"^git@github\.com:(?P<repo>[^/]+/[^/]+?)(?:\.git)?$",
+        r"^https://(?:[^/@]+@)?github\.com/(?P<repo>[^/]+/[^/]+?)(?:\.git)?$",
+        r"^https://(?:[^/@]+:[^/@]+@)?github\.com/(?P<repo>[^/]+/[^/]+?)(?:\.git)?$",
         r"^https://github\.com/(?P<repo>[^/]+/[^/]+?)(?:\.git)?$",
         r"^ssh://git@github\.com/(?P<repo>[^/]+/[^/]+?)(?:\.git)?$",
     )
@@ -120,7 +125,7 @@ def normalize_github_repo(url: str) -> str:
         match = re.match(pattern, url)
         if match:
             return strip_dot_git(match.group("repo"))
-    raise ValueError(f"unsupported GitHub remote URL: {url}")
+    raise ValueError(f"unsupported GitHub remote URL: {redact_credentials(url)}")
 
 
 @dataclass(frozen=True)
