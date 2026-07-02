@@ -719,7 +719,7 @@
       "apt_versions": {
         "focal": "1.1.0-3"
       },
-      "expected_source_sha": "a2a902968afe70e7ac430f33c0523bc0d01314bb",
+      "expected_source_sha": "b9dcb1b6302e46558c787849ee4c736a2f065220",
       "expected_version": "1.1.0-3",
       "id": "xgc2-gazebo-sim-cerlab-uav",
       "inputs": {},
@@ -728,7 +728,7 @@
       "repository": "lxk36/xgc2-cerlab-uav-sim",
       "skip_apt_verify": false,
       "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/simulator/gazebo-sim/cerlab-uav-sim",
-      "source_sha": "a2a902968afe70e7ac430f33c0523bc0d01314bb",
+      "source_sha": "b9dcb1b6302e46558c787849ee4c736a2f065220",
       "version": "1.1.0-3",
       "workflow": "release.yml",
       "workflow_inputs": [
@@ -827,7 +827,7 @@
       "apt_versions": {
         "focal": "1.1.4-3"
       },
-      "expected_source_sha": "e51650212e2999c88c106e66f2db96f95eecfa6f",
+      "expected_source_sha": "a81ef0a5201d9ba3fed4b515370f035907283ae6",
       "expected_version": "1.1.4-3",
       "id": "xgc2-scene-generation",
       "inputs": {},
@@ -836,7 +836,7 @@
       "repository": "lxk36/xgc2-scene-generation",
       "skip_apt_verify": false,
       "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/simulator/convex_geometry",
-      "source_sha": "e51650212e2999c88c106e66f2db96f95eecfa6f",
+      "source_sha": "a81ef0a5201d9ba3fed4b515370f035907283ae6",
       "version": "1.1.4-3",
       "workflow": "release.yml",
       "workflow_inputs": [
@@ -1164,7 +1164,7 @@
       "apt_versions": {
         "focal": "1.1.0-7"
       },
-      "expected_source_sha": "31947ed75644c8bd95d5301503ea57dade62002b",
+      "expected_source_sha": "b9f1dce441f2b42f126f52cbd61fac0b8cbe307d",
       "expected_version": "1.1.0-7",
       "id": "xgc2-gazebo-sim",
       "inputs": {},
@@ -1173,7 +1173,7 @@
       "repository": "lxk36/xgc2-gazebo-sim",
       "skip_apt_verify": false,
       "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/simulator/gazebo-sim",
-      "source_sha": "31947ed75644c8bd95d5301503ea57dade62002b",
+      "source_sha": "b9f1dce441f2b42f126f52cbd61fac0b8cbe307d",
       "version": "1.1.0-7",
       "workflow": "release.yml",
       "workflow_inputs": [
