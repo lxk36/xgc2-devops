@@ -260,6 +260,19 @@ def workflow_quality_gates_other_jobs(workflow: Path) -> set[str]:
     return workflow_quality_needs(text)
 
 
+def release_cpp_quality_is_gated(text: str) -> bool:
+    jobs = workflow_job_blocks(text)
+    body = jobs.get("cpp-quality")
+    if body is None:
+        return True
+    return bool(
+        re.search(
+            r"(?m)^    if:\s*(?:\$\{\{\s*)?inputs\.run_cpp_quality\b",
+            body,
+        )
+    )
+
+
 def push_requires_version_bump(source_dir: Path) -> bool:
     ci_workflow = source_dir / ".github" / "workflows" / "ci.yml"
     if not ci_workflow.exists():
@@ -370,6 +383,19 @@ def audit_product(root: Path, product: dict[str, Any]) -> list[dict[str, str]]:
                         "code": "release-inputs-missing",
                         "path": workflow.relative_to(root).as_posix(),
                         "message": "missing inputs: " + ", ".join(missing),
+                    }
+                )
+            if not release_cpp_quality_is_gated(text):
+                issues.append(
+                    {
+                        "product": str(product["id"]),
+                        "severity": "error",
+                        "code": "release-cpp-quality-not-gated",
+                        "path": workflow.relative_to(root).as_posix(),
+                        "message": (
+                            "release cpp-quality job must be gated by "
+                            "inputs.run_cpp_quality so APT publishing can disable it"
+                        ),
                     }
                 )
             defaults = workflow_input_defaults(text)
