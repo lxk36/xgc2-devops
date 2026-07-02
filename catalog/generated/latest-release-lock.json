@@ -939,10 +939,10 @@
       ],
       "apt_version_template": "",
       "apt_versions": {
-        "focal": "1.1.15-3"
+        "focal": "1.1.15-4"
       },
-      "expected_source_sha": "ebabef72dc637e650bd53bd30f6bbca1e01e967e",
-      "expected_version": "1.1.15-3",
+      "expected_source_sha": "862bd88aa41e3ce1665581acf858ad25b68809cf",
+      "expected_version": "1.1.15-4",
       "id": "xgc2-multirotor-controller",
       "inputs": {},
       "layer": 3,
@@ -950,8 +950,8 @@
       "repository": "lxk36/xgc2-multirotor-controller",
       "skip_apt_verify": false,
       "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/controller/multirotor-controller",
-      "source_sha": "ebabef72dc637e650bd53bd30f6bbca1e01e967e",
-      "version": "1.1.15-3",
+      "source_sha": "862bd88aa41e3ce1665581acf858ad25b68809cf",
+      "version": "1.1.15-4",
       "workflow": "release.yml",
       "workflow_inputs": [
         "expected_source_sha",
@@ -1054,10 +1054,10 @@
       ],
       "apt_version_template": "",
       "apt_versions": {
-        "focal": "1.3.14-3"
+        "focal": "1.3.14-4"
       },
-      "expected_source_sha": "897d086309efe046261e3df33a98521c3eb28e70",
-      "expected_version": "1.3.14-3",
+      "expected_source_sha": "62f8da576fa8a3eb361daa4c2ad8d7da856f94be",
+      "expected_version": "1.3.14-4",
       "id": "xgc2-controller",
       "inputs": {},
       "layer": 4,
@@ -1065,8 +1065,8 @@
       "repository": "lxk36/xgc2-controller",
       "skip_apt_verify": false,
       "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/controller",
-      "source_sha": "897d086309efe046261e3df33a98521c3eb28e70",
-      "version": "1.3.14-3",
+      "source_sha": "62f8da576fa8a3eb361daa4c2ad8d7da856f94be",
+      "version": "1.3.14-4",
       "workflow": "release.yml",
       "workflow_inputs": [
         "expected_source_sha",
