@@ -393,7 +393,7 @@
       "apt_versions": {
         "focal": "1.12.3-9"
       },
-      "expected_source_sha": "97c7eff1822c3b72e68bdb077acf85f7d389592d",
+      "expected_source_sha": "551bdc586c48fbb8e391da2ac19e531d3c1495d4",
       "expected_version": "1.12.3-9",
       "id": "xgc2-px4-sitl-112",
       "inputs": {},
@@ -402,7 +402,7 @@
       "repository": "lxk36/xgc2-px4-sitl",
       "skip_apt_verify": false,
       "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/simulator/gazebo-sim/px4-sitl-112",
-      "source_sha": "97c7eff1822c3b72e68bdb077acf85f7d389592d",
+      "source_sha": "551bdc586c48fbb8e391da2ac19e531d3c1495d4",
       "version": "1.12.3-9",
       "workflow": "release.yml",
       "workflow_inputs": [
@@ -429,7 +429,7 @@
       "apt_versions": {
         "focal": "1.14.4-8"
       },
-      "expected_source_sha": "91c4c6242384e7ec68939c2361d4112a4b935bbf",
+      "expected_source_sha": "0e53db43f30c269f32eac309ccf1d101f05481c8",
       "expected_version": "1.14.4-8",
       "id": "xgc2-px4-sitl-114",
       "inputs": {},
@@ -438,7 +438,7 @@
       "repository": "lxk36/xgc2-px4-sitl",
       "skip_apt_verify": false,
       "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/simulator/gazebo-sim/px4-sitl-114",
-      "source_sha": "91c4c6242384e7ec68939c2361d4112a4b935bbf",
+      "source_sha": "0e53db43f30c269f32eac309ccf1d101f05481c8",
       "version": "1.14.4-8",
       "workflow": "release.yml",
       "workflow_inputs": [
@@ -465,7 +465,7 @@
       "apt_versions": {
         "noble": "1.16.2-3"
       },
-      "expected_source_sha": "c3b8f3d43d3581b9f399787b56b65502678ca372",
+      "expected_source_sha": "4d8916c2fecdee56b667567eb4401bcd4962b253",
       "expected_version": "1.16.2-3",
       "id": "xgc2-px4-sitl-116",
       "inputs": {},
@@ -474,7 +474,7 @@
       "repository": "lxk36/xgc2-px4-sitl",
       "skip_apt_verify": false,
       "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros2/simulator/px4-sitl-116",
-      "source_sha": "c3b8f3d43d3581b9f399787b56b65502678ca372",
+      "source_sha": "4d8916c2fecdee56b667567eb4401bcd4962b253",
       "version": "1.16.2-3",
       "workflow": "release.yml",
       "workflow_inputs": [
@@ -565,26 +565,26 @@
       ],
       "apt_packages": [
         "ros-noetic-swarm-sync-sim",
-        "ros-noetic-sss-sim-env (>= 1.1.0-1)",
-        "ros-noetic-sss-px4-rotor-sim (>= 1.1.0-1)",
-        "ros-noetic-sss-tello-sim (>= 1.1.0-1)",
-        "ros-noetic-sss-ugv-sim (>= 1.1.0-1)",
-        "ros-noetic-sss-fw-plane-sim (>= 1.1.0-1)"
+        "ros-noetic-sss-sim-env",
+        "ros-noetic-sss-px4-rotor-sim",
+        "ros-noetic-sss-tello-sim",
+        "ros-noetic-sss-ugv-sim",
+        "ros-noetic-sss-fw-plane-sim"
       ],
       "apt_version_template": "",
       "apt_versions": {
         "focal": "1.1.0-3"
       },
-      "expected_source_sha": "a6cf3bb7687ef9bbf0a4b6d399d7ef3bcde6af40",
+      "expected_source_sha": "d788841d40418b78f2cfd898149cd575992b7f43",
       "expected_version": "1.1.0-3",
       "id": "xgc2-swarm-sync-sim",
       "inputs": {},
       "layer": 1,
       "ref": "master",
       "repository": "lxk36/xgc2-swarm-sync-sim",
-      "skip_apt_verify": false,
+      "skip_apt_verify": true,
       "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/simulator/swarm-sync-sim",
-      "source_sha": "a6cf3bb7687ef9bbf0a4b6d399d7ef3bcde6af40",
+      "source_sha": "d788841d40418b78f2cfd898149cd575992b7f43",
       "version": "1.1.0-3",
       "workflow": "release.yml",
       "workflow_inputs": [
@@ -1164,7 +1164,7 @@
       "apt_versions": {
         "focal": "1.1.0-7"
       },
-      "expected_source_sha": "ce47d868b8d2753f9c4edf7cc2227e4a832d2d1c",
+      "expected_source_sha": "31947ed75644c8bd95d5301503ea57dade62002b",
       "expected_version": "1.1.0-7",
       "id": "xgc2-gazebo-sim",
       "inputs": {},
@@ -1173,7 +1173,7 @@
       "repository": "lxk36/xgc2-gazebo-sim",
       "skip_apt_verify": false,
       "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/simulator/gazebo-sim",
-      "source_sha": "ce47d868b8d2753f9c4edf7cc2227e4a832d2d1c",
+      "source_sha": "31947ed75644c8bd95d5301503ea57dade62002b",
       "version": "1.1.0-7",
       "workflow": "release.yml",
       "workflow_inputs": [
