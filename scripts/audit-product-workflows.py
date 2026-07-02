@@ -35,6 +35,14 @@ BUILD_ARTIFACT_JOB_MARKERS = {
     "package_debs.sh",
     "dpkg-deb",
 }
+PREFERRED_RELEASE_WORKFLOWS = (
+    "release.yml",
+    "release.yaml",
+    "build-debs.yml",
+    "build-debs.yaml",
+    "ci.yml",
+    "ci.yaml",
+)
 
 
 def workflow_has_event(text: str, event: str) -> bool:
@@ -109,6 +117,26 @@ def workflow_input_defaults(text: str) -> dict[str, str]:
             if match:
                 defaults[current_input] = match.group(1).strip().strip("'\"")
     return defaults
+
+
+def infer_release_workflow(source_dir: Path, product: dict[str, Any]) -> Path:
+    workflow_dir = source_dir / ".github" / "workflows"
+    release_config = product.get("release") if isinstance(product.get("release"), dict) else {}
+    configured = release_config.get("workflow")
+    if configured:
+        return workflow_dir / str(configured)
+    for name in PREFERRED_RELEASE_WORKFLOWS:
+        workflow = workflow_dir / name
+        if workflow.exists() and workflow_has_event(
+            workflow.read_text(encoding="utf-8", errors="ignore"), "workflow_dispatch"
+        ):
+            return workflow
+    for workflow in sorted(workflow_dir.glob("*.y*ml")):
+        if workflow_has_event(
+            workflow.read_text(encoding="utf-8", errors="ignore"), "workflow_dispatch"
+        ):
+            return workflow
+    return workflow_dir / "release.yml"
 
 
 def workflow_job_blocks(text: str) -> dict[str, str]:
@@ -272,7 +300,7 @@ def audit_product(root: Path, product: dict[str, Any]) -> list[dict[str, str]]:
         return issues
 
     workflows = sorted(workflow_dir.glob("*.yml")) + sorted(workflow_dir.glob("*.yaml"))
-    release_workflow = workflow_dir / "release.yml"
+    release_workflow = infer_release_workflow(source_dir, product)
     cpp_quality_script = source_dir / ".xgc2" / "scripts" / "check_cpp_quality.sh"
     if cpp_quality_script.exists() and not push_runs_cpp_quality(root, source_dir):
         issues.append(
@@ -294,9 +322,7 @@ def audit_product(root: Path, product: dict[str, Any]) -> list[dict[str, str]]:
                 "message": "ordinary push CI must not require product version bumps",
             }
         )
-    release_config = product.get("release") if isinstance(product.get("release"), dict) else {}
-    has_configured_workflow = bool(release_config.get("workflow"))
-    if not has_configured_workflow and not release_workflow.exists():
+    if not release_workflow.exists():
         issues.append(
             {
                 "product": str(product["id"]),
@@ -333,7 +359,7 @@ def audit_product(root: Path, product: dict[str, Any]) -> list[dict[str, str]]:
                     "message": "push-triggered workflow can publish APT",
                 }
             )
-        if workflow.name == "release.yml":
+        if workflow == release_workflow:
             input_names = workflow_input_names(text)
             missing = sorted(STANDARD_RELEASE_INPUTS - workflow_input_names(text))
             if missing:

@@ -29,6 +29,13 @@ PREFERRED_WORKFLOWS = (
 )
 RELEASE_ACTION = "release"
 VERIFY_ACTION = "verify"
+STANDARD_WORKFLOW_INPUTS = {
+    "expected_version",
+    "expected_source_sha",
+    "publish_apt",
+    "run_cpp_quality",
+    "run_source_tests",
+}
 
 
 def run(
@@ -598,6 +605,12 @@ def build_targets(
         raw_inputs = product.release.get("inputs")
         if isinstance(raw_inputs, dict):
             dispatch_inputs = {str(key): str(value) for key, value in raw_inputs.items()}
+        reserved_inputs = sorted(set(dispatch_inputs) & STANDARD_WORKFLOW_INPUTS)
+        if reserved_inputs:
+            raise ValueError(
+                f"{product_id}: release.inputs must not override standard "
+                "orchestrator inputs: " + ", ".join(reserved_inputs)
+            )
         action = action_by_id.get(product_id, RELEASE_ACTION)
         expected_versions = planned_apt_versions(
             product,
@@ -821,6 +834,8 @@ def trigger_workflow(
     if "run_source_tests" in inputs:
         command.extend(["-f", f"run_source_tests={str(source_tests).lower()}"])
     for name, value in sorted(target.dispatch_inputs.items()):
+        if name in STANDARD_WORKFLOW_INPUTS:
+            continue
         command.extend(["-f", f"{name}={value}"])
 
     triggered_after = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time() - 10))

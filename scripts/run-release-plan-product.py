@@ -18,6 +18,13 @@ DEFAULT_APT_BASE_URL = "https://xgc2.apt.xiaokang.ink"
 DEFAULT_ARCHES = ("amd64", "arm64")
 RELEASE_ACTION = "release"
 VERIFY_ACTION = "verify"
+STANDARD_WORKFLOW_INPUTS = {
+    "expected_version",
+    "expected_source_sha",
+    "publish_apt",
+    "run_cpp_quality",
+    "run_source_tests",
+}
 
 
 def run(args: list[str], *, check: bool = True) -> subprocess.CompletedProcess[str]:
@@ -61,6 +68,8 @@ def trigger(product: dict[str, Any], *, quality_required: bool, source_tests: bo
     if "run_source_tests" in workflow_inputs:
         command.extend(["-f", f"run_source_tests={str(source_tests).lower()}"])
     for name, value in sorted(product.get("inputs", {}).items()):
+        if name in STANDARD_WORKFLOW_INPUTS:
+            continue
         command.extend(["-f", f"{name}={value}"])
 
     triggered_after = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time() - 10))
