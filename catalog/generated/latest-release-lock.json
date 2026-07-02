@@ -868,10 +868,10 @@
       ],
       "apt_version_template": "",
       "apt_versions": {
-        "focal": "1.1.0-3"
+        "focal": "1.1.0-4"
       },
-      "expected_source_sha": "593710094e1b99cbee5f6ae240ef7051a5c7e92f",
-      "expected_version": "1.1.0-3",
+      "expected_source_sha": "e5899192fa3349264b16a8c57c32c407a839bf3a",
+      "expected_version": "1.1.0-4",
       "id": "xgc2-slam",
       "inputs": {},
       "layer": 2,
@@ -879,8 +879,8 @@
       "repository": "lxk36/xgc2-slam",
       "skip_apt_verify": false,
       "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/perception/slam",
-      "source_sha": "593710094e1b99cbee5f6ae240ef7051a5c7e92f",
-      "version": "1.1.0-3",
+      "source_sha": "e5899192fa3349264b16a8c57c32c407a839bf3a",
+      "version": "1.1.0-4",
       "workflow": "release.yml",
       "workflow_inputs": [
         "expected_source_sha",
