@@ -11,6 +11,10 @@ from typing import Any
 
 
 RELEASE_ACTION = "release"
+SCRIPT_DEPENDENCY_PATHS = (
+    ".xgc2/scripts/package_debs.sh",
+    ".xgc2/scripts/check_package_compliance.sh",
+)
 
 
 def run(
@@ -93,13 +97,62 @@ def update_dependency_version(dependency: str, owner_versions: dict[str, str]) -
     return dependency
 
 
+def split_dependency(dependency: str) -> tuple[str, str]:
+    parts = dependency.split(" ", 1)
+    if len(parts) == 1:
+        return parts[0], ""
+    return parts[0], f" {parts[1]}"
+
+
+def dependency_replacements(old_dependency: str, new_dependency: str) -> dict[str, str]:
+    old_package, old_suffix = split_dependency(old_dependency)
+    new_package, new_suffix = split_dependency(new_dependency)
+    replacements = {old_dependency: new_dependency}
+    old_ros_prefix = "ros-noetic-"
+    new_ros_prefix = "ros-noetic-"
+    if old_package.startswith(old_ros_prefix) and new_package.startswith(new_ros_prefix):
+        old_name = old_package[len(old_ros_prefix) :]
+        new_name = new_package[len(new_ros_prefix) :]
+        for prefix in ("ros-${ROS_DISTRO}-", "ros-\\${ROS_DISTRO}-"):
+            replacements[f"{prefix}{old_name}{old_suffix}"] = f"{prefix}{new_name}{new_suffix}"
+    return replacements
+
+
+def update_script_dependency_versions(
+    source_dir: Path,
+    old_depends: list[str],
+    new_depends: list[str],
+    *,
+    apply: bool,
+) -> set[str]:
+    changed_paths: set[str] = set()
+    if old_depends == new_depends:
+        return changed_paths
+    replacements: dict[str, str] = {}
+    for old_dependency, new_dependency in zip(old_depends, new_depends):
+        replacements.update(dependency_replacements(old_dependency, new_dependency))
+    for relative_path in SCRIPT_DEPENDENCY_PATHS:
+        path = source_dir / relative_path
+        if not path.exists():
+            continue
+        old_text = path.read_text(encoding="utf-8")
+        new_text = old_text
+        for old_text_dependency, new_text_dependency in replacements.items():
+            new_text = new_text.replace(old_text_dependency, new_text_dependency)
+        if new_text != old_text:
+            changed_paths.add(relative_path)
+            if apply:
+                path.write_text(new_text, encoding="utf-8")
+    return changed_paths
+
+
 def update_product_metadata(
     root: Path,
     item: dict[str, Any],
     *,
     owner_versions: dict[str, str],
     apply: bool,
-) -> bool:
+) -> set[str]:
     if item.get("action") != RELEASE_ACTION:
         should_consider = False
     else:
@@ -110,6 +163,7 @@ def update_product_metadata(
     product_path = source_dir / ".xgc2" / "product.yml"
     metadata = load_yaml(product_path)
     changed = False
+    changed_paths: set[str] = set()
 
     if should_consider and expected_version and expected_version != current_version:
         metadata["version"] = expected_version
@@ -127,6 +181,7 @@ def update_product_metadata(
 
     apt = metadata.get("apt")
     if should_consider and isinstance(apt, dict) and isinstance(apt.get("depends"), list):
+        old_depends = [str(dependency) for dependency in apt["depends"]]
         new_depends = [
             update_dependency_version(str(dependency), owner_versions)
             for dependency in apt["depends"]
@@ -134,15 +189,25 @@ def update_product_metadata(
         if new_depends != apt["depends"]:
             apt["depends"] = new_depends
             changed = True
+            changed_paths.update(
+                update_script_dependency_versions(
+                    source_dir,
+                    old_depends,
+                    new_depends,
+                    apply=apply,
+                )
+            )
 
-    if changed and apply:
-        dump_yaml(product_path, metadata)
+    if changed:
+        changed_paths.add(".xgc2/product.yml")
+        if apply:
+            dump_yaml(product_path, metadata)
     if changed:
         if expected_version and expected_version != current_version:
             print(f"{item['id']}: {current_version} -> {expected_version}")
         else:
             print(f"{item['id']}: dependency minimums updated")
-    return changed
+    return changed_paths
 
 
 def commit_repo(
@@ -250,18 +315,22 @@ def main() -> int:
         plan = json.load(handle)
 
     touched_repos: dict[Path, list[dict[str, Any]]] = {}
+    touched_paths_by_repo: dict[Path, set[str]] = {}
     plan_items_by_source: dict[Path, list[dict[str, Any]]] = {}
     owner_versions = package_owner_versions(plan)
     for item in plan_items(plan):
         plan_items_by_source.setdefault(root / str(item["source"]), []).append(item)
-        if update_product_metadata(root, item, owner_versions=owner_versions, apply=args.apply):
-            touched_repos.setdefault(root / str(item["source"]), []).append(item)
+        changed_paths = update_product_metadata(root, item, owner_versions=owner_versions, apply=args.apply)
+        if changed_paths:
+            source_dir = root / str(item["source"])
+            touched_repos.setdefault(source_dir, []).append(item)
+            touched_paths_by_repo.setdefault(source_dir, set()).update(changed_paths)
 
     top_level_touched_repos = sorted(touched_repos)
     if args.apply and args.commit:
         stage_paths_by_repo: dict[Path, set[str]] = {
-            repo: {".xgc2/product.yml"}
-            for repo in touched_repos
+            repo: set(paths)
+            for repo, paths in touched_paths_by_repo.items()
         }
         changed_repos = set(touched_repos)
         for repo in sorted(changed_repos, key=lambda item: len(item.parts), reverse=True):
