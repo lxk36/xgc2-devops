@@ -1019,10 +1019,10 @@
       ],
       "apt_version_template": "",
       "apt_versions": {
-        "focal": "1.1.1-3"
+        "focal": "1.1.1-4"
       },
-      "expected_source_sha": "0f5ec1890bce4e8bcc84d949b1846600f19f4075",
-      "expected_version": "1.1.1-3",
+      "expected_source_sha": "ce2d2c9ad760da8558ad227fc017afacd19bb2e5",
+      "expected_version": "1.1.1-4",
       "id": "xgc2-ugv-controller",
       "inputs": {},
       "layer": 3,
@@ -1030,8 +1030,8 @@
       "repository": "lxk36/xgc2-ugv-controller",
       "skip_apt_verify": false,
       "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/controller/ugv-controller",
-      "source_sha": "0f5ec1890bce4e8bcc84d949b1846600f19f4075",
-      "version": "1.1.1-3",
+      "source_sha": "ce2d2c9ad760da8558ad227fc017afacd19bb2e5",
+      "version": "1.1.1-4",
       "workflow": "release.yml",
       "workflow_inputs": [
         "expected_source_sha",
@@ -1054,10 +1054,10 @@
       ],
       "apt_version_template": "",
       "apt_versions": {
-        "focal": "1.3.14-4"
+        "focal": "1.3.14-5"
       },
-      "expected_source_sha": "62f8da576fa8a3eb361daa4c2ad8d7da856f94be",
-      "expected_version": "1.3.14-4",
+      "expected_source_sha": "991186651a729c429648944b7be681950a049934",
+      "expected_version": "1.3.14-5",
       "id": "xgc2-controller",
       "inputs": {},
       "layer": 4,
@@ -1065,8 +1065,8 @@
       "repository": "lxk36/xgc2-controller",
       "skip_apt_verify": false,
       "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/controller",
-      "source_sha": "62f8da576fa8a3eb361daa4c2ad8d7da856f94be",
-      "version": "1.3.14-4",
+      "source_sha": "991186651a729c429648944b7be681950a049934",
+      "version": "1.3.14-5",
       "workflow": "release.yml",
       "workflow_inputs": [
         "expected_source_sha",
