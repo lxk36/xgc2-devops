@@ -827,7 +827,7 @@
       "apt_versions": {
         "focal": "1.1.4-3"
       },
-      "expected_source_sha": "a81ef0a5201d9ba3fed4b515370f035907283ae6",
+      "expected_source_sha": "191fc04af1024bd89c0ea9231b9ec26d894d8f18",
       "expected_version": "1.1.4-3",
       "id": "xgc2-scene-generation",
       "inputs": {},
@@ -836,7 +836,7 @@
       "repository": "lxk36/xgc2-scene-generation",
       "skip_apt_verify": false,
       "source": "/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros1/simulator/convex_geometry",
-      "source_sha": "a81ef0a5201d9ba3fed4b515370f035907283ae6",
+      "source_sha": "191fc04af1024bd89c0ea9231b9ec26d894d8f18",
       "version": "1.1.4-3",
       "workflow": "release.yml",
       "workflow_inputs": [
