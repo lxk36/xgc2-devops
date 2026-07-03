@@ -38,10 +38,14 @@
 	path = products/common/state-machine
 	url = git@github.com:lxk36/xgc2-state-machine.git
 	branch = master
-[submodule "products/ros1/manager/linux-utils"]
-	path = products/ros1/manager/linux-utils
+[submodule "products/utils/linux"]
+	path = products/utils/linux
 	url = git@github.com:lxk36/xgc2-linux-utils.git
-	branch = noetic
+	branch = main
+[submodule "products/robotics/fs150"]
+	path = products/robotics/fs150
+	url = git@github.com:lxk36/xgc2-robot-fs150.git
+	branch = main
 [submodule "products/ros1/simulator/gazebo-sim"]
 	path = products/ros1/simulator/gazebo-sim
 	url = git@github.com:lxk36/xgc2-gazebo-sim.git
@@ -66,9 +70,6 @@
 	path = products/ros1/common/ros1-utils
 	url = git@github.com:lxk36/xgc2-ros1-utils.git
 	branch = noetic
-[submodule "products/xgc1"]
-	path = products/xgc1
-	url = git@github.com:lxk36/xgc1.git
 [submodule "products/ros1/perception/slam"]
 	path = products/ros1/perception/slam
 	url = git@github.com:lxk36/xgc2-slam.git

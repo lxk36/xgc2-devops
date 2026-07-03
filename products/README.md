@@ -9,12 +9,15 @@ workspaces are disposable Docker build views over those repositories.
 ## Directory Classes
 
 - `common/`: system-level libraries and tools that are not tied to ROS, such as `xgc2-acados`, `xgc2-tbb`, `libxgc2-state-machine-dev`, and `mavlink-routerd`.
+- `utils/`: host-level utility packages and services that are not tied to a
+  ROS distribution.
 - `ros1/`: ROS Noetic products, grouped by domain. High-frequency source
   iteration still happens here; Docker decides which repositories are mounted
   into a temporary catkin workspace.
 - `ros2/`: ROS2 or Gazebo Sim generation products.
+- `robotics/`: real-vehicle profiles and target-machine service packages.
 - `webui/`: frontend or visualization products.
-- `xgc1/`, `xgc2/`: application-level products.
+- `xgc2/`: application-level product.
 
 ## Development APT Policy
 

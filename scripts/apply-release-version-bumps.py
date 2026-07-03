@@ -12,7 +12,6 @@ from typing import Any
 
 RELEASE_ACTION = "release"
 SCRIPT_DEPENDENCY_PATHS = (
-    ".xgc2/scripts/build_debs_in_docker.sh",
     ".xgc2/scripts/package_debs.sh",
     ".xgc2/scripts/check_package_compliance.sh",
 )

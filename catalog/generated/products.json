@@ -40,9 +40,9 @@
       },
       "release": {
         "apt_versions": {
-          "focal": "0.1.0-3~focal",
-          "jammy": "0.1.0-3~jammy",
-          "noble": "0.1.0-3~noble"
+          "focal": "0.1.0-7~focal",
+          "jammy": "0.1.0-7~jammy",
+          "noble": "0.1.0-7~noble"
         }
       },
       "schema": "xgc2.product.v1",
@@ -52,7 +52,7 @@
         "notes": "CMake consumers should use find_package(xgc2_acados REQUIRED CONFIG).\nMATLAB users should run /opt/xgc2/acados/setup_acados.m.\n",
         "smoke_test": "source /opt/xgc2/acados/setup.bash\npython3 -c 'from acados_template import AcadosOcp'\n"
       },
-      "version": "0.1.0-3"
+      "version": "0.1.0-7"
     },
     {
       "_source": "products/common/math/.xgc2/product.yml",
@@ -96,7 +96,7 @@
         "notes": "CMake consumers should use find_package(xgc2_math REQUIRED CONFIG)\nand link xgc2_math::math or one of the component targets:\nxgc2_math::algebra, xgc2_math::utils, xgc2_math::geometry, xgc2_math::filter,\nxgc2_math::observer, xgc2_math::estimation, xgc2_math::optimization,\nxgc2_math::trajectory, xgc2_math::control.\n",
         "smoke_test": "cmake --find-package -DNAME=xgc2_math -DCOMPILER_ID=GNU -DLANGUAGE=CXX -DMODE=EXIST\n"
       },
-      "version": "0.5.5-1"
+      "version": "0.5.5-6"
     },
     {
       "_source": "products/common/mavlink-router/.xgc2/product.yml",
@@ -126,9 +126,9 @@
       },
       "release": {
         "apt_versions": {
-          "focal": "3.0.0-1+focal",
-          "jammy": "3.0.0-1+jammy",
-          "noble": "3.0.0-1+noble"
+          "focal": "3.0.0-5+focal",
+          "jammy": "3.0.0-5+jammy",
+          "noble": "3.0.0-5+noble"
         }
       },
       "schema": "xgc2.product.v1",
@@ -137,7 +137,7 @@
         "install": "sudo apt update\nsudo apt install xgc2-mavlink-router\n",
         "smoke_test": "command -v mavlink-routerd\nmavlink-routerd --version\n"
       },
-      "version": "3.0.0-1"
+      "version": "3.0.0-5"
     },
     {
       "_source": "products/common/state-machine/.xgc2/product.yml",
@@ -172,9 +172,9 @@
       },
       "release": {
         "apt_versions": {
-          "focal": "0.1.2-1~focal",
-          "jammy": "0.1.2-1~jammy",
-          "noble": "0.1.2-1~noble"
+          "focal": "0.1.2-5~focal",
+          "jammy": "0.1.2-5~jammy",
+          "noble": "0.1.2-5~noble"
         }
       },
       "schema": "xgc2.product.v1",
@@ -184,7 +184,7 @@
         "notes": "CMake consumers should use find_package(xgc2_state_machine REQUIRED CONFIG)\nand link xgc2_state_machine::state_machine. The public include path remains\n<state_machine/state_machine.hpp>.\n",
         "smoke_test": "cmake --find-package -DNAME=xgc2_state_machine -DCOMPILER_ID=GNU -DLANGUAGE=CXX -DMODE=EXIST\n"
       },
-      "version": "0.1.2-1"
+      "version": "0.1.2-5"
     },
     {
       "_source": "products/common/tbb/.xgc2/product.yml",
@@ -229,7 +229,55 @@
         "notes": "CMake consumers should use find_package(xgc2_tbb REQUIRED CONFIG).\nThe upstream oneTBB CMake package remains available under /opt/xgc2/tbb.\n",
         "smoke_test": "source /opt/xgc2/tbb/setup.bash\ncmake --find-package -DNAME=xgc2_tbb -DCOMPILER_ID=GNU -DLANGUAGE=CXX -DMODE=EXIST\n"
       },
-      "version": "0.1.0-1"
+      "version": "0.1.0-5"
+    },
+    {
+      "_source": "products/robotics/fs150/.xgc2/product.yml",
+      "apt": {
+        "depends": [
+          "chrony",
+          "python3",
+          "ros-noetic-ros-base",
+          "ros-noetic-mavros",
+          "ros-noetic-mavros-extras",
+          "ros-noetic-vrpn-client-ros",
+          "ros-noetic-xgc2-linux-utils",
+          "xgc2-mavlink-router"
+        ],
+        "distribution": "focal",
+        "install": [
+          "xgc2-fs150",
+          "xgc2-fs150-mavlink-router"
+        ],
+        "packages": [
+          "xgc2-fs150",
+          "xgc2-fs150-mavlink-router"
+        ]
+      },
+      "groups": [
+        "robotics",
+        "fs150"
+      ],
+      "id": "xgc2-fs150",
+      "kind": "mixed",
+      "name": "XGC2 FS150 Robot",
+      "ownership": {
+        "paths": [
+          "/opt/xgc2/robots/fs150",
+          "/usr/share/doc/xgc2-fs150",
+          "/etc/xgc2/fs150-mavlink-router",
+          "/lib/systemd/system/xgc2-fs150-mavlink-router.service",
+          "/usr/share/doc/xgc2-fs150-mavlink-router"
+        ]
+      },
+      "schema": "xgc2.product.v1",
+      "summary": "Real FS150 robot onboard profile, documentation, and runtime dependency aggregation.",
+      "usage": {
+        "install": "sudo apt update\nsudo apt install xgc2-fs150\nsudo apt install xgc2-fs150-mavlink-router\n",
+        "notes": "The ROS Noetic and XGC2 APT sources must be configured before installing this package.",
+        "smoke_test": "test -d /opt/xgc2/robots/fs150/docs\ntest -f /opt/xgc2/robots/fs150/docs/rk356x_performance_mode.md\ndpkg -s xgc2-fs150\ndpkg -s xgc2-fs150-mavlink-router\ntest -f /etc/xgc2/fs150-mavlink-router/router.conf\nsystemctl is-enabled xgc2-fs150-mavlink-router.service\n"
+      },
+      "version": "0.1.0-2"
     },
     {
       "_source": "products/ros1/common/ros1-utils/.xgc2/product.yml",
@@ -264,7 +312,7 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-ros1-utils\n",
         "smoke_test": "rospack find ros1_utils\n"
       },
-      "version": "1.1.0-1"
+      "version": "1.1.0-5"
     },
     {
       "_source": "products/ros1/communication/runtime-sync/.xgc2/product.yml",
@@ -304,14 +352,14 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-runtime-sync\n",
         "smoke_test": "rospack find periodic_sync\n"
       },
-      "version": "1.6.2-1"
+      "version": "1.6.2-5"
     },
     {
       "_source": "products/ros1/controller/.xgc2/product.yml",
       "apt": {
         "depends": [
-          "ros-noetic-xgc2-multirotor-controller (>= 1.1.15-1)",
-          "ros-noetic-xgc2-ugv-controller (>= 1.1.1-1)"
+          "ros-noetic-xgc2-multirotor-controller (>= 1.1.15-7)",
+          "ros-noetic-xgc2-ugv-controller (>= 1.1.1-6)"
         ],
         "distribution": "focal",
         "install": [
@@ -339,19 +387,19 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-controller\n",
         "smoke_test": "roslaunch --files px4_multirotor_controller uav_nmpc_controller.launch\nroslaunch --files unicycle_ugv_controller ugv_unicycle_nmpc_controller.launch\n"
       },
-      "version": "1.3.14-1"
+      "version": "1.3.14-8"
     },
     {
       "_source": "products/ros1/controller/multirotor-controller/.xgc2/product.yml",
       "apt": {
         "depends": [
           "libeigen3-dev",
-          "libxgc2-state-machine-dev (>= 0.1.2-1~focal)",
-          "libxgc2-math-dev (>= 0.5.4-1)",
-          "xgc2-acados (>= 0.1.0-3~focal)",
+          "libxgc2-state-machine-dev (>= 0.1.2-5~focal)",
+          "libxgc2-math-dev (>= 0.5.5-6)",
+          "xgc2-acados (>= 0.1.0-7~focal)",
           "ros-noetic-xgc2-ros1-utils",
-          "ros-noetic-xgc2-estimator-hover-thrust (>= 1.1.22-1)",
-          "ros-noetic-xgc2-estimator-rigid-state (>= 1.1.3-1)"
+          "ros-noetic-xgc2-estimator-hover-thrust (>= 1.1.22-6)",
+          "ros-noetic-xgc2-estimator-rigid-state (>= 1.1.3-7)"
         ],
         "distribution": "focal",
         "install": [
@@ -388,18 +436,18 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-multirotor-controller\n",
         "smoke_test": "roslaunch --files multirotor_reference_trajectory uav_multirotor_reference_trajectory.launch\nroslaunch --files px4_multirotor_controller uav_nmpc_controller.launch\n"
       },
-      "version": "1.1.15-1"
+      "version": "1.1.15-7"
     },
     {
       "_source": "products/ros1/controller/ugv-controller/.xgc2/product.yml",
       "apt": {
         "depends": [
           "libeigen3-dev",
-          "libxgc2-state-machine-dev (>= 0.1.2-1~focal)",
-          "libxgc2-math-dev (>= 0.5.1-1)",
-          "xgc2-acados (>= 0.1.0-3~focal)",
+          "libxgc2-state-machine-dev (>= 0.1.2-5~focal)",
+          "libxgc2-math-dev (>= 0.5.5-5)",
+          "xgc2-acados (>= 0.1.0-7~focal)",
           "ros-noetic-xgc2-ros1-utils",
-          "ros-noetic-xgc2-estimator-rigid-state (>= 1.1.0-1)"
+          "ros-noetic-xgc2-estimator-rigid-state (>= 1.1.3-6)"
         ],
         "distribution": "focal",
         "install": [
@@ -436,7 +484,7 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-ugv-controller\n",
         "smoke_test": "roslaunch --files unicycle_reference_trajectory ugv_unicycle_reference_trajectory.launch\nroslaunch --files unicycle_ugv_controller ugv_unicycle_nmpc_controller.launch\n"
       },
-      "version": "1.1.1-1"
+      "version": "1.1.1-6"
     },
     {
       "_source": "products/ros1/driver/livox_ros_driver/.xgc2/product.yml",
@@ -471,7 +519,7 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-livox-ros-driver\n",
         "smoke_test": "rospack find livox_ros_driver\n"
       },
-      "version": "2.6.0-1"
+      "version": "2.6.0-5"
     },
     {
       "_source": "products/ros1/driver/livox_ros_driver2/.xgc2/product.yml",
@@ -506,57 +554,15 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-livox-ros-driver2\n",
         "smoke_test": "rospack find livox_ros_driver2\n"
       },
-      "version": "1.2.6-1"
-    },
-    {
-      "_source": "products/ros1/manager/linux-utils/.xgc2/product.yml",
-      "apt": {
-        "distribution": "focal",
-        "install": [
-          "ros-noetic-xgc2-linux-utils"
-        ],
-        "packages": [
-          "ros-noetic-xgc2-linux-utils"
-        ]
-      },
-      "id": "xgc2-linux-utils",
-      "kind": "ros1-apt",
-      "name": "XGC2 Linux Utils",
-      "ownership": {
-        "paths": [
-          "/opt/ros/noetic/share/linux_performance",
-          "/opt/ros/noetic/lib/linux_performance/configure-log-limits.sh",
-          "/opt/ros/noetic/lib/linux_performance/enable_performance_mode.sh",
-          "/opt/ros/noetic/lib/linux_performance/print_cpu_frequency.sh",
-          "/opt/ros/noetic/lib/linux_performance/query_cpu_state.sh",
-          "/opt/ros/noetic/lib/linux_performance/restore-runtime-gateway.sh",
-          "/opt/ros/noetic/lib/linux_performance/restore-runtime-nat-gateway.sh",
-          "/opt/ros/noetic/lib/linux_performance/restore_balanced_mode.sh",
-          "/opt/ros/noetic/lib/linux_performance/setup-runtime-nat-gateway.sh",
-          "/opt/ros/noetic/lib/linux_performance/use-runtime-gateway.sh"
-        ]
-      },
-      "ros": {
-        "distro": "noetic",
-        "packages": [
-          "linux_performance"
-        ]
-      },
-      "schema": "xgc2.product.v1",
-      "summary": "ROS Noetic-accessible Linux CPU performance helper scripts for simulation and experiment runs.",
-      "usage": {
-        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-linux-utils\n",
-        "smoke_test": "rospack find linux_performance\nrosrun linux_performance print_cpu_frequency.sh\n"
-      },
-      "version": "1.1.0-1"
+      "version": "1.2.6-5"
     },
     {
       "_source": "products/ros1/perception/detection/.xgc2/product.yml",
       "apt": {
         "depends": [
-          "ros-noetic-xgc2-onboard-detector-lv (>= 1.1.0-1)",
-          "ros-noetic-xgc2-fapp-obj-state-msgs (>= 1.1.0-1)",
-          "ros-noetic-xgc2-fapp-mot-mapping (>= 1.1.0-1)"
+          "ros-noetic-xgc2-onboard-detector-lv (>= 1.1.0-5)",
+          "ros-noetic-xgc2-fapp-obj-state-msgs (>= 1.1.0-5)",
+          "ros-noetic-xgc2-fapp-mot-mapping (>= 1.1.0-5)"
         ],
         "distribution": "focal",
         "install": [
@@ -591,14 +597,14 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-detection\n",
         "smoke_test": "rospack find onboard_detector_lv\nrosrun onboard_detector_lv detector_node_lv --help\n"
       },
-      "version": "1.1.0-1"
+      "version": "1.1.0-5"
     },
     {
       "_source": "products/ros1/perception/hover-thrust/.xgc2/product.yml",
       "apt": {
         "depends": [
-          "libxgc2-math-dev (>= 0.4.0-1)",
-          "libxgc2-state-machine-dev (>= 0.1.2-1~focal)",
+          "libxgc2-math-dev (>= 0.5.5-5)",
+          "libxgc2-state-machine-dev (>= 0.1.2-5~focal)",
           "ros-noetic-xgc2-ros1-utils"
         ],
         "distribution": "focal",
@@ -633,14 +639,14 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-estimator-hover-thrust\n",
         "smoke_test": "roslaunch --files hover_thrust_estimator hover_thrust_estimator.launch\n"
       },
-      "version": "1.1.22-2"
+      "version": "1.1.22-6"
     },
     {
       "_source": "products/ros1/perception/rigid-state/.xgc2/product.yml",
       "apt": {
         "depends": [
-          "libxgc2-math-dev (>= 0.5.4-1)",
-          "libxgc2-state-machine-dev (>= 0.1.2-1~focal)",
+          "libxgc2-math-dev (>= 0.5.5-6)",
+          "libxgc2-state-machine-dev (>= 0.1.2-5~focal)",
           "ros-noetic-xgc2-ros1-utils"
         ],
         "distribution": "focal",
@@ -681,19 +687,19 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-estimator-rigid-state\n",
         "smoke_test": "roslaunch --files estimator_vrpn_px4_rotor_state vrpn_px4_rotor_state_estimator.launch\nroslaunch --files estimator_vrpn_ugv_state vrpn_ugv_state_estimator.launch\n"
       },
-      "version": "1.1.3-2"
+      "version": "1.1.3-7"
     },
     {
       "_source": "products/ros1/perception/slam/.xgc2/product.yml",
       "apt": {
         "depends": [
-          "ros-noetic-livox-ros-driver (>= 2.6.0-1)",
-          "ros-noetic-xgc2-fast-lio2 (>= 1.1.0-1)",
-          "ros-noetic-xgc2-swarm-lio2 (>= 1.1.0-1)",
-          "ros-noetic-xgc2-point-lio (>= 1.1.0-1)",
-          "ros-noetic-xgc2-lio-sam (>= 1.1.0-1)",
-          "ros-noetic-xgc2-voxel-slam (>= 1.1.0-1)",
-          "ros-noetic-xgc2-voxelslam-pointcloud2 (>= 1.1.0-1)"
+          "ros-noetic-livox-ros-driver (>= 2.6.0-5)",
+          "ros-noetic-xgc2-fast-lio2 (>= 1.1.0-6)",
+          "ros-noetic-xgc2-swarm-lio2 (>= 1.1.0-6)",
+          "ros-noetic-xgc2-point-lio (>= 1.1.0-6)",
+          "ros-noetic-xgc2-lio-sam (>= 1.1.0-6)",
+          "ros-noetic-xgc2-voxel-slam (>= 1.1.0-6)",
+          "ros-noetic-xgc2-voxelslam-pointcloud2 (>= 1.1.0-6)"
         ],
         "distribution": "focal",
         "install": [
@@ -752,14 +758,14 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-slam\n",
         "smoke_test": "rospack find fast_lio\nrospack find swarm_lio\nrospack find point_lio\nrospack find lio_sam\nrospack find voxel_slam\nrospack find voxelslam_pointcloud2\n"
       },
-      "version": "1.1.0-1"
+      "version": "1.1.0-6"
     },
     {
       "_source": "products/ros1/planner/planner/.xgc2/product.yml",
       "apt": {
         "depends": [
-          "ros-noetic-xgc2-planner-all (>= 1.1.0-1)",
-          "ros-noetic-xgc2-mockamap (>= 1.1.4-1)",
+          "ros-noetic-xgc2-planner-all (>= 1.1.0-5)",
+          "ros-noetic-xgc2-mockamap (>= 1.1.4-5)",
           "libboost-dev",
           "libeigen3-dev",
           "libompl15",
@@ -892,16 +898,16 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-planner\n",
         "smoke_test": "rospack find gcopter\nrospack find mader\nrospack find rmader\nrospack find xgc2_cerlab_global_planner\nrospack find xgc2_cerlab_tracking_controller\nrospack find xgc2_cerlab_trajectory_planner\nrospack find xgc2_intent_mpc_trajectory_planner\nrospack find xgc2_intent_mpc_autonomous_flight\nrospack find ego_planner\nrospack find fast_plan_manage\n"
       },
-      "version": "1.1.0-1"
+      "version": "1.1.0-5"
     },
     {
       "_source": "products/ros1/simulator/convex_geometry/.xgc2/product.yml",
       "apt": {
         "depends": [
-          "libxgc2-math-dev (>= 0.5.5-1)",
-          "ros-noetic-xgc2-geometry-msgs (>= 1.1.4-1)",
-          "ros-noetic-xgc2-cluttered-environment (>= 1.1.4-1)",
-          "ros-noetic-xgc2-mockamap (>= 1.1.4-1)"
+          "libxgc2-math-dev (>= 0.5.5-5)",
+          "ros-noetic-xgc2-geometry-msgs (>= 1.1.4-5)",
+          "ros-noetic-xgc2-cluttered-environment (>= 1.1.4-5)",
+          "ros-noetic-xgc2-mockamap (>= 1.1.4-5)"
         ],
         "distribution": "focal",
         "install": [
@@ -943,21 +949,21 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-scene-generation\n",
         "smoke_test": "rospack find xgc2_geometry_msgs\nrospack find cluttered_environment\nrospack find mockamap\n"
       },
-      "version": "1.1.4-1"
+      "version": "1.1.4-5"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/.xgc2/product.yml",
       "apt": {
         "depends": [
-          "ros-noetic-xgc2-gazebo-sim-manager (>= 1.1.0-3)",
-          "ros-noetic-xgc2-gazebo-sim-examples (>= 1.1.0-3)",
-          "ros-noetic-xgc2-gazebo-sim-visualization (>= 1.1.0-2)",
-          "ros-noetic-xgc2-gazebo-sim-vrpn-bridge (>= 1.1.0-2)",
-          "ros-noetic-xgc2-gazebo-sim-worlds (>= 1.1.0-3)",
-          "ros-noetic-xgc2-gazebo-sim-scout (>= 0.4.9-1)",
-          "ros-noetic-xgc2-gazebo-sim-px4-1-12 (>= 1.12.3-7)",
-          "ros-noetic-xgc2-gazebo-sim-px4-1-14 (>= 1.14.4-6)",
-          "ros-noetic-xgc2-gazebo-sim-fs150-sitl (>= 1.1.0-1)",
+          "ros-noetic-xgc2-gazebo-sim-manager (>= 1.1.0-10)",
+          "ros-noetic-xgc2-gazebo-sim-examples (>= 1.1.0-10)",
+          "ros-noetic-xgc2-gazebo-sim-visualization (>= 1.1.0-6)",
+          "ros-noetic-xgc2-gazebo-sim-vrpn-bridge (>= 1.1.0-6)",
+          "ros-noetic-xgc2-gazebo-sim-worlds (>= 1.1.0-7)",
+          "ros-noetic-xgc2-gazebo-sim-scout (>= 0.4.9-5)",
+          "ros-noetic-xgc2-gazebo-sim-px4-1-12 (>= 1.12.3-11)",
+          "ros-noetic-xgc2-gazebo-sim-px4-1-14 (>= 1.14.4-10)",
+          "ros-noetic-xgc2-gazebo-sim-fs150-sitl (>= 1.1.0-6)",
           "ros-noetic-vrpn-client-ros"
         ],
         "distribution": "focal",
@@ -989,14 +995,14 @@
         "notes": "This repository is the verified Gazebo simulation suite entrypoint. Source packages live in child product repositories.\nThe aggregate package uses minimum child package versions so apt upgrades stale installed children when a quickstart requires newer launch assets.\nChild repositories may publish compatible packaging revisions independently; bump this product version only when the aggregate dependency set or compatibility contract changes.\n",
         "smoke_test": "dpkg -s ros-noetic-xgc2-gazebo-sim\nroslaunch --files gazebo_sim_examples fs150_ugv_vrpn_stack.launch\nroslaunch --files gazebo_sim_visualization fs150_vrpn_tracking_rviz.launch rviz:=false\nroslaunch --files gazebo_sim_scout simple.launch rviz:=false\nroslaunch --files gazebo_sim_px4_1_12 iris.launch gui:=false\nroslaunch --files gazebo_sim_px4_1_14 iris.launch gui:=false\nroslaunch --files gazebo_sim_fs150_sitl fs150.launch gui:=false\n"
       },
-      "version": "1.1.0-5"
+      "version": "1.1.0-12"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/agilex/.xgc2/product.yml",
       "apt": {
         "depends": [
           "ros-noetic-xgc2-scout-description",
-          "ros-noetic-xgc2-gazebo-sim-worlds (>= 1.1.0-1)",
+          "ros-noetic-xgc2-gazebo-sim-worlds (>= 1.1.0-7)",
           "ros-noetic-xgc2-gazebo-sim-vrpn-bridge"
         ],
         "distribution": "focal",
@@ -1032,7 +1038,7 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-gazebo-sim-scout\n",
         "smoke_test": "roslaunch --files gazebo_sim_scout simple.launch rviz:=false\n"
       },
-      "version": "0.4.9-1"
+      "version": "0.4.9-5"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/cerlab-uav-sim/.xgc2/product.yml",
@@ -1043,7 +1049,7 @@
           "ros-noetic-mavros",
           "ros-noetic-mavros-extras",
           "ros-noetic-topic-tools",
-          "ros-noetic-xgc2-gazebo-sim-worlds (>= 1.1.0-1)",
+          "ros-noetic-xgc2-gazebo-sim-worlds (>= 1.1.0-7)",
           "python3-numpy",
           "python3-yaml"
         ],
@@ -1077,7 +1083,7 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-gazebo-sim-cerlab-uav\n",
         "smoke_test": "roslaunch --files xgc2_cerlab_uav_simulator start.launch\nroslaunch --files xgc2_cerlab_uav_simulator px4_start.launch\n"
       },
-      "version": "1.1.0-1"
+      "version": "1.1.0-5"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/fs150-sitl/.xgc2/product.yml",
@@ -1117,7 +1123,7 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-gazebo-sim-fs150-sitl\n",
         "smoke_test": "roslaunch --files gazebo_sim_fs150_sitl fs150.launch gui:=false\nroslaunch --files gazebo_sim_fs150_sitl fs150_robot_description.launch\n"
       },
-      "version": "1.1.0-1"
+      "version": "1.1.0-6"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/px4-sitl-112/.xgc2/product.yml",
@@ -1167,7 +1173,7 @@
         "notes": "Runtime entry scripts are installed from package scripts; packaging scripts stay under .xgc2/scripts.\n",
         "smoke_test": "roslaunch --files gazebo_sim_px4_1_12 iris.launch\n"
       },
-      "version": "1.12.3-7"
+      "version": "1.12.3-11"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/px4-sitl-114/.xgc2/product.yml",
@@ -1217,7 +1223,7 @@
         "notes": "Runtime entry scripts are installed from package scripts; packaging scripts stay under .xgc2/scripts.\n",
         "smoke_test": "roslaunch --files gazebo_sim_px4_1_14 iris.launch\n"
       },
-      "version": "1.14.4-6"
+      "version": "1.14.4-10"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/visualization/.xgc2/product.yml",
@@ -1232,7 +1238,7 @@
           "ros-noetic-sensor-msgs",
           "ros-noetic-tf2-ros",
           "ros-noetic-visualization-msgs",
-          "ros-noetic-xgc2-gazebo-sim-fs150-sitl (>= 1.1.0-1)",
+          "ros-noetic-xgc2-gazebo-sim-fs150-sitl (>= 1.1.0-5)",
           "ros-noetic-xgc2-gazebo-sim-scout"
         ],
         "distribution": "focal",
@@ -1264,13 +1270,13 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-gazebo-sim-visualization\n",
         "smoke_test": "roslaunch --files gazebo_sim_visualization gazebo_auto_visualization_rviz.launch rviz:=false\n"
       },
-      "version": "1.1.0-2"
+      "version": "1.1.0-6"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/vrpn_bridge/.xgc2/product.yml",
       "apt": {
         "depends": [
-          "libxgc2-math-dev (>= 0.5.1-1)",
+          "libxgc2-math-dev (>= 0.5.5-5)",
           "ros-noetic-gazebo-msgs",
           "ros-noetic-geometry-msgs",
           "ros-noetic-roscpp",
@@ -1309,12 +1315,15 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-gazebo-sim-vrpn-bridge\n",
         "smoke_test": "roslaunch --files gazebo_sim_vrpn_bridge vrpn_server.launch auto_track_known_models:=true\nroslaunch --files gazebo_sim_vrpn_bridge vrpn_client.launch trackers:=[uav1]\n"
       },
-      "version": "1.1.0-2"
+      "version": "1.1.0-6"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/worlds/.xgc2/product.yml",
       "apt": {
-        "depends": [],
+        "depends": [
+          "ros-noetic-gazebo-ros",
+          "libgazebo11"
+        ],
         "distribution": "focal",
         "install": [
           "ros-noetic-xgc2-gazebo-sim-worlds"
@@ -1328,7 +1337,8 @@
       "name": "XGC2 Gazebo Sim Worlds",
       "ownership": {
         "paths": [
-          "/opt/ros/noetic/share/gazebo_sim_worlds"
+          "/opt/ros/noetic/share/gazebo_sim_worlds",
+          "/opt/ros/noetic/lib/libobstaclePathPlugin.so"
         ]
       },
       "ros": {
@@ -1342,9 +1352,9 @@
       "usage": {
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-gazebo-sim-worlds\n",
         "notes": "This product owns reusable world and model assets only. Scenario launch files remain in gazebo_sim_examples.\n",
-        "smoke_test": "rospack find gazebo_sim_worlds\ntest -f /opt/ros/noetic/share/gazebo_sim_worlds/worlds/weston_robot_empty/weston_robot_empty.world\ntest -f /opt/ros/noetic/share/gazebo_sim_worlds/models/corridor/model.sdf\n"
+        "smoke_test": "rospack find gazebo_sim_worlds\ntest -f /opt/ros/noetic/share/gazebo_sim_worlds/worlds/empty/empty.world\ntest -f /opt/ros/noetic/lib/libobstaclePathPlugin.so\ntest -f /opt/ros/noetic/share/gazebo_sim_worlds/models/corridor/model.sdf\n"
       },
-      "version": "1.1.0-3"
+      "version": "1.1.0-8"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim-tools/.xgc2/product.yml",
@@ -1353,16 +1363,16 @@
           "ros-noetic-vrpn-client-ros",
           "ros-noetic-rviz",
           "ros-noetic-robot-state-publisher",
-          "ros-noetic-xgc2-gazebo-sim-visualization (>= 1.1.0-2)",
-          "ros-noetic-xgc2-gazebo-sim-vrpn-bridge (>= 1.1.0-2)",
+          "ros-noetic-xgc2-gazebo-sim-visualization (>= 1.1.0-6)",
+          "ros-noetic-xgc2-gazebo-sim-vrpn-bridge (>= 1.1.0-6)",
           "ros-noetic-xgc2-gazebo-sim-fs150-sitl",
           "ros-noetic-xgc2-gazebo-sim-scout",
-          "ros-noetic-xgc2-gazebo-sim-worlds (>= 1.1.0-3)",
-          "ros-noetic-xgc2-multirotor-controller (>= 1.1.15-1)",
-          "ros-noetic-xgc2-ugv-controller (>= 1.1.1-1)",
-          "ros-noetic-xgc2-estimator-hover-thrust (>= 1.1.22-2)",
-          "ros-noetic-xgc2-estimator-rigid-state (>= 1.1.3-2)",
-          "libxgc2-math-dev (>= 0.5.4-1)"
+          "ros-noetic-xgc2-gazebo-sim-worlds (>= 1.1.0-7)",
+          "ros-noetic-xgc2-multirotor-controller (>= 1.1.15-7)",
+          "ros-noetic-xgc2-ugv-controller (>= 1.1.1-6)",
+          "ros-noetic-xgc2-estimator-hover-thrust (>= 1.1.22-6)",
+          "ros-noetic-xgc2-estimator-rigid-state (>= 1.1.3-7)",
+          "libxgc2-math-dev (>= 0.5.5-6)"
         ],
         "distribution": "focal",
         "install": [
@@ -1399,7 +1409,7 @@
         "notes": "These are Gazebo Classic simulation tools. The full suite is installed through ros-noetic-xgc2-gazebo-sim-all from xgc2-gazebo-sim.\n",
         "smoke_test": "roslaunch --files gazebo_session_manager session_manager.launch world_name:=/tmp/xgc2-empty.world\nroslaunch --files gazebo_sim_examples fs150_ugv_vrpn_stack.launch\nroslaunch --files gazebo_sim_examples fs150_uav1_nmpc_tracking.launch\nroslaunch --files gazebo_sim_visualization gazebo_auto_visualization_rviz.launch rviz:=false\nroslaunch --files gazebo_sim_vrpn_bridge vrpn_server.launch auto_track_known_models:=true\nroslaunch --files gazebo_sim_vrpn_bridge vrpn_client.launch trackers:=[uav1]\n"
       },
-      "version": "1.1.0-3"
+      "version": "1.1.0-10"
     },
     {
       "_source": "products/ros1/simulator/swarm-sync-sim/.xgc2/product.yml",
@@ -1417,11 +1427,11 @@
         ],
         "packages": [
           "ros-noetic-swarm-sync-sim",
-          "ros-noetic-sss-sim-env (>= 1.1.0-1)",
-          "ros-noetic-sss-px4-rotor-sim (>= 1.1.0-1)",
-          "ros-noetic-sss-tello-sim (>= 1.1.0-1)",
-          "ros-noetic-sss-ugv-sim (>= 1.1.0-1)",
-          "ros-noetic-sss-fw-plane-sim (>= 1.1.0-1)"
+          "ros-noetic-sss-sim-env",
+          "ros-noetic-sss-px4-rotor-sim",
+          "ros-noetic-sss-tello-sim",
+          "ros-noetic-sss-ugv-sim",
+          "ros-noetic-sss-fw-plane-sim"
         ]
       },
       "id": "xgc2-swarm-sync-sim",
@@ -1441,6 +1451,9 @@
           "/opt/ros/noetic/lib/fw_plane_sim"
         ]
       },
+      "release": {
+        "skip_apt_verify": true
+      },
       "ros": {
         "distro": "noetic",
         "packages": [
@@ -1457,7 +1470,7 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-swarm-sync-sim\n",
         "smoke_test": "roslaunch --files sss_sim_env sim_clock.launch\n"
       },
-      "version": "1.1.0-1"
+      "version": "1.1.0-5"
     },
     {
       "_source": "products/ros2/simulator/px4-sitl-116/.xgc2/product.yml",
@@ -1505,52 +1518,57 @@
         "notes": "Runtime entry scripts are installed from package scripts; packaging scripts stay under .xgc2/scripts.\n",
         "smoke_test": "ros2 pkg prefix px4_gz_sim_1_16\n"
       },
-      "version": "1.16.2-1"
+      "version": "1.16.2-5"
     },
     {
-      "_source": "products/xgc1/.xgc2/product.yml",
+      "_source": "products/utils/linux/.xgc2/product.yml",
       "apt": {
         "depends": [
-          "xgc1-qt-runtime",
-          "ros-noetic-tf-conversions"
+          "cpufrequtils"
         ],
         "distribution": "focal",
         "install": [
-          "xgc1"
+          "xgc2-utils-linux-performance-mode"
         ],
         "packages": [
-          "xgc1",
-          "xgc1-qt-runtime"
+          "xgc2-utils-linux-performance-mode"
         ]
       },
-      "id": "xgc1",
-      "kind": "ros1-apt",
-      "name": "XGC1",
+      "groups": [
+        "utils",
+        "linux"
+      ],
+      "id": "xgc2-linux-utils",
+      "kind": "toolchain-apt",
+      "name": "XGC2 Linux Utils",
       "ownership": {
         "paths": [
-          "/opt/xgc1/app",
-          "/opt/xgc1/ros_ws",
-          "/opt/xgc1/toolchains/qt/5.15.2-runtime",
-          "/usr/bin/xgc1"
+          "/usr/lib/xgc2-utils/linux",
+          "/usr/lib/xgc2-utils/linux/configure-log-limits.sh",
+          "/usr/lib/xgc2-utils/linux/enable_performance_mode.sh",
+          "/usr/lib/xgc2-utils/linux/print_cpu_frequency.sh",
+          "/usr/lib/xgc2-utils/linux/query_cpu_state.sh",
+          "/usr/lib/xgc2-utils/linux/restore-runtime-gateway.sh",
+          "/usr/lib/xgc2-utils/linux/restore-runtime-nat-gateway.sh",
+          "/usr/lib/xgc2-utils/linux/restore_balanced_mode.sh",
+          "/usr/lib/xgc2-utils/linux/setup-runtime-nat-gateway.sh",
+          "/usr/lib/xgc2-utils/linux/use-runtime-gateway.sh",
+          "/usr/share/xgc2-utils-linux-performance-mode/cpufrequtils.default",
+          "/etc/default/cpufrequtils"
         ]
       },
       "release": {
-        "apt_version_template": "1.1.0-1",
-        "ref": "master",
-        "repository": "lxk36/xgc1",
+        "ref": "main",
+        "repository": "lxk36/xgc2-linux-utils",
         "workflow": "release.yml"
       },
-      "ros": {
-        "distro": "noetic",
-        "workspace": "/opt/xgc1/ros_ws"
-      },
       "schema": "xgc2.product.v1",
-      "summary": "XGC1 ROS Noetic ground-control application with bundled Qt runtime.",
+      "summary": "Linux host utility scripts and cpufrequtils performance-governor persistence.",
       "usage": {
-        "install": "sudo apt update\nsudo apt install xgc1\n",
-        "smoke_test": "xgc1 --help\n"
+        "install": "sudo apt update\nsudo apt install xgc2-utils-linux-performance-mode\n",
+        "smoke_test": "cat /etc/default/cpufrequtils\nsystemctl status cpufrequtils.service\n"
       },
-      "version": "1.1.0-1"
+      "version": "1.1.0-10"
     }
   ],
   "schema": "xgc2.catalog.v1"

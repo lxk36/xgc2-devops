@@ -34,6 +34,10 @@
   <arg name="paused" default="false"/>
   <arg name="interactive" default="false"/>
   <arg name="world" default="$(find gazebo_sim_worlds)/worlds/weston_robot_empty/weston_robot_empty.world"/>
+  <arg name="fs150_base_sdf" default="$(find gazebo_sim_fs150_sitl)/models/fs150/iris.sdf"/>
+  <arg name="fs150_sdf" default="$(env HOME)/.xgc2/fs150_sitl/iris_indoor.sdf"/>
+  <arg name="fs150_render_sdf" default="true"/>
+  <arg name="fs150_param_file" default="$(find gazebo_sim_fs150_sitl)/config/generated/fs150-sitl.params"/>
 
   <include file="$(find gazebo_sim_examples)/launch/fs150_uav1_nmpc_tracking.launch">
     <arg name="ns" value="$(arg ns)"/>
@@ -66,6 +70,10 @@
     <arg name="paused" value="$(arg paused)"/>
     <arg name="interactive" value="$(arg interactive)"/>
     <arg name="world" value="$(arg world)"/>
+    <arg name="fs150_base_sdf" value="$(arg fs150_base_sdf)"/>
+    <arg name="fs150_sdf" value="$(arg fs150_sdf)"/>
+    <arg name="fs150_render_sdf" value="$(arg fs150_render_sdf)"/>
+    <arg name="fs150_param_file" value="$(arg fs150_param_file)"/>
   </include>
 
   <include file="$(find gazebo_sim_visualization)/launch/gazebo_auto_visualization_rviz.launch">
