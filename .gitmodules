@@ -110,3 +110,15 @@
 	path = products/common/vrpn-router
 	url = git@github.com:lxk36/xgc2-vrpn-router.git
 	branch = master
+[submodule "products/ros1/robot/fs150_description"]
+	path = products/ros1/robot/fs150_description
+	url = git@github.com:lxk36/xgc2-fs150-description.git
+	branch = noetic
+[submodule "products/ros1/robot/scout_description"]
+	path = products/ros1/robot/scout_description
+	url = git@github.com:lxk36/xgc2-scout-description.git
+	branch = noetic
+[submodule "products/ros1/robot/xgc2_robot_visualization"]
+	path = products/ros1/robot/xgc2_robot_visualization
+	url = git@github.com:lxk36/xgc2-robot-visualization.git
+	branch = noetic
