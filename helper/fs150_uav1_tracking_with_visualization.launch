@@ -9,6 +9,11 @@
   <arg name="tracking_backend" default="dfbc_attitude_rate"/>
   <arg name="hover_thrust_config_file" default="$(find hover_thrust_estimator)/config/hover_thrust_estimator.yaml"/>
   <arg name="vrpn_px4_rotor_state_config_file" default="$(find gazebo_sim_examples)/config/vrpn_px4_rotor_state_estimator_fs150_tracking.yaml"/>
+  <arg name="estimator_request_highres_imu" default="true"/>
+  <arg name="estimator_mavros_ns" default="mavros"/>
+  <arg name="estimator_highres_imu_message_id" default="105"/>
+  <arg name="estimator_highres_imu_rate" default="250.0"/>
+  <arg name="estimator_highres_imu_reassert_period" default="10.0"/>
   <arg name="debug_print" default="false"/>
 
   <arg name="enable_yaw_control" default="false"/>
@@ -49,6 +54,11 @@
     <arg name="tracking_backend" value="$(arg tracking_backend)"/>
     <arg name="hover_thrust_config_file" value="$(arg hover_thrust_config_file)"/>
     <arg name="vrpn_px4_rotor_state_config_file" value="$(arg vrpn_px4_rotor_state_config_file)"/>
+    <arg name="estimator_request_highres_imu" value="$(arg estimator_request_highres_imu)"/>
+    <arg name="estimator_mavros_ns" value="$(arg estimator_mavros_ns)"/>
+    <arg name="estimator_highres_imu_message_id" value="$(arg estimator_highres_imu_message_id)"/>
+    <arg name="estimator_highres_imu_rate" value="$(arg estimator_highres_imu_rate)"/>
+    <arg name="estimator_highres_imu_reassert_period" value="$(arg estimator_highres_imu_reassert_period)"/>
     <arg name="debug_print" value="$(arg debug_print)"/>
     <arg name="enable_yaw_control" value="$(arg enable_yaw_control)"/>
     <arg name="reference_start_delay" value="$(arg reference_start_delay)"/>
