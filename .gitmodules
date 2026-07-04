@@ -106,3 +106,7 @@
 	path = products/ros1/simulator/gazebo-sim-tools
 	url = git@github.com:lxk36/xgc2-gazebo-sim-tools.git
 	branch = noetic
+[submodule "products/common/vrpn-router"]
+	path = products/common/vrpn-router
+	url = git@github.com:lxk36/xgc2-vrpn-router.git
+	branch = master
