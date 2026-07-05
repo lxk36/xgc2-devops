@@ -26,6 +26,7 @@ submodules=(
   products/common/state-machine
   products/common/tbb
   products/robotics/fs150
+  products/ros1/common/ros1-msgs
   products/ros1/common/ros1-utils
   products/ros1/communication/runtime-sync
   products/ros1/controller

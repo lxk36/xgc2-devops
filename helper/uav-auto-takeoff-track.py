@@ -7,7 +7,7 @@ import rospy
 from mavros_msgs.msg import State
 from std_msgs.msg import String
 
-from estimator_vrpn_px4_rotor_state.msg import RigidStateEstimate
+from rigid_state_estimator_msgs.msg import RigidStateEstimate
 
 
 class AutoTakeoffTrack:
