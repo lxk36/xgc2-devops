@@ -122,3 +122,7 @@
 	path = products/ros1/robot/xgc2_robot_visualization
 	url = git@github.com:lxk36/xgc2-robot-visualization.git
 	branch = noetic
+[submodule "products/ros1/common/state-machine-msgs"]
+	path = products/ros1/common/state-machine-msgs
+	url = git@github.com:lxk36/xgc2-state-machine-msgs.git
+	branch = noetic
