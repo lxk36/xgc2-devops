@@ -16,11 +16,12 @@ catkin products/ros1/common/ros1-msgs/rigid_state_estimator_msgs
 catkin products/ros1/common/ros1-msgs/multirotor_reference_trajectory_msgs
 catkin products/ros1/common/ros1-msgs/px4_multirotor_controller_msgs
 catkin products/ros1/common/ros1-msgs/unicycle_reference_trajectory_msgs
+catkin products/ros1/communication/ros1-adapter/src/xgc_ros1_adapter
 catkin products/ros1/controller/multirotor-controller/multirotor_reference_trajectory
 catkin products/ros1/controller/multirotor-controller/px4_multirotor_controller
 catkin products/ros1/controller/ugv-controller/unicycle_reference_trajectory
 catkin products/ros1/controller/ugv-controller/unicycle_ugv_controller
-catkin products/ros1/perception/hover-thrust
+catkin products/ros1/perception/hover-thrust/hover_thrust_estimator
 catkin products/ros1/perception/rigid-state/estimator_vrpn_px4_rotor_state
 catkin products/ros1/perception/rigid-state/estimator_vrpn_ugv_state
 catkin products/ros1/robot/fs150_description

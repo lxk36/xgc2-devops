@@ -12,11 +12,17 @@ g++
 gdb
 git
 libeigen3-dev
+libgrpc++-dev
 libgtest-dev
 libgoogle-glog-dev
+libprotobuf-dev
+libre2-dev
 libyaml-cpp-dev
 make
 mesa-utils
+pkg-config
+protobuf-compiler
+protobuf-compiler-grpc
 python3-catkin-tools
 python3-numpy
 python3-pip

@@ -126,3 +126,19 @@
 	path = products/ros1/common/ros1-msgs
 	url = git@github.com:lxk36/xgc2-ros-msgs.git
 	branch = noetic
+[submodule "products/ros1/communication/ros1-adapter"]
+	path = products/ros1/communication/ros1-adapter
+	url = git@github.com:lxk36/xgc2-ros1-adapter.git
+	branch = master
+[submodule "products/robotics/agilex"]
+	path = products/robotics/agilex
+	url = git@github.com:lxk36/xgc2-robot-agilex.git
+	branch = melodic
+[submodule "products/ros1/communication/swarm-ros-bridge"]
+	path = products/ros1/communication/swarm-ros-bridge
+	url = git@github.com:lxk36/xgc2-swarm-ros-bridge.git
+	branch = master
+[submodule "products/ros1/robot/scout_msgs"]
+	path = products/ros1/robot/scout_msgs
+	url = git@github.com:lxk36/xgc2-scout-msgs.git
+	branch = main

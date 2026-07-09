@@ -5,17 +5,16 @@
       "apt": {
         "depends": [
           "libc6",
-          "libgcc-s1",
+          "libgcc1 | libgcc-s1",
           "libgomp1",
           "libstdc++6",
           "libblas-dev",
           "python3",
-          "python3-deprecated",
           "python3-matplotlib",
           "python3-numpy",
           "python3-scipy"
         ],
-        "distribution": "focal,jammy,noble",
+        "distribution": "bionic,focal,jammy,noble",
         "install": [
           "xgc2-acados"
         ],
@@ -40,19 +39,20 @@
       },
       "release": {
         "apt_versions": {
-          "focal": "0.1.0-7~focal",
-          "jammy": "0.1.0-7~jammy",
-          "noble": "0.1.0-7~noble"
+          "bionic": "0.1.0-8~bionic",
+          "focal": "0.1.0-8~focal",
+          "jammy": "0.1.0-8~jammy",
+          "noble": "0.1.0-8~noble"
         }
       },
       "schema": "xgc2.product.v1",
-      "summary": "System-level acados solver stack and Python code-generation dependencies for XGC2 projects on Ubuntu 20.04, 22.04, and 24.04.",
+      "summary": "System-level acados solver stack and Python code-generation dependencies for XGC2 projects on Ubuntu 18.04, 20.04, 22.04, and 24.04.",
       "usage": {
         "install": "sudo apt update\nsudo apt install xgc2-acados\n",
-        "notes": "CMake consumers should use find_package(xgc2_acados REQUIRED CONFIG).\nMATLAB users should run /opt/xgc2/acados/setup_acados.m.\n",
+        "notes": "CMake consumers should use find_package(xgc2_acados REQUIRED CONFIG).\nMATLAB users should run /opt/xgc2/acados/setup_acados.m.\nBionic packages use CasADi 3.5.5 plus vendored dataclasses and typing_extensions backports for Python 3.6 and Ubuntu 18.04 libstdc++ compatibility; newer distributions use CasADi 3.7.2 by default.\nsetup.bash defaults MPLBACKEND to Agg for headless robot and CI runtime.\n",
         "smoke_test": "source /opt/xgc2/acados/setup.bash\npython3 -c 'from acados_template import AcadosOcp'\n"
       },
-      "version": "0.1.0-7"
+      "version": "0.1.0-8"
     },
     {
       "_source": "products/common/math/.xgc2/product.yml",
@@ -60,10 +60,10 @@
         "depends": [
           "libeigen3-dev",
           "libc6",
-          "libgcc-s1",
+          "libgcc1 | libgcc-s1",
           "libstdc++6"
         ],
-        "distribution": "focal,jammy,noble",
+        "distribution": "bionic,focal,jammy,noble",
         "install": [
           "libxgc2-math-dev"
         ],
@@ -89,6 +89,14 @@
           "/usr/lib/cmake/xgc2_math"
         ]
       },
+      "release": {
+        "apt_versions": {
+          "bionic": "0.5.6-2~bionic",
+          "focal": "0.5.6-2~focal",
+          "jammy": "0.5.6-2~jammy",
+          "noble": "0.5.6-2~noble"
+        }
+      },
       "schema": "xgc2.product.v1",
       "summary": "Header-only C++ math library for XGC2 geometry, filters, observers, estimators, and control utilities.",
       "usage": {
@@ -96,7 +104,7 @@
         "notes": "CMake consumers should use find_package(xgc2_math REQUIRED CONFIG)\nand link xgc2_math::math or one of the component targets:\nxgc2_math::algebra, xgc2_math::utils, xgc2_math::geometry, xgc2_math::filter,\nxgc2_math::observer, xgc2_math::estimation, xgc2_math::optimization,\nxgc2_math::trajectory, xgc2_math::control.\n",
         "smoke_test": "cmake --find-package -DNAME=xgc2_math -DCOMPILER_ID=GNU -DLANGUAGE=CXX -DMODE=EXIST\n"
       },
-      "version": "0.5.6-1"
+      "version": "0.5.6-2"
     },
     {
       "_source": "products/common/mavlink-router/.xgc2/product.yml",
@@ -144,10 +152,10 @@
       "apt": {
         "depends": [
           "libc6",
-          "libgcc-s1",
+          "libgcc1 | libgcc-s1",
           "libstdc++6"
         ],
-        "distribution": "focal,jammy,noble",
+        "distribution": "bionic,focal,jammy,noble",
         "install": [
           "libxgc2-state-machine-dev"
         ],
@@ -172,9 +180,10 @@
       },
       "release": {
         "apt_versions": {
-          "focal": "0.1.3-1~focal",
-          "jammy": "0.1.3-1~jammy",
-          "noble": "0.1.3-1~noble"
+          "bionic": "0.1.3-2~bionic",
+          "focal": "0.1.3-2~focal",
+          "jammy": "0.1.3-2~jammy",
+          "noble": "0.1.3-2~noble"
         }
       },
       "schema": "xgc2.product.v1",
@@ -184,7 +193,7 @@
         "notes": "CMake consumers should use find_package(xgc2_state_machine REQUIRED CONFIG)\nand link xgc2_state_machine::state_machine. The public include path remains\n<state_machine/state_machine.hpp>.\n",
         "smoke_test": "cmake --find-package -DNAME=xgc2_state_machine -DCOMPILER_ID=GNU -DLANGUAGE=CXX -DMODE=EXIST\n"
       },
-      "version": "0.1.3-1"
+      "version": "0.1.3-2"
     },
     {
       "_source": "products/common/tbb/.xgc2/product.yml",
@@ -275,6 +284,130 @@
       "version": "0.1.0-2"
     },
     {
+      "_source": "products/robotics/agilex/.xgc2/product.yml",
+      "apt": {
+        "depends": [
+          "ros-melodic-controller-manager",
+          "ros-melodic-cv-bridge",
+          "ros-melodic-ddynamic-reconfigure",
+          "ros-melodic-diagnostic-updater",
+          "ros-melodic-genmsg",
+          "ros-melodic-geometry-msgs",
+          "ros-melodic-image-transport",
+          "ros-melodic-message-runtime",
+          "ros-melodic-nav-msgs",
+          "ros-melodic-nodelet",
+          "ros-melodic-pcl-conversions",
+          "ros-melodic-pcl-ros",
+          "ros-melodic-roscpp",
+          "ros-melodic-roslaunch",
+          "ros-melodic-roslib",
+          "ros-melodic-rospy",
+          "ros-melodic-rosgraph",
+          "ros-melodic-scout-msgs",
+          "ros-melodic-sensor-msgs",
+          "ros-melodic-serial",
+          "ros-melodic-std-msgs",
+          "ros-melodic-std-srvs",
+          "ros-melodic-swarm-ros-bridge",
+          "ros-melodic-tf",
+          "ros-melodic-tf2",
+          "ros-melodic-tf2-ros",
+          "ros-melodic-topic-tools",
+          "systemd",
+          "udev",
+          "iproute2",
+          "ros-melodic-xacro",
+          "libpcap-dev",
+          "libpcl-dev",
+          "librealsense2-dev",
+          "libyaml-cpp-dev"
+        ],
+        "distribution": "bionic",
+        "install": [
+          "ros-melodic-xgc2-agilex-onboard-imu",
+          "ros-melodic-xgc2-agilex-wrp-io",
+          "ros-melodic-xgc2-agilex-ugv-sdk",
+          "ros-melodic-xgc2-agilex-scout-base",
+          "ros-melodic-xgc2-agilex-scout-bringup",
+          "ros-melodic-xgc2-agilex-swarm-ros-bridge",
+          "ros-melodic-xgc2-agilex-realsense2-camera",
+          "ros-melodic-xgc2-agilex-realsense2-description",
+          "ros-melodic-xgc2-agilex-rslidar-sdk",
+          "ros-melodic-xgc2-agilex-onboard-autostart"
+        ],
+        "packages": [
+          "ros-melodic-xgc2-agilex-onboard-imu",
+          "ros-melodic-xgc2-agilex-wrp-io",
+          "ros-melodic-xgc2-agilex-ugv-sdk",
+          "ros-melodic-xgc2-agilex-scout-base",
+          "ros-melodic-xgc2-agilex-scout-bringup",
+          "ros-melodic-xgc2-agilex-swarm-ros-bridge",
+          "ros-melodic-xgc2-agilex-realsense2-camera",
+          "ros-melodic-xgc2-agilex-realsense2-description",
+          "ros-melodic-xgc2-agilex-rslidar-sdk",
+          "ros-melodic-xgc2-agilex-onboard-autostart"
+        ]
+      },
+      "groups": [
+        "robotics",
+        "agilex",
+        "onboard"
+      ],
+      "id": "xgc2-agilex-onboard-ros1",
+      "kind": "ros1-apt",
+      "name": "XGC2 AgileX Onboard ROS1",
+      "ownership": {
+        "paths": [
+          "/opt/ros/melodic/share/agilex_onboard_imu",
+          "/opt/ros/melodic/lib/agilex_onboard_imu/agilex_onboard_imu_node",
+          "/opt/ros/melodic/share/agilex_onboard_imu/scripts/install_imu_udev_rule.sh",
+          "/opt/ros/melodic/share/wrp_io",
+          "/opt/ros/melodic/share/ugv_sdk",
+          "/opt/ros/melodic/share/scout_base",
+          "/opt/ros/melodic/share/scout_bringup",
+          "/opt/ros/melodic/share/agilex_swarm_ros_bridge",
+          "/opt/ros/melodic/lib/scout_base/scout_base_node",
+          "/opt/ros/melodic/share/realsense2_camera",
+          "/opt/ros/melodic/share/realsense2_description",
+          "/opt/ros/melodic/share/rslidar_sdk",
+          "/opt/ros/melodic/lib/rslidar_sdk/rslidar_sdk_node",
+          "/opt/ros/melodic/share/agilex_onboard_autostart",
+          "/opt/ros/melodic/lib/agilex_onboard_autostart/start-imu",
+          "/lib/systemd/system/xgc2-agilex-onboard.target",
+          "/etc/udev/rules.d/99-xgc2-agilex-imu.rules",
+          "/etc/xgc2/agilex/swarm_ros_bridge/ros_topics.yaml"
+        ]
+      },
+      "release": {
+        "workflow": "release.yml"
+      },
+      "ros": {
+        "distro": "melodic",
+        "packages": [
+          "agilex_onboard_imu",
+          "wrp_io",
+          "ugv_sdk",
+          "scout_base",
+          "scout_bringup",
+          "agilex_swarm_ros_bridge",
+          "realsense2_camera",
+          "realsense2_description",
+          "rslidar_sdk",
+          "agilex_onboard_autostart"
+        ],
+        "workspace": "onboard/ros1"
+      },
+      "schema": "xgc2.product.v1",
+      "summary": "ROS Melodic onboard IMU, Scout chassis, communication, and sensor packages for the AgileX onboard computer.",
+      "usage": {
+        "install": "sudo apt update\nsudo apt install ros-melodic-xgc2-agilex-onboard-autostart\n",
+        "notes": "The launch defaults match the recovered vehicle startup chain:\nport=/dev/imu, baud=115200, topic=/imu/data_raw, frame_id=imu_link.\nThe IMU deb also installs a one-time udev setup script for /dev/imu:\n/opt/ros/melodic/share/agilex_onboard_imu/scripts/install_imu_udev_rule.sh.\nThe Scout chassis packages are split by ROS package so SDK, messages,\ndriver, and bringup can be installed independently. The compatible Scout\nmessage definitions are maintained in xgc2-scout-msgs and consumed as the\nexternal Debian package ros-melodic-scout-msgs.\nThe AgileX swarm bridge package only provides vehicle-specific YAML and\nlaunch files. It consumes the external generic package\nros-melodic-swarm-ros-bridge.\nThe onboard sensor packages are grouped under onboard/ros1/src/sensors and\nsplit into independent Debian packages for RealSense camera, RealSense\ndescription assets, and RoboSense LiDAR.\nThe optional autostart package installs systemd units, the IMU udev rule,\nlightweight ROS readiness probes, and default swarm bridge configuration.\nIt enables xgc2-agilex-onboard.target but does not start the target during\ninstallation.\nInternal Debian dependencies include >= version constraints so driver and\nbringup packages do not silently bind to older SDK/driver packages.\n",
+        "smoke_test": "rospack find agilex_onboard_imu\nroslaunch --files agilex_onboard_imu imu_msg.launch\nrospack find scout_base\nroslaunch --files scout_bringup scout_minimal.launch\nrospack find agilex_swarm_ros_bridge\nroslaunch --files agilex_swarm_ros_bridge agilex_swarm_ros_bridge.launch\n"
+      },
+      "version": "0.1.1-5"
+    },
+    {
       "_source": "products/robotics/fs150/.xgc2/product.yml",
       "apt": {
         "depends": [
@@ -320,7 +453,7 @@
         "notes": "The ROS Noetic and XGC2 APT sources must be configured before installing this package.",
         "smoke_test": "test -d /opt/xgc2/robots/fs150/docs\ntest -f /opt/xgc2/robots/fs150/docs/rk356x_performance_mode.md\ndpkg -s xgc2-fs150\ndpkg -s xgc2-fs150-mavlink-router\ntest -f /etc/xgc2/fs150-mavlink-router/router.conf\nsystemctl is-enabled xgc2-fs150-mavlink-router.service\n"
       },
-      "version": "0.1.0-2"
+      "version": "0.1.0-3"
     },
     {
       "_source": "products/ros1/common/ros1-msgs/.xgc2/product.yml",
@@ -412,6 +545,54 @@
       "version": "1.1.1-1"
     },
     {
+      "_source": "products/ros1/communication/ros1-adapter/.xgc2/product.yml",
+      "apt": {
+        "depends": [
+          "libgrpc++1",
+          "libprotobuf17",
+          "libre2-5",
+          "ros-noetic-geometry-msgs",
+          "ros-noetic-mavros-msgs",
+          "ros-noetic-roscpp",
+          "ros-noetic-sensor-msgs",
+          "ros-noetic-std-msgs",
+          "ros-noetic-tf2"
+        ],
+        "distribution": "focal",
+        "install": [
+          "ros-noetic-xgc2-ros1-adapter"
+        ],
+        "packages": [
+          "ros-noetic-xgc2-ros1-adapter"
+        ]
+      },
+      "id": "xgc2-ros1-adapter",
+      "kind": "ros1-apt",
+      "name": "XGC2 ROS1 Adapter",
+      "ownership": {
+        "paths": [
+          "/opt/ros/noetic/share/xgc_ros1_adapter",
+          "/opt/ros/noetic/include/xgc_ros1_adapter",
+          "/opt/ros/noetic/lib/xgc_ros1_adapter/xgc_ros1_adapter_node"
+        ]
+      },
+      "ros": {
+        "distro": "noetic",
+        "packages": [
+          "xgc_ros1_adapter"
+        ],
+        "workspace": "catkin"
+      },
+      "schema": "xgc2.product.v1",
+      "summary": "ROS1 semantic adapter for XGC2 Go Core robot state and command bridging.",
+      "usage": {
+        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-ros1-adapter\n",
+        "notes": "The runtime process is managed by XGC Go Core as ros1-adapter and connects\nto the AdapterIngress gRPC UDS, defaulting to /tmp/xgc2/adapter-ingress.sock.\n",
+        "smoke_test": "rospack find xgc_ros1_adapter\ntest -x /opt/ros/noetic/lib/xgc_ros1_adapter/xgc_ros1_adapter_node\n"
+      },
+      "version": "0.1.0-1"
+    },
+    {
       "_source": "products/ros1/communication/runtime-sync/.xgc2/product.yml",
       "apt": {
         "distribution": "focal",
@@ -452,11 +633,61 @@
       "version": "1.6.2-5"
     },
     {
+      "_source": "products/ros1/communication/swarm-ros-bridge/.xgc2/product.yml",
+      "apt": {
+        "depends": [
+          "libzmqpp-dev",
+          "ros-melodic-geometry-msgs",
+          "ros-melodic-roscpp",
+          "ros-melodic-sensor-msgs",
+          "ros-melodic-std-msgs"
+        ],
+        "distribution": "bionic",
+        "install": [
+          "ros-melodic-swarm-ros-bridge"
+        ],
+        "packages": [
+          "ros-melodic-swarm-ros-bridge"
+        ]
+      },
+      "groups": [
+        "ros1",
+        "communication",
+        "swarm"
+      ],
+      "id": "xgc2-swarm-ros-bridge",
+      "kind": "ros1-apt",
+      "name": "XGC2 Swarm ROS Bridge",
+      "ownership": {
+        "paths": [
+          "/opt/ros/melodic/share/swarm_ros_bridge",
+          "/opt/ros/melodic/lib/swarm_ros_bridge/bridge_node"
+        ]
+      },
+      "release": {
+        "workflow": "release.yml"
+      },
+      "ros": {
+        "distro": "melodic",
+        "packages": [
+          "swarm_ros_bridge"
+        ]
+      },
+      "schema": "xgc2.product.v1",
+      "summary": "ROS Melodic ZeroMQ bridge for selected swarm robot topics.",
+      "usage": {
+        "install": "sudo apt update\nsudo apt install ros-melodic-swarm-ros-bridge\n",
+        "notes": "This package is the generic bridge binary. Robot-specific topic and peer\nconfiguration should live in the consuming robot product, not in this\npackage. The current compiled message set is sensor_msgs/Imu,\ngeometry_msgs/Twist, and std_msgs/String.\n",
+        "smoke_test": "rospack find swarm_ros_bridge\nroslaunch --files swarm_ros_bridge test.launch\n"
+      },
+      "version": "1.0.0-1"
+    },
+    {
       "_source": "products/ros1/controller/.xgc2/product.yml",
       "apt": {
         "depends": [
-          "ros-noetic-xgc2-multirotor-controller (>= 1.1.17-1)",
-          "ros-noetic-xgc2-ugv-controller (>= 1.1.3-1)"
+          "ros-noetic-xgc2-multirotor-controller (>= 1.1.18-1)",
+          "ros-noetic-xgc2-ugv-controller (>= 1.1.4-1)"
         ],
         "distribution": "focal",
         "install": [
@@ -484,7 +715,7 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-controller\n",
         "smoke_test": "roslaunch --files px4_multirotor_controller uav_nmpc_controller.launch\nroslaunch --files unicycle_ugv_controller ugv_unicycle_nmpc_controller.launch\n"
       },
-      "version": "1.3.15-1"
+      "version": "1.3.16-1"
     },
     {
       "_source": "products/ros1/controller/multirotor-controller/.xgc2/product.yml",
@@ -535,7 +766,7 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-multirotor-controller\n",
         "smoke_test": "roslaunch --files multirotor_reference_trajectory uav_multirotor_reference_trajectory.launch\nroslaunch --files px4_multirotor_controller uav_nmpc_controller.launch\n"
       },
-      "version": "1.1.17-1"
+      "version": "1.1.18-1"
     },
     {
       "_source": "products/ros1/controller/ugv-controller/.xgc2/product.yml",
@@ -584,7 +815,7 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-ugv-controller\n",
         "smoke_test": "roslaunch --files unicycle_reference_trajectory ugv_unicycle_reference_trajectory.launch\nroslaunch --files unicycle_ugv_controller ugv_unicycle_nmpc_controller.launch\n"
       },
-      "version": "1.1.3-1"
+      "version": "1.1.4-1"
     },
     {
       "_source": "products/ros1/driver/livox_ros_driver/.xgc2/product.yml",
@@ -792,7 +1023,7 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-estimator-rigid-state\n",
         "smoke_test": "roslaunch --files estimator_vrpn_px4_rotor_state vrpn_px4_rotor_state_estimator.launch\nroslaunch --files estimator_vrpn_ugv_state vrpn_ugv_state_estimator.launch\n"
       },
-      "version": "1.1.5-1"
+      "version": "1.1.6-1"
     },
     {
       "_source": "products/ros1/perception/slam/.xgc2/product.yml",
@@ -1077,7 +1308,54 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-scout-description\n",
         "smoke_test": "rospack find scout_description\nroslaunch --files scout_description mini_description.launch\n"
       },
-      "version": "0.4.10-1"
+      "version": "0.4.10-4"
+    },
+    {
+      "_source": "products/ros1/robot/scout_msgs/.xgc2/product.yml",
+      "apt": {
+        "depends": [
+          "ros-melodic-message-runtime",
+          "ros-melodic-std-msgs",
+          "ros-noetic-message-runtime",
+          "ros-noetic-std-msgs"
+        ],
+        "distribution": "bionic,focal",
+        "install": [
+          "ros-melodic-scout-msgs",
+          "ros-noetic-scout-msgs"
+        ],
+        "packages": [
+          "ros-melodic-scout-msgs",
+          "ros-noetic-scout-msgs"
+        ]
+      },
+      "id": "xgc2-scout-msgs",
+      "kind": "ros1-apt",
+      "name": "XGC2 Scout Messages",
+      "ownership": {
+        "paths": [
+          "/opt/ros/melodic/share/scout_msgs",
+          "/opt/ros/melodic/include/scout_msgs",
+          "/opt/ros/noetic/share/scout_msgs",
+          "/opt/ros/noetic/include/scout_msgs"
+        ]
+      },
+      "release": {
+        "workflow": "release.yml"
+      },
+      "ros": {
+        "distro": "melodic,noetic",
+        "packages": [
+          "scout_msgs"
+        ]
+      },
+      "schema": "xgc2.product.v1",
+      "summary": "ROS Melodic and Noetic AgileX Scout message definitions kept compatible with the recovered vehicle driver.",
+      "usage": {
+        "install": "sudo apt update\nsudo apt install ros-melodic-scout-msgs\nsudo apt install ros-noetic-scout-msgs\n",
+        "smoke_test": "rospack find scout_msgs\nrosmsg show scout_msgs/ScoutStatus\n"
+      },
+      "version": "0.3.3-2"
     },
     {
       "_source": "products/ros1/robot/xgc2_robot_visualization/.xgc2/product.yml",
@@ -1178,13 +1456,13 @@
       "_source": "products/ros1/simulator/gazebo-sim/.xgc2/product.yml",
       "apt": {
         "depends": [
-          "ros-noetic-xgc2-gazebo-sim-manager (>= 1.1.0-12)",
-          "ros-noetic-xgc2-gazebo-sim-examples (>= 1.1.0-12)",
+          "ros-noetic-xgc2-gazebo-sim-manager (>= 1.1.0-13)",
+          "ros-noetic-xgc2-gazebo-sim-examples (>= 1.1.0-13)",
           "ros-noetic-xgc2-robot-visualization (>= 0.1.0-1)",
           "ros-noetic-xgc2-gazebo-sim-visualization (>= 1.1.0-7)",
           "ros-noetic-xgc2-gazebo-sim-vrpn-bridge (>= 1.1.0-8)",
           "ros-noetic-xgc2-gazebo-sim-worlds (>= 1.1.0-8)",
-          "ros-noetic-xgc2-gazebo-sim-scout (>= 0.4.9-8)",
+          "ros-noetic-xgc2-gazebo-sim-scout (>= 0.4.9-12)",
           "ros-noetic-xgc2-gazebo-sim-px4-1-12 (>= 1.12.3-11)",
           "ros-noetic-xgc2-gazebo-sim-px4-1-14 (>= 1.14.4-10)",
           "ros-noetic-xgc2-gazebo-sim-fs150-sitl (>= 1.1.0-7)",
@@ -1219,13 +1497,14 @@
         "notes": "This repository is the verified Gazebo simulation suite entrypoint. Source packages live in child product repositories.\nThe aggregate package uses minimum child package versions so apt upgrades stale installed children when a quickstart requires newer launch assets.\nChild repositories may publish compatible packaging revisions independently; bump this product version only when the aggregate dependency set or compatibility contract changes.\n",
         "smoke_test": "dpkg -s ros-noetic-xgc2-gazebo-sim\nroslaunch --files gazebo_sim_examples fs150_ugv_vrpn_stack.launch\nroslaunch --files gazebo_sim_visualization fs150_vrpn_tracking_rviz.launch rviz:=false\nroslaunch --files gazebo_sim_scout simple.launch rviz:=false\nroslaunch --files gazebo_sim_px4_1_12 iris.launch gui:=false\nroslaunch --files gazebo_sim_px4_1_14 iris.launch gui:=false\nroslaunch --files gazebo_sim_fs150_sitl fs150.launch gui:=false\n"
       },
-      "version": "1.1.0-18"
+      "version": "1.1.0-22"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/agilex/.xgc2/product.yml",
       "apt": {
         "depends": [
-          "ros-noetic-xgc2-scout-description (>= 0.4.10-1)",
+          "ros-noetic-scout-msgs",
+          "ros-noetic-xgc2-scout-description (>= 0.4.10-4)",
           "ros-noetic-xgc2-gazebo-sim-worlds (>= 1.1.0-8)",
           "ros-noetic-xgc2-gazebo-sim-vrpn-bridge"
         ],
@@ -1259,7 +1538,7 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-gazebo-sim-scout\n",
         "smoke_test": "roslaunch --files gazebo_sim_scout simple.launch rviz:=false\n"
       },
-      "version": "0.4.9-8"
+      "version": "0.4.9-12"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/cerlab-uav-sim/.xgc2/product.yml",
@@ -1629,7 +1908,7 @@
         "notes": "These are Gazebo Classic simulation tools. The full suite is installed through ros-noetic-xgc2-gazebo-sim-all from xgc2-gazebo-sim.\n",
         "smoke_test": "roslaunch --files gazebo_session_manager session_manager.launch world_name:=/tmp/xgc2-empty.world\nroslaunch --files gazebo_sim_examples fs150_ugv_vrpn_stack.launch\nroslaunch --files gazebo_sim_examples fs150_uav1_nmpc_tracking.launch\nroslaunch --files gazebo_sim_visualization gazebo_auto_visualization_rviz.launch rviz:=false\nroslaunch --files gazebo_sim_vrpn_bridge vrpn_server.launch auto_track_known_models:=true\nroslaunch --files gazebo_sim_vrpn_bridge vrpn_client.launch trackers:=[uav1]\n"
       },
-      "version": "1.1.0-12"
+      "version": "1.1.0-13"
     },
     {
       "_source": "products/ros1/simulator/swarm-sync-sim/.xgc2/product.yml",
