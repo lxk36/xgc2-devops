@@ -1462,7 +1462,7 @@
           "ros-noetic-xgc2-gazebo-sim-visualization (>= 1.1.0-7)",
           "ros-noetic-xgc2-gazebo-sim-vrpn-bridge (>= 1.1.0-8)",
           "ros-noetic-xgc2-gazebo-sim-worlds (>= 1.1.0-8)",
-          "ros-noetic-xgc2-gazebo-sim-scout (>= 0.4.9-12)",
+          "ros-noetic-xgc2-gazebo-sim-scout (>= 0.4.9-13)",
           "ros-noetic-xgc2-gazebo-sim-px4-1-12 (>= 1.12.3-11)",
           "ros-noetic-xgc2-gazebo-sim-px4-1-14 (>= 1.14.4-10)",
           "ros-noetic-xgc2-gazebo-sim-fs150-sitl (>= 1.1.0-7)",
@@ -1497,7 +1497,7 @@
         "notes": "This repository is the verified Gazebo simulation suite entrypoint. Source packages live in child product repositories.\nThe aggregate package uses minimum child package versions so apt upgrades stale installed children when a quickstart requires newer launch assets.\nChild repositories may publish compatible packaging revisions independently; bump this product version only when the aggregate dependency set or compatibility contract changes.\n",
         "smoke_test": "dpkg -s ros-noetic-xgc2-gazebo-sim\nroslaunch --files gazebo_sim_examples fs150_ugv_vrpn_stack.launch\nroslaunch --files gazebo_sim_visualization fs150_vrpn_tracking_rviz.launch rviz:=false\nroslaunch --files gazebo_sim_scout simple.launch rviz:=false\nroslaunch --files gazebo_sim_px4_1_12 iris.launch gui:=false\nroslaunch --files gazebo_sim_px4_1_14 iris.launch gui:=false\nroslaunch --files gazebo_sim_fs150_sitl fs150.launch gui:=false\n"
       },
-      "version": "1.1.0-22"
+      "version": "1.1.0-23"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/agilex/.xgc2/product.yml",
@@ -1538,7 +1538,7 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-gazebo-sim-scout\n",
         "smoke_test": "roslaunch --files gazebo_sim_scout simple.launch rviz:=false\n"
       },
-      "version": "0.4.9-12"
+      "version": "0.4.9-13"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/cerlab-uav-sim/.xgc2/product.yml",
