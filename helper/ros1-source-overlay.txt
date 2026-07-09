@@ -26,6 +26,7 @@ catkin products/ros1/perception/rigid-state/estimator_vrpn_px4_rotor_state
 catkin products/ros1/perception/rigid-state/estimator_vrpn_ugv_state
 catkin products/ros1/robot/fs150_description
 catkin products/ros1/robot/scout_description
+catkin products/ros1/robot/scout_msgs
 catkin products/ros1/robot/xgc2_robot_visualization
 catkin products/ros1/simulator/gazebo-sim/agilex/scout
 catkin products/ros1/simulator/gazebo-sim/fs150-sitl

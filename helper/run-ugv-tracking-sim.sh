@@ -21,8 +21,12 @@ Options:
   --skip-build           Do not auto-build when /ros1_ws/devel is missing.
   --speed MPS            reference_default_line_speed. Default: 1.0
   --radius M             reference_default_radius. Default: 3.0
-  --trajectory-type ID   reference_default_type. Default: 3
+  --trajectory-type ID   reference_default_type. Default: 1 (circle)
   --duration SEC         reference_default_duration. Default: 120.0
+  --random-targets       Replace the analytic reference with periodic random targets.
+  --replan-period SEC    Random-target replanning period. Default: 5.0
+  --random-range M       Sample random x/y targets in [-M, M]. Default: 5.0
+  --random-seed N        Random-target seed; 0 uses a random seed. Default: 0
   --no-gui               Disable Gazebo GUI.
   --no-rviz              Disable RViz.
   --dry-run              Print the container launch command.
@@ -40,8 +44,12 @@ gazebo_master_uri="${XGC2_UGV_GAZEBO_MASTER_URI:-${XGC2_GAZEBO_MASTER_URI:-http:
 build_mode="auto"
 speed="1.0"
 radius="3.0"
-trajectory_type="3"
+trajectory_type="1"
 duration="120.0"
+random_targets=0
+replan_period="5.0"
+random_range="5.0"
+random_seed="0"
 gui="true"
 rviz="true"
 dry_run=0
@@ -102,6 +110,22 @@ while [[ $# -gt 0 ]]; do
       duration="${2:?--duration requires a value}"
       shift 2
       ;;
+    --random-targets)
+      random_targets=1
+      shift
+      ;;
+    --replan-period)
+      replan_period="${2:?--replan-period requires a value}"
+      shift 2
+      ;;
+    --random-range)
+      random_range="${2:?--random-range requires a value}"
+      shift 2
+      ;;
+    --random-seed)
+      random_seed="${2:?--random-seed requires a value}"
+      shift 2
+      ;;
     --no-gui)
       gui="false"
       shift
@@ -152,6 +176,20 @@ launch_args=(
   "reference_default_radius:=${radius}"
   "reference_default_line_speed:=${speed}"
 )
+if [[ "${random_targets}" == "1" ]]; then
+  launch_args+=(
+    "ugv_yaw:=0.0"
+    "reference_default_enabled:=false"
+    "target_replanner_enabled:=true"
+    "target_replanner_random_targets:=true"
+    "target_replanner_period:=${replan_period}"
+    "target_replanner_random_min_x:=-${random_range}"
+    "target_replanner_random_max_x:=${random_range}"
+    "target_replanner_random_min_y:=-${random_range}"
+    "target_replanner_random_max_y:=${random_range}"
+    "target_replanner_random_seed:=${random_seed}"
+  )
+fi
 launch_args+=("${extra_roslaunch_args[@]}")
 launch_command="$(printf '%q ' roslaunch gazebo_sim_examples scout_ugv1_nmpc_tracking.launch "${launch_args[@]}")"
 
