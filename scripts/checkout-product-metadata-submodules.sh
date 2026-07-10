@@ -25,11 +25,15 @@ submodules=(
   products/common/mavlink-router
   products/common/state-machine
   products/common/tbb
+  products/common/vrpn-router
+  products/robotics/agilex
   products/robotics/fs150
   products/webui/lichtblick-packaging
   products/ros1/common/ros1-msgs
   products/ros1/common/ros1-utils
+  products/ros1/communication/ros1-adapter
   products/ros1/communication/runtime-sync
+  products/ros1/communication/swarm-ros-bridge
   products/ros1/controller
   products/ros1/driver/livox_ros_driver
   products/ros1/driver/livox_ros_driver2
@@ -38,6 +42,10 @@ submodules=(
   products/ros1/perception/rigid-state
   products/ros1/perception/slam
   products/ros1/planner/planner
+  products/ros1/robot/fs150_description
+  products/ros1/robot/scout_description
+  products/ros1/robot/scout_msgs
+  products/ros1/robot/xgc2_robot_visualization
   products/ros1/simulator/convex_geometry
   products/ros1/simulator/gazebo-sim
   products/ros1/simulator/gazebo-sim-tools
