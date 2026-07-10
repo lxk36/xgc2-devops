@@ -72,6 +72,24 @@ class FakeClock:
 
 
 class WorkflowAuditTests(unittest.TestCase):
+    def test_duplicate_apt_overlay_prefix_is_forbidden(self):
+        pattern = next(
+            pattern
+            for code, pattern, _message in workflow_audit.FORBIDDEN_PRODUCT_PATTERNS
+            if code == "duplicate-apt-overlay-prefix"
+        )
+        broken = (
+            'sed "s#https://xgc2.apt.xiaokang.ink#${XGC2_APT_OVERLAY_URL%/}#g; '
+            's#${XGC2_APT_BASE_URL:-https://xgc2.apt.xiaokang.ink}#'
+            '${XGC2_APT_OVERLAY_URL%/}#g"'
+        )
+        fixed = (
+            'sed "s#${XGC2_APT_BASE_URL:-https://xgc2.apt.xiaokang.ink}#'
+            '${XGC2_APT_OVERLAY_URL%/}#g"'
+        )
+        self.assertIsNotNone(pattern.search(broken))
+        self.assertIsNone(pattern.search(fixed))
+
     def test_central_workflow_run_blocks_are_valid_bash(self):
         import yaml
 

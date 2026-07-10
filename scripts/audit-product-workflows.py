@@ -53,6 +53,14 @@ PREFERRED_RELEASE_WORKFLOWS = (
 )
 FORBIDDEN_PRODUCT_PATTERNS: tuple[tuple[str, re.Pattern[str], str], ...] = (
     (
+        "duplicate-apt-overlay-prefix",
+        re.compile(
+            r"s#https://xgc2\.apt\.xiaokang\.ink#\$\{XGC2_APT_OVERLAY_URL%/\}#g;"
+            r"\s*s#\$\{XGC2_APT_BASE_URL:-https://xgc2\.apt\.xiaokang\.ink\}#"
+        ),
+        "APT overlay replacement must not rewrite the base URL twice",
+    ),
+    (
         "product-apt-secret",
         re.compile(r"\bAPT_REPO_[A-Z0-9_]+\b"),
         "product code must not reference centralized APT credentials",
