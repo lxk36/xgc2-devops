@@ -4,10 +4,12 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import os
 import re
 import subprocess
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -22,6 +24,14 @@ PREFERRED_WORKFLOWS = (
 )
 RELEASE_ACTION = "release"
 VERIFY_ACTION = "verify"
+COMPATIBILITY_VERIFY_ACTION = "compatibility-verify"
+DEPENDENCY_POLICIES = {"rebuild", "verify", "order"}
+APT_ARCHITECTURES = ("amd64", "arm64")
+ACTION_PRIORITY = {
+    VERIFY_ACTION: 0,
+    COMPATIBILITY_VERIFY_ACTION: 1,
+    RELEASE_ACTION: 2,
+}
 STANDARD_WORKFLOW_INPUTS = {
     "expected_version",
     "expected_source_sha",
@@ -32,6 +42,9 @@ STANDARD_WORKFLOW_INPUTS = {
     "release_lock_digest",
     "trusted_ci_run_id",
     "ci_run_id",
+    "prepare_action",
+    "apt_overlay_url",
+    "dependency_set_digest",
 }
 
 
@@ -147,14 +160,84 @@ class Product:
     apt_depends: tuple[str, ...]
     groups: tuple[str, ...]
     release: dict[str, Any]
+    apt_package_architectures: dict[str, tuple[str, ...]] = field(default_factory=dict)
+    apt_package_distributions: dict[str, tuple[str, ...]] = field(default_factory=dict)
 
     @property
     def is_apt(self) -> bool:
-        return bool(self.apt_packages or self.apt_install) and "apt" in self.kind
+        # Package metadata is the source of truth.  Some hardware products are
+        # intentionally classified as ``mixed`` while still publishing debs.
+        return bool(self.apt_packages or self.apt_install)
 
     @property
     def provided_apt_packages(self) -> tuple[str, ...]:
         return tuple(dict.fromkeys((*self.apt_packages, *self.apt_install)))
+
+    @property
+    def package_architectures(self) -> dict[str, tuple[str, ...]]:
+        provided = set(self.provided_apt_packages)
+        unknown = sorted(set(self.apt_package_architectures) - provided)
+        if unknown:
+            raise ValueError(
+                f"{self.product_id}: apt.package_architectures references unknown package(s): "
+                + ", ".join(unknown)
+            )
+        result: dict[str, tuple[str, ...]] = {}
+        for package in self.apt_packages or self.apt_install:
+            arches = self.apt_package_architectures.get(package, APT_ARCHITECTURES)
+            if not arches or any(arch not in APT_ARCHITECTURES for arch in arches):
+                raise ValueError(
+                    f"{self.product_id}: invalid apt.package_architectures[{package}]"
+                )
+            result[package] = tuple(arch for arch in APT_ARCHITECTURES if arch in arches)
+        narrowed_install = sorted(
+            package
+            for package in self.apt_install
+            if set(result.get(package, APT_ARCHITECTURES)) != set(APT_ARCHITECTURES)
+        )
+        if narrowed_install:
+            raise ValueError(
+                f"{self.product_id}: apt.install packages must support amd64 and arm64: "
+                + ", ".join(narrowed_install)
+            )
+        return result
+
+    @property
+    def package_distributions(self) -> dict[str, tuple[str, ...]]:
+        provided = set(self.provided_apt_packages)
+        unknown = sorted(set(self.apt_package_distributions) - provided)
+        if unknown:
+            raise ValueError(
+                f"{self.product_id}: apt.package_distributions references unknown package(s): "
+                + ", ".join(unknown)
+            )
+        allowed = set(self.apt_distributions)
+        result: dict[str, tuple[str, ...]] = {}
+        for package in self.apt_packages or self.apt_install:
+            distributions = self.apt_package_distributions.get(
+                package, self.apt_distributions
+            )
+            if not distributions or any(value not in allowed for value in distributions):
+                raise ValueError(
+                    f"{self.product_id}: invalid apt.package_distributions[{package}]"
+                )
+            result[package] = tuple(
+                value for value in self.apt_distributions if value in distributions
+            )
+        missing_install = sorted(
+            distribution
+            for distribution in self.apt_distributions
+            if not any(
+                distribution in result.get(package, self.apt_distributions)
+                for package in self.apt_install
+            )
+        )
+        if missing_install:
+            raise ValueError(
+                f"{self.product_id}: no apt.install package applies to distribution(s): "
+                + ", ".join(missing_install)
+            )
+        return result
 
     @property
     def apt_version_overrides(self) -> dict[str, str]:
@@ -183,6 +266,21 @@ class Product:
     def ci_workflow(self) -> str:
         value = self.release.get("ci_workflow", "ci.yml")
         return str(value) if value else "ci.yml"
+
+    @property
+    def dependency_policy(self) -> dict[str, str]:
+        value = self.release.get("dependency_policy", {})
+        if not isinstance(value, dict):
+            raise ValueError(f"{self.product_id}: release.dependency_policy must be an object")
+        result = {str(key): str(policy) for key, policy in value.items()}
+        invalid = sorted(
+            f"{key}={policy}" for key, policy in result.items() if policy not in DEPENDENCY_POLICIES
+        )
+        if invalid:
+            raise ValueError(
+                f"{self.product_id}: invalid release.dependency_policy: {', '.join(invalid)}"
+            )
+        return result
 
 
 @dataclass(frozen=True)
@@ -224,6 +322,16 @@ def load_catalog(root: Path, catalog_path: Path | None) -> list[Product]:
         source_file = root / str(item["_source"])
         apt = item.get("apt") if isinstance(item.get("apt"), dict) else {}
         release = item.get("release") if isinstance(item.get("release"), dict) else {}
+        raw_package_architectures = apt.get("package_architectures", {})
+        if not isinstance(raw_package_architectures, dict):
+            raise ValueError(
+                f"{item.get('id', '<unknown>')}: apt.package_architectures must be an object"
+            )
+        raw_package_distributions = apt.get("package_distributions", {})
+        if not isinstance(raw_package_distributions, dict):
+            raise ValueError(
+                f"{item.get('id', '<unknown>')}: apt.package_distributions must be an object"
+            )
         distributions = split_csv(str(apt.get("distribution", "focal")))
         products.append(
             Product(
@@ -239,27 +347,49 @@ def load_catalog(root: Path, catalog_path: Path | None) -> list[Product]:
                 apt_depends=tuple(list_field(item, "apt", "depends")),
                 groups=tuple(list_field(item, "groups")),
                 release=release,
+                apt_package_architectures={
+                    str(package): tuple(str(arch) for arch in arches)
+                    for package, arches in raw_package_architectures.items()
+                    if isinstance(arches, list)
+                },
+                apt_package_distributions={
+                    str(package): tuple(str(distribution) for distribution in values)
+                    for package, values in raw_package_distributions.items()
+                    if isinstance(values, list)
+                },
             )
         )
     return products
 
 
-def build_graph(products: list[Product]) -> tuple[dict[str, set[str]], dict[str, set[str]]]:
+def build_graph(
+    products: list[Product],
+) -> tuple[dict[str, set[str]], dict[str, set[str]], dict[tuple[str, str], str]]:
     active = [product for product in products if product.is_apt]
     owners: dict[str, str] = {}
     for product in active:
         for package in product.provided_apt_packages:
             owners[package] = product.product_id
+        # During metadata migration, retain a deterministic product-id alias so
+        # legacy install names such as ros-noetic-xgc2-linux-utils still map to
+        # the product that now publishes a differently named compatibility deb.
+        owners.setdefault(product.product_id, product.product_id)
+        for ros_distro in ("melodic", "noetic", "humble", "jazzy"):
+            owners.setdefault(f"ros-{ros_distro}-{product.product_id}", product.product_id)
 
     downstream: dict[str, set[str]] = {product.product_id: set() for product in active}
     upstream: dict[str, set[str]] = {product.product_id: set() for product in active}
+    edge_policy: dict[tuple[str, str], str] = {}
     active_ids = set(upstream)
     for product in active:
+        direct_upstream: set[str] = set()
         for dependency in product.apt_depends:
             provider = owners.get(parse_dep_package(dependency))
             if provider and provider != product.product_id:
                 downstream[provider].add(product.product_id)
                 upstream[product.product_id].add(provider)
+                direct_upstream.add(provider)
+                edge_policy[(provider, product.product_id)] = "rebuild"
         for provider in product.release_requires:
             if provider not in active_ids:
                 raise ValueError(
@@ -269,7 +399,55 @@ def build_graph(products: list[Product]) -> tuple[dict[str, set[str]], dict[str,
                 raise ValueError(f"{product.product_id}: release.requires cannot reference itself")
             downstream[provider].add(product.product_id)
             upstream[product.product_id].add(provider)
-    return downstream, upstream
+            direct_upstream.add(provider)
+            edge_policy.setdefault((provider, product.product_id), "order")
+        unknown_overrides = sorted(set(product.dependency_policy) - direct_upstream)
+        if unknown_overrides:
+            raise ValueError(
+                f"{product.product_id}: release.dependency_policy references non-direct "
+                f"upstream product(s): {', '.join(unknown_overrides)}"
+            )
+        for provider, policy in product.dependency_policy.items():
+            edge_policy[(provider, product.product_id)] = policy
+    return downstream, upstream, edge_policy
+
+
+def merge_action(current: str | None, candidate: str) -> str:
+    if current is None or ACTION_PRIORITY[candidate] > ACTION_PRIORITY[current]:
+        return candidate
+    return current
+
+
+def propagate_downstream_actions(
+    seed: set[str],
+    downstream: dict[str, set[str]],
+    edge_policy: dict[tuple[str, str], str],
+) -> dict[str, str]:
+    """Propagate only compatibility-relevant dependency changes.
+
+    A rebuild edge selects and recursively releases its consumer.  A verify
+    edge selects a compatibility check but deliberately stops propagation.
+    Order-only edges constrain two already selected nodes and never expand the
+    release train.
+    """
+
+    actions = {product_id: RELEASE_ACTION for product_id in seed}
+    queue = list(sorted(seed))
+    while queue:
+        provider = queue.pop(0)
+        if actions.get(provider) != RELEASE_ACTION:
+            continue
+        for consumer in sorted(downstream.get(provider, ())):
+            policy = edge_policy[(provider, consumer)]
+            if policy == "order":
+                continue
+            candidate = RELEASE_ACTION if policy == "rebuild" else COMPATIBILITY_VERIFY_ACTION
+            previous = actions.get(consumer)
+            merged = merge_action(previous, candidate)
+            actions[consumer] = merged
+            if merged == RELEASE_ACTION and previous != RELEASE_ACTION:
+                queue.append(consumer)
+    return actions
 
 
 def changed_products(
@@ -599,6 +777,31 @@ def infer_ref(product: Product) -> str:
     remote_head = git(["symbolic-ref", "--quiet", "--short", "refs/remotes/origin/HEAD"], product.source_dir)
     if remote_head.startswith("origin/"):
         return remote_head.split("/", 1)[1]
+    # A freshly checked-out nested submodule can be detached before its remote
+    # refs are fetched.  Its parent .gitmodules branch is still an immutable,
+    # local source of truth and avoids guessing main/master/noetic.
+    repo_root_text = git(["rev-parse", "--show-toplevel"], product.source_dir)
+    if repo_root_text:
+        repo_root = Path(repo_root_text).resolve()
+        parent = repo_root.parent
+        while parent != parent.parent:
+            modules = parent / ".gitmodules"
+            if modules.exists():
+                entries = git(
+                    ["config", "-f", os.fspath(modules), "--get-regexp", r"^submodule\..*\.path$"],
+                    parent,
+                )
+                for line in entries.splitlines():
+                    key, _, configured_path = line.partition(" ")
+                    if not configured_path:
+                        continue
+                    if (parent / configured_path).resolve() != repo_root:
+                        continue
+                    branch_key = key[: -len(".path")] + ".branch"
+                    branch = git(["config", "-f", os.fspath(modules), "--get", branch_key], parent)
+                    if branch and branch != ".":
+                        return branch
+            parent = parent.parent
     raise ValueError(
         f"{product.product_id}: cannot infer release ref; add release.ref to product.yml"
     )
@@ -671,7 +874,20 @@ def build_targets(
     return targets
 
 
-def target_plan_item(product_id: str, layer_index: int, target: ReleaseTarget) -> dict[str, Any]:
+def canonical_digest(value: Any) -> str:
+    encoded = json.dumps(
+        value, ensure_ascii=False, separators=(",", ":"), sort_keys=True
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def target_plan_item(
+    product_id: str,
+    layer_index: int,
+    target: ReleaseTarget,
+    *,
+    root: Path,
+) -> dict[str, Any]:
     product = target.product
     return {
         "id": product_id,
@@ -684,7 +900,7 @@ def target_plan_item(product_id: str, layer_index: int, target: ReleaseTarget) -
         "skip_apt_verify": product.skip_apt_verify,
         "repository": target.repository,
         "ref": target.ref,
-        "source": product.source_dir.as_posix(),
+        "source": product.source_dir.resolve().relative_to(root.resolve()).as_posix(),
         "source_sha": target.source_sha,
         "expected_source_sha": target.source_sha,
         "workflow": target.workflow,
@@ -694,13 +910,23 @@ def target_plan_item(product_id: str, layer_index: int, target: ReleaseTarget) -
         "apt_packages": list(product.apt_packages or product.apt_install),
         "apt_install": list(product.apt_install),
         "apt_distributions": list(product.apt_distributions),
+        "apt_package_architectures": {
+            package: list(arches)
+            for package, arches in sorted(product.package_architectures.items())
+        },
+        "apt_package_distributions": {
+            package: list(distributions)
+            for package, distributions in sorted(product.package_distributions.items())
+        },
     }
 
 
 def product_plan_json(
+    root: Path,
     layers: list[list[str]],
     targets: dict[str, ReleaseTarget],
     downstream: dict[str, set[str]],
+    edge_policy: dict[tuple[str, str], str],
 ) -> dict[str, Any]:
     selected = set(targets)
     dependencies: dict[str, list[str]] = {product_id: [] for product_id in selected}
@@ -710,18 +936,40 @@ def product_plan_json(
         for consumer in consumers:
             if consumer in selected:
                 dependencies[consumer].append(provider)
+    items_by_id: dict[str, dict[str, Any]] = {}
+    for layer_index, layer in enumerate(layers, start=1):
+        for product_id in layer:
+            dependencies_for_product = sorted(dependencies[product_id])
+            policies = {
+                provider: edge_policy[(provider, product_id)]
+                for provider in dependencies_for_product
+            }
+            dependency_set = [
+                {
+                    "id": provider,
+                    "action": targets[provider].action,
+                    "source_sha": targets[provider].source_sha,
+                    "version": targets[provider].expected_version,
+                    "policy": policies[provider],
+                }
+                for provider in dependencies_for_product
+            ]
+            items_by_id[product_id] = {
+                **target_plan_item(product_id, layer_index, targets[product_id], root=root),
+                "dependencies": dependencies_for_product,
+                "dependency_policy": policies,
+                "dependency_set_digest": canonical_digest(dependency_set),
+                "release_scoped_build": any(
+                    targets[provider].action == RELEASE_ACTION
+                    for provider in dependencies_for_product
+                ),
+            }
     return {
-        "schema": "xgc2.release-plan.v1",
+        "schema": "xgc2.release-plan.v2",
         "max_parallel": 4,
         "layers": [
-            [
-                {
-                    **target_plan_item(product_id, layer_index, targets[product_id]),
-                    "dependencies": sorted(dependencies[product_id]),
-                }
-                for product_id in layer
-            ]
-            for layer_index, layer in enumerate(layers, start=1)
+            [items_by_id[product_id] for product_id in layer]
+            for layer in layers
         ],
     }
 
@@ -795,8 +1043,9 @@ def write_plan_outputs(
     layers: list[list[str]],
     targets: dict[str, ReleaseTarget],
     downstream: dict[str, set[str]],
+    edge_policy: dict[tuple[str, str], str],
 ) -> None:
-    plan = product_plan_json(layers, targets, downstream)
+    plan = product_plan_json(root, layers, targets, downstream, edge_policy)
     plan_path = root / plan_output
     plan_path.parent.mkdir(parents=True, exist_ok=True)
     with plan_path.open("w", encoding="utf-8") as handle:
@@ -815,7 +1064,7 @@ def write_plan_outputs(
         with lock_path.open("w", encoding="utf-8") as handle:
             json.dump(
                 {
-                    "schema": "xgc2.release-lock.v1",
+                    "schema": "xgc2.release-lock.v2",
                     "products": lock_products,
                 },
                 handle,
@@ -893,7 +1142,7 @@ def main() -> int:
     catalog_path = Path(args.catalog).resolve() if args.catalog else None
     products = [product for product in load_catalog(root, catalog_path) if product.is_apt]
     products_by_id = {product.product_id: product for product in products}
-    downstream, upstream = build_graph(products)
+    downstream, upstream, edge_policy = build_graph(products)
 
     explicit_seed = {
         product_id
@@ -918,22 +1167,23 @@ def main() -> int:
         raise SystemExit(f"unknown product id(s): {', '.join(unknown)}")
 
     selected = set(seed)
+    action_by_id = {product_id: RELEASE_ACTION for product_id in seed}
     prerequisite_ids: set[str] = set()
-    downstream_ids: set[str] = set()
     if not args.no_upstream:
         prerequisite_ids = upstream_closure(seed, upstream) - seed
         selected.update(prerequisite_ids)
+        for product_id in prerequisite_ids:
+            action_by_id[product_id] = VERIFY_ACTION
     if not args.no_downstream:
-        downstream_roots = explicit_seed | changed_seed
-        downstream_ids = downstream_closure(downstream_roots, downstream) - seed
-        selected.update(downstream_ids)
+        propagated = propagate_downstream_actions(seed, downstream, edge_policy)
+        selected.update(propagated)
+        for product_id, action in propagated.items():
+            action_by_id[product_id] = merge_action(action_by_id.get(product_id), action)
 
-    action_by_id = {
-        product_id: (VERIFY_ACTION if product_id in prerequisite_ids else RELEASE_ACTION)
-        for product_id in selected
-    }
-    for product_id in downstream_ids:
-        action_by_id[product_id] = RELEASE_ACTION
+    # Order edges do not expand the plan, but every selected consumer must keep
+    # any selected direct upstream as a scheduler dependency.
+    for product_id in selected:
+        action_by_id.setdefault(product_id, VERIFY_ACTION)
 
     layers = topo_layers(selected, downstream)
     targets = build_targets(
@@ -952,6 +1202,7 @@ def main() -> int:
         layers=layers,
         targets=targets,
         downstream=downstream,
+        edge_policy=edge_policy,
     )
 
     if args.execute:

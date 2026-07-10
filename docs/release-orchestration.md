@@ -1,103 +1,112 @@
 # XGC2 APT Release Orchestration
 
-`scripts/orchestrate-apt-release.py` turns product metadata into an APT release DAG.
-It is intentionally owned by `xgc2-devops`; product repositories still only build
-and publish themselves.
+`xgc2-devops` is the only XGC2 APT release control plane. Product repositories
+build and test packages, but they do not hold APT credentials, create release
+manifests, or mutate repository indexes.
 
-## Local dry-run
+## Entry point
 
-```bash
-cd xgc2-devops
-python3 scripts/orchestrate-apt-release.py --product libxgc2-math-dev
-```
-
-For simulation stack releases, use product groups instead of manually listing
-every child package:
+Create a dry-run plan locally:
 
 ```bash
-python3 scripts/orchestrate-apt-release.py --group gazebo-sim
-python3 scripts/orchestrate-apt-release.py --group simulator
+python3 scripts/orchestrate-apt-release.py --root . --group gazebo-sim
 ```
 
-`gazebo-sim` includes the ROS1 Gazebo Classic stack: worlds, PX4 SITL wrappers,
-FS150, Scout/UGV, CERLAB UAV plugins, VRPN bridge, visualization, tools, and the
-aggregate `xgc2-gazebo-sim` package. `simulator` additionally covers other
-simulator products such as ROS2 PX4 SITL and swarm-sync simulation packages.
-
-This collects `.xgc2/product.yml`, expands downstream products that depend on the
-seed product, resolves each product repository/ref/workflow, and writes
-`.work/release-plan.json`.
-
-## Execute
+Execute a reviewed release through GitHub Actions:
 
 ```bash
 gh workflow run release-orchestrator.yml \
   --repo lxk36/xgc2-devops \
-  -f products=libxgc2-math-dev \
+  -f groups=gazebo-sim \
   -f execute=true
 ```
 
-The planner CLI is dry-run only. Its former `--execute` path is deliberately
-disabled so local dispatch cannot bypass approvals, immutable locks, recovery
-checks, or the dependency-ready scheduler.
+The `plan` job never receives production credentials. The `execute-release`
+job references the protected `xgc2-apt-production` Environment and is globally
+serialized by the `xgc2-apt-production` concurrency group. Do not dispatch
+product release workflows manually.
 
-The GitHub orchestrator runs a dependency-ready queue. A downstream product is
-released only after every upstream workflow completes and the expected package,
-deb SHA256, source SHA manifest, and release-lock digest are visible for both
-APT architectures.
+## Prepare and promote
 
-Quality jobs are treated as optional unless `--quality-required` is passed. Build,
-deb packaging, publish, and APT index verification remain required.
+Every release has an immutable release ID, plan digest, and lock digest. Ready
+nodes prepare with at most four builds in flight:
 
-## GitHub Actions
+1. Reuse an exact-SHA successful push artifact only when none of its upstream
+   packages changes in the same train.
+2. Otherwise dispatch the product fallback builder with `publish_apt` disabled.
+3. Re-read deb metadata, recompute SHA256, and validate all declared
+   distribution/architecture/package coverage centrally.
+4. Upload the validated bundle to `staging/<release_id>`.
+5. Release downstream work only after the upstream staging index and manifest
+   match the expected bundle digest.
 
-Use the `release-orchestrator` workflow in `xgc2-devops` for manual releases.
-Release orchestration remains owned by `xgc2-devops`; the top-level workspace
-should only point to the devops revision that contains the orchestration system.
+Independent branches continue preparing after another branch fails, but no
+production change occurs unless every selected release and compatibility node
+passes. The orchestrator then submits one sorted `xgc2.release-train.v1` and the
+APT service atomically switches the complete production generation.
 
-Executing cross-repository workflows requires a token with Actions write access
-to the product repositories. Store it as `XGC2_RELEASE_ORCHESTRATOR_TOKEN`.
+## Dependency impact
 
-## Scheduling and recovery
+`apt.depends` discovers internal package dependencies and defaults to
+`rebuild`. `release.requires` expresses ordering and defaults to `order`.
+Products may override a direct upstream edge:
 
-Do not manually dispatch dependent product releases in parallel. The supported
-batch entrypoint is `release-orchestrator`; direct product dispatch is reserved
-for isolated recovery after all prerequisites are already APT-visible.
+```yaml
+release:
+  dependency_policy:
+    libxgc2-math-dev: rebuild
+    xgc2-runtime-sync: verify
+    xgc2-gazebo-sim-tools: order
+```
 
-The workflow uses one dependency-ready queue instead of fixed layer barriers.
-Ready products start up to `max_parallel`; a failure blocks only its downstream
-closure. Supply `resume_run_id` to reuse the prior `release-state.json`, keeping
-successful nodes as verify-only work while retrying failed and blocked work.
-Every resumed success must re-confirm the current APT indexes and lock-bound
-manifests before it can release downstream nodes. Resume is rejected when the
-plan digest or release-lock digest differs. Resume downloads the prior plan,
-lock, state, and per-node publish checkpoints verbatim; it never replans or bumps
-versions. The exact child run ID is checkpointed immediately after dispatch. A
-workflow wait timeout resumes that run, and a node whose workflow already
-published but whose APT visibility check timed out resumes visibility
-verification, without dispatching another build. Only exit code 75 (temporary
-network/TLS, APT propagation, or publish-lock failure) is retried, after 15, 30,
-and 60 seconds. Compile, test, version, metadata, and source-SHA failures are not
-retried. `apt.depends` expresses installation dependencies; `release.requires`
-adds ordering-only dependencies.
+- `rebuild`: bump, rebuild, test, stage, and continue propagating downstream.
+- `verify`: run compatibility/install/smoke checks against staging without
+  publishing a new package.
+- `order`: add a scheduling edge only when both products are already selected.
 
-Visibility polling downloads each `(distribution, architecture)` Packages index
-once per poll and reuses it for every package in that product. Scheduler metrics
-report child workflow, publish-job, and APT visibility time separately.
+A node with staged upstream packages must run the release-scoped builder. Its
+old push CI result describes a different dependency context and is not reused.
+An explicitly failed root push CI remains a deterministic failure.
 
-## Trusted artifacts and APT single writer
+## Trusted artifacts
 
-Push CI retains debs plus `xgc2.build-artifact.v1` for 14 days. The build
-manifest records source SHA, version, target architecture, distribution, CI run
-identity, dpkg metadata, and deb SHA256; it intentionally has no release lock.
-Release can reuse an exact-SHA successful push run, validates every manifest and
-deb, and emits `xgc2.release-artifact.v1` with the release ID, lock digest, build
-manifest digest, and publication time. If no matching live CI artifact appears
-within 30 minutes, release falls back to the same validated in-release build path.
+Push CI stores debs plus `xgc2.build-artifact.v1` for 14 days. Build manifests
+record product, source SHA, version, distribution, target architecture, CI run
+identity, dpkg metadata, and deb SHA256; they intentionally contain no release
+lock. The control plane adds a release-specific prepare attestation and emits
+`xgc2.release-artifact.v1` only after independently validating the files.
 
-Architectures build in parallel, but only one `publish-apt` job downloads the
-complete set and updates a distribution. The `xgc2-apt-<distribution>` GitHub
-concurrency group only removes duplicate writers inside one repository. The APT
-server's global `/srv/aptly/.xgc2-publish.lock` is the authoritative
-cross-repository writer lock; aptly update and manifest installation happen
-inside that lock. Build jobs never update APT indexes.
+Artifact names are not an interface. The control plane downloads every artifact
+from the exact run and discovers manifests recursively, allowing one product to
+span multiple build artifacts.
+
+## Recovery
+
+`xgc2.release-state.v2` binds the stable release ID, plan, lock, train digest,
+and monotonic node checkpoints. Resume always downloads the exact prior state:
+
+- a dispatched node waits for its recorded run ID and never guesses by time;
+- an artifact is downloaded and revalidated before reuse;
+- a matching staging receipt fast-passes expired local artifacts;
+- an uncertain promote queries the promotion receipt before retrying;
+- a production success is reverified against Packages and manifests.
+
+Only exit code 75 (temporary network, lock, or index visibility failure) is
+retried after 15, 30, and 60 seconds. Compile, test, metadata, version, source,
+and digest failures are not retried. Any plan, lock, or release-ID mismatch
+rejects resume.
+
+## Credential boundary
+
+Only `lxk36/xgc2-devops` owns the `xgc2-apt-production` Environment:
+
+- `APT_REPO_HOST`
+- `APT_REPO_PORT`
+- `APT_REPO_USER`
+- `APT_REPO_SSH_KEY`
+- `APT_REPO_KNOWN_HOSTS`
+
+Product workflows and scripts are audited for these names and for all direct
+SSH, aptly, reprepro, or publish helper calls. The APT service also disables the
+legacy publish command after migration, so restoring an old workflow cannot
+restore product-level write access.

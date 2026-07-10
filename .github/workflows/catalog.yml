@@ -6,6 +6,8 @@ on:
       - master
   pull_request:
   workflow_dispatch:
+  schedule:
+    - cron: "17 3 * * *"
 
 jobs:
   validate:
@@ -19,6 +21,7 @@ jobs:
 
       - name: Checkout product metadata submodules
         env:
+          GH_TOKEN: ${{ secrets.XGC2_RELEASE_ORCHESTRATOR_TOKEN }}
           SUBMODULE_SSH_KEY: ${{ secrets.SUBMODULE_SSH_KEY }}
         run: bash scripts/checkout-product-metadata-submodules.sh
 
@@ -32,9 +35,14 @@ jobs:
           python3 -m py_compile \
             scripts/apply-release-version-bumps.py \
             scripts/audit-product-workflows.py \
+            scripts/cleanup-product-apt-secrets.py \
             scripts/orchestrate-apt-release.py \
+            scripts/release-train-publisher.py \
             scripts/release-plan-github-outputs.py \
             scripts/run-release-plan-product.py \
+            scripts/schedule-release-plan.py \
+            scripts/stage-product-release.py \
+            scripts/validate-release-plan.py \
             scripts/summarize-product-catalog.py
           python3 scripts/collect-products.py --root . --output .work/products-ci.json
           python3 scripts/summarize-product-catalog.py \
@@ -55,11 +63,22 @@ jobs:
             --plan-output .work/release-plan-uav-tracking.json \
             --lock-output .work/release-lock-uav-tracking.json \
             --summary-output .work/release-plan-uav-tracking.md
+          python3 scripts/orchestrate-apt-release.py \
+            --root . \
+            --catalog .work/products-ci.json \
+            --plan-output .work/release-plan-full-audit.json \
+            --lock-output .work/release-lock-full-audit.json
+          python3 scripts/validate-release-plan.py \
+            --root . \
+            --catalog .work/products-ci.json \
+            --plan .work/release-plan-full-audit.json
           python3 scripts/audit-product-workflows.py \
             --root . \
             --catalog .work/products-ci.json \
             --output-json .work/product-workflow-audit.json \
-            --output-md .work/product-workflow-audit.md
+            --output-md .work/product-workflow-audit.md \
+            --fail-on-error
+          python3 -m unittest discover -s tests -p 'test_*.py'
 
       - name: Show product module catalog
         run: |
@@ -80,5 +99,7 @@ jobs:
             .work/release-plan-uav-tracking.json
             .work/release-lock-uav-tracking.json
             .work/release-plan-uav-tracking.md
+            .work/release-plan-full-audit.json
+            .work/release-lock-full-audit.json
             .work/product-workflow-audit.json
             .work/product-workflow-audit.md

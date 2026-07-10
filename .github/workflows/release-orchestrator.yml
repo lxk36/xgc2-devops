@@ -52,17 +52,17 @@ on:
         default: false
         type: boolean
       reuse_ci_artifacts:
-        description: Reuse exact-SHA trusted push CI artifacts when available.
+        description: Reuse exact-SHA trusted push CI artifacts when no staged upstream exists.
         required: true
         default: true
         type: boolean
       max_parallel:
-        description: Maximum number of dependency-ready product releases.
+        description: Maximum number of dependency-ready prepare jobs.
         required: true
         default: 4
         type: number
       resume_run_id:
-        description: Optional prior orchestrator run whose release-state artifact should be resumed.
+        description: Prior orchestrator run containing digest-bound release-state evidence.
         required: false
         default: ""
 
@@ -70,8 +70,15 @@ permissions:
   actions: read
   contents: read
 
+# Executing trains acquire the production mutex before planning, so a queued
+# train cannot prepare from a snapshot that another train changes first. Dry
+# runs remain independent and never hold the production lane.
+concurrency:
+  group: ${{ inputs.execute && 'xgc2-apt-production' || format('xgc2-apt-plan-{0}', github.run_id) }}
+  cancel-in-progress: false
+
 jobs:
-  release:
+  plan:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -86,85 +93,226 @@ jobs:
       - name: Install metadata dependencies
         run: python3 -m pip install --user --no-cache-dir PyYAML jsonschema
       - name: Validate control inputs
+        env:
+          INPUT_PRODUCTS: ${{ inputs.products }}
+          INPUT_GROUPS: ${{ inputs.groups }}
+          INPUT_CHANGED_FROM: ${{ inputs.changed_from }}
+          INPUT_CHANGED_TO: ${{ inputs.changed_to }}
+          INPUT_INCLUDE_UPSTREAM: ${{ inputs.include_upstream }}
+          INPUT_INCLUDE_DOWNSTREAM: ${{ inputs.include_downstream }}
+          INPUT_BUMP_RELEASE_VERSIONS: ${{ inputs.bump_release_versions }}
+          INPUT_RELEASE_VERSION_SERIES: ${{ inputs.release_version_series }}
+          INPUT_COMMIT_VERSION_BUMPS: ${{ inputs.commit_version_bumps }}
+          INPUT_EXECUTE: ${{ inputs.execute }}
+          INPUT_QUALITY_REQUIRED: ${{ inputs.quality_required }}
+          INPUT_SOURCE_TESTS: ${{ inputs.source_tests }}
+          INPUT_REUSE_CI_ARTIFACTS: ${{ inputs.reuse_ci_artifacts }}
+          INPUT_MAX_PARALLEL: ${{ inputs.max_parallel }}
+          INPUT_RESUME_RUN_ID: ${{ inputs.resume_run_id }}
         run: |
           set -euo pipefail
-          if [[ -n "${{ inputs.resume_run_id }}" && "${{ inputs.execute }}" != true ]]; then
-            echo "resume_run_id requires execute=true" >&2
-            exit 2
-          fi
+          python3 - <<'PY'
+          import os, re
+
+          def require(name, pattern, *, allow_empty=False):
+              value = os.environ[name]
+              if allow_empty and not value:
+                  return
+              if re.fullmatch(pattern, value) is None:
+                  raise SystemExit(f"invalid {name}: {value!r}")
+
+          for name in ("INPUT_PRODUCTS", "INPUT_GROUPS"):
+              require(name, r"[A-Za-z0-9._-]+(?:,[A-Za-z0-9._-]+)*", allow_empty=True)
+          require("INPUT_CHANGED_FROM", r"[A-Za-z0-9][A-Za-z0-9._/@+-]{0,254}", allow_empty=True)
+          require("INPUT_CHANGED_TO", r"[A-Za-z0-9][A-Za-z0-9._/@+-]{0,254}")
+          require("INPUT_RELEASE_VERSION_SERIES", r"[0-9]+(?:\.[0-9]+){0,2}", allow_empty=True)
+          require("INPUT_RESUME_RUN_ID", r"[1-9][0-9]*", allow_empty=True)
+          for name in (
+              "INPUT_INCLUDE_UPSTREAM", "INPUT_INCLUDE_DOWNSTREAM",
+              "INPUT_BUMP_RELEASE_VERSIONS", "INPUT_COMMIT_VERSION_BUMPS",
+              "INPUT_EXECUTE", "INPUT_QUALITY_REQUIRED", "INPUT_SOURCE_TESTS",
+              "INPUT_REUSE_CI_ARTIFACTS",
+          ):
+              require(name, r"true|false")
+          require("INPUT_MAX_PARALLEL", r"[1-4]")
+          if os.environ["INPUT_RESUME_RUN_ID"] and os.environ["INPUT_EXECUTE"] != "true":
+              raise SystemExit("resume_run_id requires execute=true")
+          if (
+              os.environ["INPUT_EXECUTE"] == "true"
+              and os.environ["INPUT_BUMP_RELEASE_VERSIONS"] == "true"
+              and os.environ["INPUT_COMMIT_VERSION_BUMPS"] != "true"
+          ):
+              raise SystemExit("execute with bump_release_versions requires commit_version_bumps")
+          PY
       - name: Download exact resume evidence
-        if: ${{ inputs.execute && inputs.resume_run_id != '' }}
+        if: ${{ inputs.resume_run_id != '' }}
         env:
           GH_TOKEN: ${{ secrets.XGC2_RELEASE_ORCHESTRATOR_TOKEN || github.token }}
+          RESUME_RUN_ID: ${{ inputs.resume_run_id }}
         run: |
           set -euo pipefail
           mkdir -p .work/resume
-          gh run download "${{ inputs.resume_run_id }}" \
-            --repo "${{ github.repository }}" \
-            --name xgc2-release-state \
-            --dir .work/resume
-          for name in release-products.json release-plan.json release-lock.json release-state.json; do
-            if [[ ! -s ".work/resume/${name}" ]]; then
+          if ! gh run download "$RESUME_RUN_ID" \
+              --repo "${{ github.repository }}" \
+              --name xgc2-release-state \
+              --dir .work/resume; then
+            echo "release-state artifact unavailable; recovering from immutable plan evidence"
+            gh run download "$RESUME_RUN_ID" \
+              --repo "${{ github.repository }}" \
+              --name "xgc2-release-plan-${RESUME_RUN_ID}" \
+              --dir .work/resume
+          fi
+          for name in release-products.json release-plan.json release-lock.json; do
+            test -s ".work/resume/${name}" || {
               echo "resume run is missing ${name}" >&2
               exit 2
-            fi
+            }
             cp ".work/resume/${name}" ".work/${name}"
           done
+          if [[ -s .work/resume/release-state.json ]]; then
+            cp .work/resume/release-state.json .work/release-state.json
+            python3 - <<'PY'
+            import json
+            state=json.load(open('.work/release-state.json', encoding='utf-8'))
+            if state.get('schema') != 'xgc2.release-state.v2':
+                raise SystemExit('resume state is not xgc2.release-state.v2')
+            PY
+          fi
+          if [[ -s .work/resume/release-push-transaction.json ]]; then
+            cp .work/resume/release-push-transaction.json .work/release-push-transaction.json
+          fi
           if [[ -f .work/resume/release-plan.md ]]; then
             cp .work/resume/release-plan.md .work/release-plan.md
           else
             printf '# Resumed XGC2 release\n\nPrior run: `%s`\n' \
-              "${{ inputs.resume_run_id }}" > .work/release-plan.md
+              "$RESUME_RUN_ID" > .work/release-plan.md
           fi
-          if [[ -d .work/resume/release-node-checkpoints ]]; then
-            cp -a .work/resume/release-node-checkpoints .work/
-          fi
+          for directory in release-node-checkpoints release-stage-receipts; do
+            if [[ -d ".work/resume/${directory}" ]]; then
+              cp -a ".work/resume/${directory}" .work/
+            fi
+          done
           cat .work/release-plan.md >> "$GITHUB_STEP_SUMMARY"
       - name: Build and validate release plan
         if: ${{ inputs.resume_run_id == '' }}
+        env:
+          INPUT_PRODUCTS: ${{ inputs.products }}
+          INPUT_GROUPS: ${{ inputs.groups }}
+          INPUT_CHANGED_FROM: ${{ inputs.changed_from }}
+          INPUT_CHANGED_TO: ${{ inputs.changed_to }}
+          INPUT_INCLUDE_UPSTREAM: ${{ inputs.include_upstream }}
+          INPUT_INCLUDE_DOWNSTREAM: ${{ inputs.include_downstream }}
+          INPUT_BUMP_RELEASE_VERSIONS: ${{ inputs.bump_release_versions }}
+          INPUT_RELEASE_VERSION_SERIES: ${{ inputs.release_version_series }}
         run: |
           set -euo pipefail
-          if [[ "${{ inputs.execute }}" == true &&
-                "${{ inputs.bump_release_versions }}" == true &&
-                "${{ inputs.commit_version_bumps }}" != true ]]; then
-            echo "execute with bump_release_versions requires commit_version_bumps" >&2
-            exit 2
-          fi
           python3 scripts/collect-products.py --root . --output .work/release-products.json
-          args=(--root . --catalog .work/release-products.json --changed-to "${{ inputs.changed_to }}" --plan-output .work/release-plan.json --lock-output .work/release-lock.json --summary-output .work/release-plan.md)
-          [[ -z "${{ inputs.products }}" ]] || args+=(--product "${{ inputs.products }}")
-          [[ -z "${{ inputs.groups }}" ]] || args+=(--group "${{ inputs.groups }}")
-          [[ -z "${{ inputs.changed_from }}" ]] || args+=(--changed-from "${{ inputs.changed_from }}")
-          [[ "${{ inputs.include_upstream }}" == true ]] || args+=(--no-upstream)
-          [[ "${{ inputs.include_downstream }}" == true ]] || args+=(--no-downstream)
-          [[ "${{ inputs.bump_release_versions }}" != true ]] || args+=(--bump-release-versions)
-          [[ -z "${{ inputs.release_version_series }}" ]] || args+=(--release-version-series "${{ inputs.release_version_series }}")
+          args=(--root . --catalog .work/release-products.json --changed-to "$INPUT_CHANGED_TO" --plan-output .work/release-plan.json --lock-output .work/release-lock.json --summary-output .work/release-plan.md)
+          [[ -z "$INPUT_PRODUCTS" ]] || args+=(--product "$INPUT_PRODUCTS")
+          [[ -z "$INPUT_GROUPS" ]] || args+=(--group "$INPUT_GROUPS")
+          [[ -z "$INPUT_CHANGED_FROM" ]] || args+=(--changed-from "$INPUT_CHANGED_FROM")
+          [[ "$INPUT_INCLUDE_UPSTREAM" == true ]] || args+=(--no-upstream)
+          [[ "$INPUT_INCLUDE_DOWNSTREAM" == true ]] || args+=(--no-downstream)
+          [[ "$INPUT_BUMP_RELEASE_VERSIONS" != true ]] || args+=(--bump-release-versions)
+          [[ -z "$INPUT_RELEASE_VERSION_SERIES" ]] || args+=(--release-version-series "$INPUT_RELEASE_VERSION_SERIES")
           python3 scripts/orchestrate-apt-release.py "${args[@]}"
           python3 scripts/validate-release-plan.py --root . --plan .work/release-plan.json --catalog .work/release-products.json --allow-planned-updates
+          python3 scripts/apply-release-version-bumps.py --root . --plan .work/release-plan.json --transaction-output .work/release-push-transaction.json --transaction-preview-only
           cat .work/release-plan.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload immutable plan evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: xgc2-release-plan-${{ github.run_id }}
+          path: |
+            .work/release-products.json
+            .work/release-plan.json
+            .work/release-lock.json
+            .work/release-plan.md
+            .work/release-state.json
+            .work/release-push-transaction.json
+            .work/release-node-checkpoints
+            .work/release-stage-receipts
+            .work/release-ci-reconciliation
+          if-no-files-found: ignore
+
+  execute-release:
+    if: ${{ inputs.execute }}
+    needs: plan
+    runs-on: ubuntu-latest
+    environment:
+      name: xgc2-apt-production
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.XGC2_RELEASE_ORCHESTRATOR_TOKEN || github.token }}
+      - name: Checkout product metadata submodules
+        env:
+          GH_TOKEN: ${{ secrets.XGC2_RELEASE_ORCHESTRATOR_TOKEN }}
+          SUBMODULE_SSH_KEY: ${{ secrets.SUBMODULE_SSH_KEY }}
+        run: bash scripts/checkout-product-metadata-submodules.sh
+      - name: Download planned release
+        uses: actions/download-artifact@v4
+        with:
+          name: xgc2-release-plan-${{ github.run_id }}
+          path: .work
+      - name: Install metadata dependencies
+        run: python3 -m pip install --user --no-cache-dir PyYAML jsonschema
       - name: Configure release bot
-        if: ${{ inputs.execute && inputs.resume_run_id == '' && inputs.commit_version_bumps && inputs.bump_release_versions }}
+        if: ${{ inputs.commit_version_bumps && inputs.bump_release_versions }}
         run: |
           git config --global user.name xgc2-release-bot
           git config --global user.email xgc2-release-bot@users.noreply.github.com
       - name: Apply and push release lock
-        if: ${{ inputs.execute && inputs.resume_run_id == '' && inputs.commit_version_bumps && inputs.bump_release_versions }}
-        run: python3 scripts/apply-release-version-bumps.py --root . --plan .work/release-plan.json --lock-output .work/release-lock.json --tracked-lock-output catalog/generated/latest-release-lock.json --apply --commit --push
-      - name: Validate final immutable release lock
-        if: ${{ inputs.execute && inputs.resume_run_id == '' }}
-        run: python3 scripts/validate-release-plan.py --root . --plan .work/release-plan.json --catalog .work/release-products.json
-      - name: Execute dependency-ready queue
-        if: ${{ inputs.execute }}
-        env:
-          GH_TOKEN: ${{ secrets.XGC2_RELEASE_ORCHESTRATOR_TOKEN }}
-          XGC2_RELEASE_ID: ${{ github.run_id }}
+        if: ${{ inputs.commit_version_bumps && inputs.bump_release_versions }}
         run: |
           set -euo pipefail
-          export XGC2_RELEASE_LOCK_DIGEST="$(sha256sum .work/release-lock.json | awk '{print $1}')"
-          args=(--plan .work/release-plan.json --lock .work/release-lock.json --state .work/release-state.json --max-parallel "${{ inputs.max_parallel }}")
-          [[ "${{ inputs.quality_required }}" != true ]] || args+=(--quality-required)
-          [[ "${{ inputs.source_tests }}" != true ]] || args+=(--source-tests)
-          [[ "${{ inputs.reuse_ci_artifacts }}" != true ]] || args+=(--reuse-ci-artifacts)
+          if [[ -s .work/resume/release-state.json ]]; then
+            echo "digest-bound release state already contains final version preparation"
+          else
+            python3 scripts/apply-release-version-bumps.py --root . --plan .work/release-plan.json --lock-output .work/release-lock.json --tracked-lock-output catalog/generated/latest-release-lock.json --transaction-output .work/release-push-transaction.json --apply --commit --push
+          fi
+      - name: Validate final immutable release lock
+        run: python3 scripts/validate-release-plan.py --root . --plan .work/release-plan.json --catalog .work/release-products.json
+      - name: Resolve stable release identity
+        env:
+          RESUME_RUN_ID: ${{ inputs.resume_run_id }}
+        run: |
+          set -euo pipefail
+          if [[ -n "$RESUME_RUN_ID" ]]; then
+            if [[ -s .work/release-state.json ]]; then
+              release_id="$(python3 -c 'import json; print(json.load(open(".work/release-state.json"))["release_id"])')"
+            else
+              release_id="xgc2-${RESUME_RUN_ID}"
+            fi
+          else
+            release_id="xgc2-${GITHUB_RUN_ID}"
+          fi
+          echo "XGC2_RELEASE_ID=${release_id}" >> "$GITHUB_ENV"
+          echo "XGC2_RELEASE_LOCK_DIGEST=$(sha256sum .work/release-lock.json | awk '{print $1}')" >> "$GITHUB_ENV"
+      - name: Prepare, atomically promote, and verify release train
+        env:
+          GH_TOKEN: ${{ secrets.XGC2_RELEASE_ORCHESTRATOR_TOKEN }}
+          APT_REPO_HOST: ${{ secrets.APT_REPO_HOST }}
+          APT_REPO_PORT: ${{ secrets.APT_REPO_PORT }}
+          APT_REPO_USER: ${{ secrets.APT_REPO_USER }}
+          APT_REPO_KNOWN_HOSTS: ${{ secrets.APT_REPO_KNOWN_HOSTS }}
+          APT_REPO_SSH_KEY: ${{ secrets.APT_REPO_SSH_KEY }}
+          XGC2_APT_BASE_URL: ${{ vars.APT_BASE_URL || 'https://xgc2.apt.xiaokang.ink' }}
+          XGC2_MANIFEST_BASE_URL: ${{ vars.APT_MANIFEST_BASE_URL || 'https://xgc2.apt.xiaokang.ink/manifests' }}
+          INPUT_MAX_PARALLEL: ${{ inputs.max_parallel }}
+          INPUT_QUALITY_REQUIRED: ${{ inputs.quality_required }}
+          INPUT_SOURCE_TESTS: ${{ inputs.source_tests }}
+          INPUT_REUSE_CI_ARTIFACTS: ${{ inputs.reuse_ci_artifacts }}
+        run: |
+          set -euo pipefail
+          args=(--plan .work/release-plan.json --lock .work/release-lock.json --state .work/release-state.json --release-id "$XGC2_RELEASE_ID" --max-parallel "$INPUT_MAX_PARALLEL")
+          [[ "$INPUT_QUALITY_REQUIRED" != true ]] || args+=(--quality-required)
+          [[ "$INPUT_SOURCE_TESTS" != true ]] || args+=(--source-tests)
+          [[ "$INPUT_REUSE_CI_ARTIFACTS" != true ]] || args+=(--reuse-ci-artifacts)
           [[ ! -f .work/resume/release-state.json ]] || args+=(--resume-state .work/resume/release-state.json)
           python3 scripts/schedule-release-plan.py "${args[@]}"
       - name: Upload release evidence
@@ -178,5 +326,9 @@ jobs:
             .work/release-lock.json
             .work/release-plan.md
             .work/release-state.json
+            .work/release-train.json
+            .work/release-push-transaction.json
             .work/release-node-checkpoints
+            .work/release-stage-receipts
+            .work/release-ci-reconciliation
           if-no-files-found: ignore

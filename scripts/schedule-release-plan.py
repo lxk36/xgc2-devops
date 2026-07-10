@@ -11,6 +11,7 @@ import os
 import subprocess
 import sys
 import time
+import datetime as dt
 from pathlib import Path
 from typing import Any, Callable
 
@@ -52,6 +53,27 @@ def plan_items(plan: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return items
 
 
+def validate_plan_lock_equivalence(plan: dict[str, Any], lock: dict[str, Any]) -> None:
+    """Require the immutable lock to be an exact flattened view of the plan."""
+
+    if lock.get("schema") != "xgc2.release-lock.v2":
+        raise ValueError("release lock schema must be xgc2.release-lock.v2")
+    lock_products = lock.get("products")
+    expected = [item for layer in plan.get("layers", []) for item in layer]
+    if not isinstance(lock_products, list) or lock_products != expected:
+        raise ValueError("release plan and release lock product contents are not equivalent")
+
+
+def execution_policy_value(
+    *, quality_required: bool, source_tests: bool, reuse_ci_artifacts: bool
+) -> dict[str, bool]:
+    return {
+        "quality_required": bool(quality_required),
+        "source_tests": bool(source_tests),
+        "reuse_ci_artifacts": bool(reuse_ci_artifacts),
+    }
+
+
 def validate_dependencies(items: dict[str, dict[str, Any]]) -> None:
     for product_id, item in items.items():
         for dependency in item.get("dependencies", []):
@@ -65,6 +87,8 @@ def initial_state(
     *,
     plan_digest: str,
     release_lock_digest: str,
+    release_id: str = "test-release",
+    execution_policy_digest: str = "",
     now_fn: Callable[[], float] = time.time,
 ) -> dict[str, Any]:
     """Create state and re-queue prior successes for strict release verification.
@@ -77,10 +101,15 @@ def initial_state(
 
     now = int(now_fn())
     state: dict[str, Any] = {
-        "schema": "xgc2.release-state.v1",
+        "schema": "xgc2.release-state.v2",
+        "release_id": release_id,
         "plan_digest": plan_digest,
         "release_lock_digest": release_lock_digest,
+        "execution_policy_digest": execution_policy_digest,
         "started_at": now,
+        "created_at": os.environ.get("XGC2_RELEASE_CREATED_AT")
+        or dt.datetime.fromtimestamp(now, dt.timezone.utc).isoformat().replace("+00:00", "Z"),
+        "phase": "preparing",
         "products": {
             product_id: {
                 "status": "pending",
@@ -94,21 +123,34 @@ def initial_state(
     if not previous:
         return state
     if previous.get("schema") != state["schema"]:
-        raise ValueError("resume state schema does not match xgc2.release-state.v1")
+        raise ValueError("resume state schema does not match xgc2.release-state.v2")
+    if previous.get("release_id") != release_id:
+        raise ValueError("resume state belongs to a different release id")
     if previous.get("plan_digest") != plan_digest:
         raise ValueError("resume state belongs to a different release plan")
     if previous.get("release_lock_digest") != release_lock_digest:
         raise ValueError("resume state belongs to a different release lock")
+    if previous.get("execution_policy_digest") != execution_policy_digest:
+        raise ValueError("resume state belongs to a different execution policy")
     previous_products = previous.get("products")
     if not isinstance(previous_products, dict):
         raise ValueError("resume state products must be an object")
+    state["started_at"] = previous.get("started_at", now)
+    state["created_at"] = previous.get("created_at", state["created_at"])
+    state["resume_phase"] = previous.get("phase")
+    if previous.get("train_digest"):
+        state["train_digest"] = previous["train_digest"]
+    if previous.get("promoted_at"):
+        state["promoted_at"] = previous["promoted_at"]
+        state["resume_was_promoted"] = True
     for product_id, data in previous_products.items():
         if product_id in items and isinstance(data, dict) and data.get("status") == "success":
             resumed = state["products"][product_id]
             resumed.update(
                 {
                     "resumed": True,
-                    "resume_verification_required": True,
+                    "resume_verification_required": previous.get("phase")
+                    in {"promoted", "verifying", "succeeded"},
                     "previous_release_run_id": data.get("release_run_id"),
                 }
             )
@@ -131,6 +173,11 @@ def run_product(
     source_tests: bool,
     reuse_ci_artifacts: bool,
     resume_verify: bool = False,
+    central_prepare: bool = True,
+    verify_production: bool = False,
+    verify_lock_only: bool = False,
+    reconcile_ci: bool = False,
+    timeout_seconds: int | None = None,
 ) -> dict[str, Any]:
     command = [sys.executable, str(runner), "--plan", str(plan_path), "--product", product_id]
     if quality_required:
@@ -139,8 +186,24 @@ def run_product(
         command.append("--source-tests")
     if reuse_ci_artifacts:
         command.append("--reuse-ci-artifacts")
-    if resume_verify:
+    if verify_lock_only:
+        command.append("--verify-lock-only")
+    if reconcile_ci:
+        command.append("--reconcile-ci")
+    if timeout_seconds is not None:
+        command.extend(["--timeout-seconds", str(timeout_seconds)])
+    if central_prepare:
+        command.append("--central-prepare")
+    if verify_production or (central_prepare and resume_verify):
+        command.append("--verify-production")
+    elif resume_verify:
         command.append("--verify-existing-release")
+    apt_base_url = os.environ.get("XGC2_APT_BASE_URL", "")
+    manifest_base_url = os.environ.get("XGC2_MANIFEST_BASE_URL", "")
+    if apt_base_url:
+        command.extend(["--apt-base-url", apt_base_url])
+    if manifest_base_url:
+        command.extend(["--manifest-base-url", manifest_base_url])
     started = time.monotonic()
     result = subprocess.run(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     return {
@@ -201,6 +264,17 @@ def result_metadata(output: str) -> dict[str, Any]:
     return {}
 
 
+def last_json_object(output: str) -> dict[str, Any]:
+    for line in reversed(output.splitlines()):
+        try:
+            value = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(value, dict):
+            return value
+    return {}
+
+
 def schedule(
     plan: dict[str, Any],
     *,
@@ -211,6 +285,7 @@ def schedule(
     quality_required: bool,
     source_tests: bool,
     release_lock_digest: str,
+    release_id: str = "test-release",
     reuse_ci_artifacts: bool = True,
     previous: dict[str, Any] | None = None,
     retry_delays: tuple[float, ...] = TRANSIENT_RETRY_DELAYS,
@@ -221,15 +296,27 @@ def schedule(
         raise ValueError("max_parallel must be between 1 and 4")
     if not release_lock_digest:
         raise ValueError("release lock digest is required")
+    if not release_id:
+        raise ValueError("release id is required")
     items = plan_items(plan)
     validate_dependencies(items)
+    policy = execution_policy_value(
+        quality_required=quality_required,
+        source_tests=source_tests,
+        reuse_ci_artifacts=reuse_ci_artifacts,
+    )
+    policy_digest = canonical_digest(policy)
+    os.environ["XGC2_EXECUTION_POLICY_DIGEST"] = policy_digest
     state = initial_state(
         items,
         previous,
         plan_digest=canonical_digest(plan),
         release_lock_digest=release_lock_digest,
+        release_id=release_id,
+        execution_policy_digest=policy_digest,
         now_fn=now_fn,
     )
+    state["execution_policy"] = policy
     write_state(state_path, state)
     running: dict[concurrent.futures.Future[dict[str, Any]], str] = {}
 
@@ -354,6 +441,7 @@ def schedule(
                     "reuse_seconds",
                     "build_seconds",
                     "publish_seconds",
+                    "stage_seconds",
                 }
                 for key, value in metadata.items():
                     if key in additive_metrics and isinstance(value, (int, float)):
@@ -402,6 +490,342 @@ def schedule(
                 print(f"scheduler: {product_id} -> {terminal_status}", flush=True)
 
     state["completed_at"] = int(now_fn())
+    state["phase"] = (
+        "prepared"
+        if all(data["status"] == "success" for data in state["products"].values())
+        else "failed"
+    )
+    write_state(state_path, state)
+    return state
+
+
+def run_global_command(
+    command: list[str],
+    *,
+    retry_delays: tuple[float, ...] = TRANSIENT_RETRY_DELAYS,
+    sleep_fn: Callable[[float], None] = time.sleep,
+) -> subprocess.CompletedProcess[str]:
+    """Retry only an explicitly transient (exit 75) train-level operation."""
+
+    attempts = 0
+    while True:
+        result = subprocess.run(
+            command,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+        if result.stdout:
+            print(result.stdout, end="" if result.stdout.endswith("\n") else "\n", flush=True)
+        if result.returncode == 0:
+            return result
+        if result.returncode != TRANSIENT_EXIT_CODE or attempts >= len(retry_delays):
+            raise RuntimeError(
+                f"release train command failed with exit {result.returncode}: {result.stdout[-4000:]}"
+            )
+        delay = float(retry_delays[attempts])
+        attempts += 1
+        print(
+            f"release train transient failure; retry {attempts}/{len(retry_delays)} "
+            f"in {delay:g}s",
+            flush=True,
+        )
+        sleep_fn(delay)
+
+
+def verify_promoted_product(
+    runner: Path,
+    plan_path: Path,
+    product_id: str,
+    *,
+    quality_required: bool,
+    source_tests: bool,
+    retry_delays: tuple[float, ...] = TRANSIENT_RETRY_DELAYS,
+    sleep_fn: Callable[[float], None] = time.sleep,
+) -> dict[str, Any]:
+    retries = 0
+    while True:
+        result = normalize_result(
+            run_product(
+                runner,
+                plan_path,
+                product_id,
+                quality_required=quality_required,
+                source_tests=source_tests,
+                reuse_ci_artifacts=False,
+                central_prepare=True,
+                verify_production=True,
+            )
+        )
+        if result["status"] != "transient" or retries >= len(retry_delays):
+            result["transient_retries"] = retries
+            return result
+        delay = float(retry_delays[retries])
+        retries += 1
+        sleep_fn(delay)
+
+
+def verify_plan_freshness(
+    plan: dict[str, Any],
+    *,
+    runner: Path,
+    plan_path: Path,
+    max_parallel: int,
+    retry_delays: tuple[float, ...] = TRANSIENT_RETRY_DELAYS,
+    sleep_fn: Callable[[float], None] = time.sleep,
+) -> None:
+    """Recheck every locked source immediately before the atomic promotion."""
+
+    def verify_one(product_id: str) -> dict[str, Any]:
+        retries = 0
+        while True:
+            result = normalize_result(
+                run_product(
+                    runner,
+                    plan_path,
+                    product_id,
+                    quality_required=False,
+                    source_tests=False,
+                    reuse_ci_artifacts=False,
+                    verify_lock_only=True,
+                )
+            )
+            if result["status"] != "transient" or retries >= len(retry_delays):
+                return result
+            sleep_fn(float(retry_delays[retries]))
+            retries += 1
+
+    failures: list[str] = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_parallel) as executor:
+        futures = {
+            executor.submit(verify_one, product_id): product_id
+            for product_id in sorted(plan_items(plan))
+        }
+        for future in concurrent.futures.as_completed(futures):
+            product_id = futures[future]
+            result = normalize_result(future.result())
+            if result["status"] != "success":
+                failures.append(
+                    f"{product_id} (exit {result['returncode']}): {result['output'][-1000:]}"
+                )
+    if failures:
+        raise RuntimeError(
+            "release plan became stale before promotion:\n" + "\n".join(sorted(failures))
+        )
+
+
+def reconcile_plan_ci(
+    plan: dict[str, Any],
+    state: dict[str, Any],
+    *,
+    runner: Path,
+    plan_path: Path,
+    state_path: Path,
+    max_parallel: int,
+    timeout_seconds: int = 21600,
+    retry_delays: tuple[float, ...] = TRANSIENT_RETRY_DELAYS,
+    sleep_fn: Callable[[float], None] = time.sleep,
+) -> None:
+    """Require exact-source CI success after new production dependencies exist."""
+
+    def reconcile_one(product_id: str) -> dict[str, Any]:
+        retries = 0
+        while True:
+            result = normalize_result(
+                run_product(
+                    runner,
+                    plan_path,
+                    product_id,
+                    quality_required=True,
+                    source_tests=False,
+                    reuse_ci_artifacts=False,
+                    reconcile_ci=True,
+                    timeout_seconds=timeout_seconds,
+                )
+            )
+            if result["status"] != "transient" or retries >= len(retry_delays):
+                result["transient_retries"] = retries
+                return result
+            sleep_fn(float(retry_delays[retries]))
+            retries += 1
+
+    state["phase"] = "reconciling-ci"
+    for product_id in plan_items(plan):
+        state["products"][product_id]["ci_reconciliation_status"] = "running"
+    write_state(state_path, state)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_parallel) as executor:
+        futures = {
+            executor.submit(reconcile_one, product_id): product_id
+            for product_id in sorted(plan_items(plan))
+        }
+        for future in concurrent.futures.as_completed(futures):
+            product_id = futures[future]
+            result = future.result()
+            output = str(result.get("output", ""))
+            if output:
+                print(output, end="" if output.endswith("\n") else "\n", flush=True)
+            node = state["products"][product_id]
+            metadata = result_metadata(output)
+            node["ci_reconciliation_status"] = (
+                "success" if result["status"] == "success" else "failed"
+            )
+            node["ci_reconciliation_retries"] = result.get("transient_retries", 0)
+            node.update(metadata)
+            if result["status"] != "success":
+                node["status"] = "failed"
+                node["reason"] = "post-promotion current-source CI reconciliation failed"
+                node["output_tail"] = output[-4000:]
+            write_state(state_path, state)
+
+
+def finalize_release_train(
+    plan: dict[str, Any],
+    state: dict[str, Any],
+    *,
+    plan_path: Path,
+    state_path: Path,
+    runner: Path,
+    release_lock_digest: str,
+    release_id: str,
+    max_parallel: int,
+    quality_required: bool,
+    source_tests: bool,
+    retry_delays: tuple[float, ...] = TRANSIENT_RETRY_DELAYS,
+    sleep_fn: Callable[[float], None] = time.sleep,
+) -> dict[str, Any]:
+    """Promote all prepared products once, then verify production visibility."""
+
+    if state.get("phase") != "prepared":
+        raise ValueError("release train can only promote a fully prepared plan")
+    already_promoted = bool(state.get("resume_was_promoted")) or state.get("resume_phase") in {
+        "promoted", "verifying", "succeeded"
+    }
+    if not already_promoted:
+        root = plan_path.parent
+        train_path = root / "release-train.json"
+        stage_tool = Path(__file__).with_name("stage-product-release.py")
+        publisher = Path(__file__).with_name("release-train-publisher.py")
+        plan_digest = canonical_digest(plan)
+        state["phase"] = "freshness-check"
+        write_state(state_path, state)
+        verify_plan_freshness(
+            plan,
+            runner=runner,
+            plan_path=plan_path,
+            max_parallel=max_parallel,
+            retry_delays=retry_delays,
+            sleep_fn=sleep_fn,
+        )
+        run_global_command(
+            [
+                sys.executable,
+                str(stage_tool),
+                "train",
+                "--plan",
+                str(plan_path),
+                "--receipt-dir",
+                str(root / "release-stage-receipts"),
+                "--release-id",
+                release_id,
+                "--release-lock-digest",
+                release_lock_digest,
+                "--plan-digest",
+                plan_digest,
+                "--output",
+                str(train_path),
+            ],
+            retry_delays=(),
+            sleep_fn=sleep_fn,
+        )
+        train = json.loads(train_path.read_text(encoding="utf-8"))
+        state["train_digest"] = canonical_digest(train)
+        state["phase"] = "promoting"
+        write_state(state_path, state)
+        promotion_started = time.monotonic()
+        promotion_result = run_global_command(
+            [
+                sys.executable,
+                str(publisher),
+                "promote",
+                "--release-id",
+                release_id,
+                "--release-lock-digest",
+                release_lock_digest,
+                "--train",
+                str(train_path),
+            ],
+            retry_delays=retry_delays,
+            sleep_fn=sleep_fn,
+        )
+        state["promotion_seconds"] = round(time.monotonic() - promotion_started, 3)
+        promotion_receipt = last_json_object(promotion_result.stdout)
+        server_promoted_at = promotion_receipt.get("promoted_at")
+        if not server_promoted_at:
+            raise RuntimeError("promotion succeeded without a server promoted_at receipt")
+        state["promoted_at"] = str(server_promoted_at)
+    state["phase"] = "promoted"
+    write_state(state_path, state)
+
+    release_ids = sorted(
+        product_id
+        for product_id, item in plan_items(plan).items()
+        if item.get("action") == "release"
+    )
+    verify_ids = [
+        product_id
+        for product_id in release_ids
+        if state["products"][product_id].get("prepare_checkpoint") != "production_verified"
+    ]
+    state["phase"] = "verifying"
+    for product_id in verify_ids:
+        state["products"][product_id]["status"] = "verifying"
+    write_state(state_path, state)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_parallel) as executor:
+        futures = {
+            executor.submit(
+                verify_promoted_product,
+                runner,
+                plan_path,
+                product_id,
+                quality_required=quality_required,
+                source_tests=source_tests,
+                retry_delays=retry_delays,
+                sleep_fn=sleep_fn,
+            ): product_id
+            for product_id in verify_ids
+        }
+        for future in concurrent.futures.as_completed(futures):
+            product_id = futures[future]
+            result = future.result()
+            output = str(result.get("output", ""))
+            if output:
+                print(output, end="" if output.endswith("\n") else "\n", flush=True)
+            node = state["products"][product_id]
+            metadata = result_metadata(output)
+            node.update(metadata)
+            node["production_verify_retries"] = result.get("transient_retries", 0)
+            node["status"] = "success" if result["status"] == "success" else "failed"
+            if result["status"] != "success":
+                node["reason"] = "production verification failed"
+                node["output_tail"] = output[-4000:]
+            write_state(state_path, state)
+    if all(data["status"] == "success" for data in state["products"].values()):
+        reconcile_plan_ci(
+            plan,
+            state,
+            runner=runner,
+            plan_path=plan_path,
+            state_path=state_path,
+            max_parallel=max_parallel,
+            retry_delays=retry_delays,
+            sleep_fn=sleep_fn,
+        )
+    state["phase"] = (
+        "succeeded"
+        if all(data["status"] == "success" for data in state["products"].values())
+        else "failed"
+    )
+    state["completed_at"] = int(time.time())
     write_state(state_path, state)
     return state
 
@@ -411,8 +835,8 @@ def append_summary(state: dict[str, Any], path: Path) -> None:
         "## Release scheduler metrics",
         "",
         "| Product | Status | Wait (s) | Runner (s) | CI reuse (s) | "
-        "Build/workflow (s) | Publish (s) | APT visibility (s) | Retries |",
-        "|---|---:|---:|---:|---:|---:|---:|---:|---:|",
+        "Build/workflow (s) | Stage (s) | Publish (s) | APT visibility (s) | Retries |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for product_id, data in sorted(state["products"].items()):
         publish = data.get("publish_seconds")
@@ -420,7 +844,7 @@ def append_summary(state: dict[str, Any], path: Path) -> None:
         lines.append(
             (
                 "| {product} | {status} | {wait} | {runner} | {reuse} | {build} | "
-                "{publish} | {visibility} | {retries} |"
+                "{stage} | {publish} | {visibility} | {retries} |"
             ).format(
                 product=product_id,
                 status=data.get("status", ""),
@@ -428,12 +852,15 @@ def append_summary(state: dict[str, Any], path: Path) -> None:
                 runner=data.get("runner_seconds", 0),
                 reuse=data.get("reuse_seconds", data.get("ci_artifact_wait_seconds", 0)),
                 build=data.get("build_seconds", 0),
+                stage=data.get("stage_seconds", 0),
                 publish=publish_display,
                 visibility=data.get("apt_visibility_seconds", 0),
                 retries=data.get("transient_retries", 0),
             )
         )
     with path.open("a", encoding="utf-8") as handle:
+        if isinstance(state.get("promotion_seconds"), (int, float)):
+            lines.extend(["", f"Global promotion: {state['promotion_seconds']} seconds."])
         handle.write("\n".join(lines) + "\n")
 
 
@@ -443,6 +870,7 @@ def main() -> int:
     parser.add_argument("--lock", required=True)
     parser.add_argument("--state", default=".work/release-state.json")
     parser.add_argument("--resume-state")
+    parser.add_argument("--release-id", default=os.environ.get("XGC2_RELEASE_ID", ""))
     parser.add_argument("--max-parallel", type=int, default=4)
     parser.add_argument("--quality-required", action="store_true")
     parser.add_argument("--source-tests", action="store_true")
@@ -450,9 +878,13 @@ def main() -> int:
     args = parser.parse_args()
     if not os.environ.get("GH_TOKEN") and not os.environ.get("GITHUB_TOKEN"):
         raise SystemExit("GH_TOKEN or GITHUB_TOKEN is required")
+    if not args.release_id:
+        raise SystemExit("--release-id or XGC2_RELEASE_ID is required")
     plan_path = Path(args.plan).resolve()
     lock_path = Path(args.lock).resolve()
     plan = json.loads(plan_path.read_text(encoding="utf-8"))
+    lock = json.loads(lock_path.read_text(encoding="utf-8"))
+    validate_plan_lock_equivalence(plan, lock)
     release_lock_digest = file_digest(lock_path)
     expected_lock_digest = os.environ.get("XGC2_RELEASE_LOCK_DIGEST", "")
     if expected_lock_digest and expected_lock_digest != release_lock_digest:
@@ -460,6 +892,14 @@ def main() -> int:
     previous = None
     if args.resume_state:
         previous = json.loads(Path(args.resume_state).read_text(encoding="utf-8"))
+        if previous.get("release_id") != args.release_id:
+            raise SystemExit("resume release id does not match --release-id")
+    os.environ["XGC2_RELEASE_ID"] = args.release_id
+    os.environ["XGC2_RELEASE_CREATED_AT"] = (
+        str(previous.get("created_at"))
+        if previous and previous.get("created_at")
+        else dt.datetime.now(dt.timezone.utc).isoformat().replace("+00:00", "Z")
+    )
     state = schedule(
         plan,
         plan_path=plan_path,
@@ -469,16 +909,37 @@ def main() -> int:
         quality_required=args.quality_required,
         source_tests=args.source_tests,
         release_lock_digest=release_lock_digest,
+        release_id=args.release_id,
         reuse_ci_artifacts=args.reuse_ci_artifacts,
         previous=previous,
     )
+    if state.get("phase") == "prepared":
+        try:
+            state = finalize_release_train(
+                plan,
+                state,
+                plan_path=plan_path,
+                state_path=Path(args.state).resolve(),
+                runner=Path(__file__).with_name("run-release-plan-product.py"),
+                release_lock_digest=release_lock_digest,
+                release_id=args.release_id,
+                max_parallel=args.max_parallel,
+                quality_required=args.quality_required,
+                source_tests=args.source_tests,
+            )
+        except Exception as exc:
+            state["phase"] = "failed"
+            state["release_train_error"] = str(exc)[-4000:]
+            state["completed_at"] = int(time.time())
+            write_state(Path(args.state).resolve(), state)
+            raise
     summary = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary:
         append_summary(state, Path(summary))
     failures = {
         key: value for key, value in state["products"].items() if value["status"] != "success"
     }
-    if failures:
+    if failures or state.get("phase") != "succeeded":
         print(json.dumps(failures, indent=2, sort_keys=True))
         return 1
     return 0

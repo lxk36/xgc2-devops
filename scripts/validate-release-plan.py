@@ -54,21 +54,86 @@ def catalog_products(catalog: dict[str, Any] | None) -> list[dict[str, Any]]:
 
 def build_package_owners(
     planned: list[dict[str, Any]], catalog: dict[str, Any] | None
-) -> dict[str, tuple[str, str]]:
-    owners: dict[str, tuple[str, str]] = {}
+) -> dict[str, tuple[str, dict[str, str]]]:
+    owners: dict[str, tuple[str, dict[str, str]]] = {}
     for product in catalog_products(catalog):
         apt = product.get("apt") if isinstance(product.get("apt"), dict) else {}
         release = product.get("release") if isinstance(product.get("release"), dict) else {}
         apt_versions = release.get("apt_versions") if isinstance(release.get("apt_versions"), dict) else {}
-        version = str(apt_versions.get("focal") or product.get("version", ""))
+        distributions = [
+            value.strip()
+            for value in str(apt.get("distribution", "focal")).split(",")
+            if value.strip()
+        ]
+        versions = {
+            distribution: str(apt_versions.get(distribution) or product.get("version", ""))
+            for distribution in distributions or ["focal"]
+        }
+        package_distribution_map = (
+            apt.get("package_distributions")
+            if isinstance(apt.get("package_distributions"), dict)
+            else {}
+        )
         for package in (*apt.get("packages", []), *apt.get("install", [])):
-            owners[str(package)] = (str(product.get("id", "")), version)
+            normalized = package_name(str(package))
+            package_distributions = package_distribution_map.get(normalized, distributions)
+            owners[normalized] = (
+                str(product.get("id", "")),
+                {
+                    distribution: version
+                    for distribution, version in versions.items()
+                    if distribution in set(map(str, package_distributions))
+                },
+            )
     for item in planned:
         apt_versions = item.get("apt_versions") if isinstance(item.get("apt_versions"), dict) else {}
-        version = str(apt_versions.get("focal") or item.get("expected_version", ""))
+        versions = {
+            str(distribution): str(
+                apt_versions.get(str(distribution)) or item.get("expected_version", "")
+            )
+            for distribution in item.get("apt_distributions", ["focal"])
+        }
+        package_distribution_map = (
+            item.get("apt_package_distributions")
+            if isinstance(item.get("apt_package_distributions"), dict)
+            else {}
+        )
         for package in (*item.get("apt_packages", []), *item.get("apt_install", [])):
-            owners[str(package)] = (str(item["id"]), version)
+            normalized = package_name(str(package))
+            package_distributions = package_distribution_map.get(
+                normalized, item.get("apt_distributions", ["focal"])
+            )
+            owners[normalized] = (
+                str(item["id"]),
+                {
+                    distribution: version
+                    for distribution, version in versions.items()
+                    if distribution in set(map(str, package_distributions))
+                },
+            )
     return owners
+
+
+def owner_default_version(owner: tuple[str, dict[str, str]]) -> str:
+    versions = owner[1]
+    return versions.get("focal") or next(iter(versions.values()), "")
+
+
+def package_variants(package: str) -> list[tuple[str, str | None]]:
+    variants: list[tuple[str, str | None]] = [(package, None)]
+    if package.startswith("ros-noetic-"):
+        suffix = package[len("ros-noetic-") :]
+        variants.extend(
+            [(f"ros-${{ROS_DISTRO}}-{suffix}", "focal"), (f"ros-\${{ROS_DISTRO}}-{suffix}", "focal")]
+        )
+        variants[0] = (package, "focal")
+    elif package.startswith("ros-melodic-"):
+        variants[0] = (package, "bionic")
+        suffix = package[len("ros-melodic-") :]
+        variants.extend(
+            [(f"ros-${{ROS_DISTRO}}-{suffix}", "bionic"), (f"ros-\${{ROS_DISTRO}}-{suffix}", "bionic")]
+        )
+    return variants
 
 
 def validate(
@@ -84,7 +149,7 @@ def validate(
 
     for item in planned:
         product_id = str(item["id"])
-        if item.get("action") != "release":
+        if item.get("action") not in {"release", "compatibility-verify"}:
             continue
         source = Path(str(item["source"]))
         if not source.is_absolute():
@@ -123,33 +188,161 @@ def validate(
                         f"release.apt_versions[{distribution}]={version} are inconsistent"
                     )
 
+        runtime_manifest_path = source / "manifest" / "px4_runtime.yaml"
+        if runtime_manifest_path.exists():
+            runtime_manifest = load_yaml(runtime_manifest_path)
+            expected_runtime_version = (
+                expected_product_version if allow_planned_updates else metadata_version
+            )
+            if str(runtime_manifest.get("debian_version", "")) != expected_runtime_version:
+                errors.append(
+                    f"{product_id}: manifest/px4_runtime.yaml debian_version="
+                    f"{runtime_manifest.get('debian_version')} but product version is "
+                    f"{expected_runtime_version}"
+                )
+
         scripts_dir = source / ".xgc2" / "scripts"
         workflow_dir = source / ".github" / "workflows"
         inspected_paths = []
         if scripts_dir.exists():
-            inspected_paths.extend(sorted(scripts_dir.glob("*.sh")))
+            inspected_paths.extend(sorted(path for path in scripts_dir.rglob("*") if path.is_file()))
         if workflow_dir.exists():
             inspected_paths.extend(sorted(workflow_dir.glob("*.y*ml")))
         if inspected_paths:
-            dependency_text = "\n".join(
+            for path in inspected_paths:
+                if path.name in {"package_debs.sh", "check_package_compliance.sh"}:
+                    continue
+                in_control_heredoc = False
+                control_continuation = False
+                for line_number, line in enumerate(
+                    path.read_text(encoding="utf-8", errors="ignore").splitlines(), 1
+                ):
+                    if "DEBIAN/control" in line and "<<" in line:
+                        in_control_heredoc = True
+                    semantic_control = (
+                        in_control_heredoc
+                        or control_continuation
+                        or "write_control" in line
+                        or re.search(r"\bDepends\s*[:=]", line) is not None
+                    )
+                    control_continuation = semantic_control and line.rstrip().endswith("\\")
+                    if in_control_heredoc and line.strip() in {"EOF", "CONTROL"}:
+                        in_control_heredoc = False
+                    if (
+                        "grep" in line
+                        or semantic_control
+                    ):
+                        continue
+                    for owned_package in package_owners:
+                        if any(
+                            re.search(
+                                rf"(?<![A-Za-z0-9+_.-]){re.escape(variant)}"
+                                r"\s+\(\s*(?:<<|<=|=|>=|>>)\s*[^)]+\)",
+                                line,
+                            )
+                            for variant, _distribution in package_variants(owned_package)
+                        ):
+                            errors.append(
+                                f"{product_id}: {path.relative_to(source)}:{line_number} "
+                                f"uses Debian relationship syntax in a command/package-name context"
+                            )
+                            break
+            raw_dependency_text = "\n".join(
                 path.read_text(encoding="utf-8", errors="ignore")
                 for path in inspected_paths
                 if path.name != "check_package_compliance.sh"
             )
-            for package in sorted(set(XGC2_PACKAGE.findall(dependency_text))):
-                normalized = package.replace("ros-${ROS_DISTRO}-", "ros-noetic-").replace(
-                    "ros-\${ROS_DISTRO}-", "ros-noetic-"
-                )
-                owner = package_owners.get(normalized)
-                if (
-                    owner
-                    and owner[0] != product_id
-                    and normalized not in declared_packages
-                    and owner[0] not in declared_products
+            dependency_text = "\n".join(
+                line
+                for line in raw_dependency_text.splitlines()
+                if re.match(r"^\s*(?:Replaces|Breaks|Conflicts|Provides)\s*:", line) is None
+            )
+            for normalized, owner in sorted(package_owners.items()):
+                if owner[0] == product_id:
+                    continue
+                item_distributions = set(map(str, item.get("apt_distributions", ["focal"])))
+                relevant_variants = [
+                    (variant, distribution)
+                    for variant, distribution in package_variants(normalized)
+                    if distribution is None or distribution in item_distributions
+                ]
+                if not any(
+                    re.search(
+                        rf"(?<![A-Za-z0-9+_.-]){re.escape(variant)}"
+                        r"(?![A-Za-z0-9+_.-])",
+                        dependency_text,
+                    )
+                    for variant, _dist in relevant_variants
                 ):
+                    continue
+                if normalized not in declared_packages and owner[0] not in declared_products:
                     errors.append(
                         f"{product_id}: scripts use {normalized}, but apt.depends/release.requires does not declare {owner[0]}"
                     )
+                relation_tokens: list[tuple[str, str | None]] = []
+                for variant, inferred_distribution in relevant_variants:
+                    relation_tokens.append((variant, inferred_distribution))
+                    assignment = re.compile(
+                        rf"(?m)^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*"
+                        rf"(['\"]?){re.escape(variant)}\2\s*(?:#.*)?$"
+                    )
+                    relation_tokens.extend(
+                        (f"${{{match.group(1)}}}", inferred_distribution)
+                        for match in assignment.finditer(dependency_text)
+                    )
+                for variant, inferred_distribution in relation_tokens:
+                    relation = re.compile(
+                        re.escape(variant)
+                        + r"\s*\(\s*(?:<<|<=|=|>=|>>)\s*([^)$\s][^)]*)\)"
+                    )
+                    for declared_version in relation.findall(dependency_text):
+                        candidate_distributions = (
+                            [inferred_distribution]
+                            if inferred_distribution
+                            else list(map(str, item.get("apt_distributions", ["focal"])))
+                        )
+                        for distribution in candidate_distributions:
+                            expected = owner[1].get(distribution)
+                            if expected and declared_version.strip() != expected:
+                                errors.append(
+                                    f"{product_id}: {variant} relation uses {declared_version.strip()} "
+                                    f"for {distribution}, but {owner[0]} current APT version is {expected}"
+                                )
+                    for line in dependency_text.splitlines():
+                        if re.search(
+                            rf"(?<![A-Za-z0-9+_.-]){re.escape(variant)}"
+                            r"(?![A-Za-z0-9+_.-])",
+                            line,
+                        ) is None:
+                            continue
+                        hardcoded_versions: list[str] = []
+                        if "dpkg --compare-versions" in line:
+                            hardcoded_versions.extend(
+                                re.findall(
+                                    r"\b(?:ge|gt|eq)\s+['\"]([^'\"]+)['\"]",
+                                    line,
+                                )
+                            )
+                        hardcoded_versions.extend(
+                            re.findall(
+                                rf"{re.escape(variant)}=([0-9][A-Za-z0-9.+:~_-]*)",
+                                line,
+                            )
+                        )
+                        candidate_distributions = (
+                            [inferred_distribution]
+                            if inferred_distribution
+                            else list(item_distributions)
+                        )
+                        for declared_version in hardcoded_versions:
+                            for distribution in candidate_distributions:
+                                expected = owner[1].get(distribution)
+                                if expected and declared_version != expected:
+                                    errors.append(
+                                        f"{product_id}: {variant} hard-coded install/compliance "
+                                        f"version is {declared_version} for {distribution}, but "
+                                        f"{owner[0]} current APT version is {expected}"
+                                    )
             version_text = "\n".join(
                 path.read_text(encoding="utf-8", errors="ignore")
                 for path in inspected_paths
@@ -171,9 +364,9 @@ def validate(
                         continue
                     apt_package = str(entry.get("apt", ""))
                     owner = package_owners.get(apt_package)
-                    if owner and str(entry.get("version", "")) != owner[1] and not allow_planned_updates:
+                    if owner and str(entry.get("version", "")) != owner_default_version(owner) and not allow_planned_updates:
                         errors.append(
-                            f"{product_id}: release-set {entry_name}={entry.get('version')} but plan requires {owner[1]}"
+                            f"{product_id}: release-set {entry_name}={entry.get('version')} but plan requires {owner_default_version(owner)}"
                         )
     return errors
 

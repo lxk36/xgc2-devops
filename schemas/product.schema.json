@@ -100,6 +100,42 @@
           },
           "uniqueItems": true
         },
+        "package_architectures": {
+          "description": "Optional per-package architecture availability. Packages omitted here default to amd64+arm64; apt.install packages must remain available on both.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "minLength": 1
+          },
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "amd64",
+                "arm64"
+              ]
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          }
+        },
+        "package_distributions": {
+          "description": "Optional per-package distribution availability. Packages omitted here default to every apt.distribution value.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "minLength": 1
+          },
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9._-]*$"
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          }
+        },
         "depends": {
           "type": "array",
           "items": {
@@ -208,6 +244,16 @@
             "pattern": "^[a-z0-9][a-z0-9._-]*$"
           },
           "uniqueItems": true
+        },
+        "dependency_policy": {
+          "description": "Override a direct internal dependency edge: rebuild, compatibility verify, or ordering only.",
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[a-z0-9][a-z0-9._-]*$"
+          },
+          "additionalProperties": {
+            "enum": ["rebuild", "verify", "order"]
+          }
         },
         "apt_versions": {
           "type": "object",

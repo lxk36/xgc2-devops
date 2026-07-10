@@ -1,70 +1,66 @@
 # XGC2 CI / Release Framework
 
-## Development Loop
+## Product contract
 
-Local Docker is the primary development loop. Developers iterate with mounted source
-overlays, run builds and Gazebo/RViz simulations locally, and push commits mainly as
-recoverable checkpoints.
+Each APT product branch owns `ci.yml` and `release.yml`.
 
-## Product CI Contract
+`ci.yml` runs for push and pull requests. It builds and install-checks all
+declared distributions and amd64/arm64 targets, then retains debs and
+`xgc2.build-artifact.v1` for 14 days. It never receives production credentials.
 
-Every product release branch owns its own two workflows. For example, `noetic`,
-`master`, `v1.12-noetic`, and `v1.14-noetic` keep branch-local workflow files
-that match the product built from that branch. `xgc2-devops` does not copy,
-generate, or centrally manage child workflow implementations.
-
-Each product branch should expose:
-
-- `ci.yml`: push, pull request, and manual reference checks. It builds and tests
-  source, may upload deb artifacts and manifests, but must never publish APT.
-- `release.yml`: manual-only release entrypoint. It is triggered by
-  `xgc2-devops` and owns deb build, APT publish, and release manifest emission.
-
-Required `release.yml` inputs:
+`release.yml` is a fallback prepare/compatibility worker. Its standard inputs
+are:
 
 - `expected_version`
 - `expected_source_sha`
-- `publish_apt`
+- `prepare_action` (`release` or `compatibility-verify`)
+- `apt_overlay_url`
+- `dependency_set_digest`
 - `run_cpp_quality`
 - `run_source_tests`
-- `release_id`
-- `release_lock_digest`
 
-`publish_apt`, `run_cpp_quality`, and `run_source_tests` must explicitly declare
-`type: boolean`; an untyped `"false"` is a non-empty string and can accidentally
-enable optional work.
+For `release`, it performs the same build/install/test contract and uploads
+build artifacts. For `compatibility-verify`, it validates against the release
+staging overlay and does not emit publishable artifacts. Product workflows do
+not accept `publish_apt`, do not generate release manifests, and do not call
+SSH/APT publishing helpers.
 
-`trusted_ci_run_id` is optional. When present, release downloads artifacts only
-from that exact run and validates `xgc2.build-artifact.v1` before publishing.
+## Control plane
 
-## Top-Level Orchestration
+The `xgc2-devops` release orchestrator:
 
-`release-orchestrator.yml` is the only global release workflow. It:
+- discovers APT products from non-empty `apt.install` or `apt.packages` metadata;
+- builds the dependency graph and computes rebuild/verify/order impact;
+- locks source SHAs, versions, distributions, package sets, and dependency
+  digests;
+- prepares dependency-ready nodes with at most four workers;
+- validates every deb and manifest centrally;
+- stages exact bundles in a release-scoped APT overlay;
+- promotes one complete immutable generation only after the entire plan passes;
+- verifies production Packages, deb SHA256, source manifests, and release lock.
 
-- Collects `.xgc2/product.yml` metadata.
-- Builds the internal APT dependency graph from `apt.packages`, `apt.install`,
-  and `apt.depends`.
-- Expands selected products with upstream prerequisites and downstream consumers.
-- Classifies nodes as `release` or `verify`.
-- Runs one dependency-ready queue with at most four product releases in flight.
-- Waits for child workflows and verifies both architecture indexes plus release
-  manifests before making downstream nodes ready.
+The APT service's global lock serializes staging, promotion, garbage collection,
+and legacy migration operations. Production is served through a `live`
+generation symlink; a release becomes visible with one atomic switch.
 
-`catalog.yml` remains lightweight. It validates metadata, shows module/DAG
-summaries, and runs workflow audits without triggering child releases.
+## Fast-pass and failure policy
 
-Top-level devops owns the release DAG and workflow contract checks only. Child
-repositories own their build logic, dependency installation, packaging scripts,
-and branch-specific workflow details.
+Fast-pass requires exact product, version, distribution, architecture, source
+SHA, build/release digest, deb SHA256, and release lock agreement. Version-only
+matches are never sufficient.
 
-## Release Reuse
+Independent branches continue preparing after a deterministic failure, but a
+failed selected node prevents global promote. Transient network, lock, and APT
+visibility errors retry; compile, test, schema, version, source, and hash errors
+fail immediately. Resume uses the original release state and never replans.
 
-Fast-pass is allowed only when all are true:
+## Enforcement
 
-- The expected APT version exists for every required package, distribution, and
-  architecture.
-- The canonical release manifest reports the expected product, distribution,
-  target architecture, source SHA, and release-lock digest.
-- The manifest deb SHA256 equals the SHA256 in the APT Packages stanza.
+Catalog CI, release preflight, and scheduled audits reject any product-side APT
+credential, production Environment, publish job/input, release-manifest writer,
+SSH publisher, `reprepro`, or `aptly publish` use. This enforcement applies to
+all products with APT metadata, regardless of their descriptive `kind`.
 
-Version-only fast-pass is not allowed.
+Jenkins may later provide heavy builders only by emitting the same trusted build
+manifest contract. GitHub remains responsible for approval, dependency
+scheduling, attestation, staging, and production promotion.
