@@ -5,6 +5,8 @@ import hashlib
 import inspect
 import json
 import os
+import re
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -38,6 +40,24 @@ workflow_audit = load_script("audit-product-workflows.py")
 version_bumper = load_script("apply-release-version-bumps.py")
 
 
+GITHUB_ACTIONS_EXPRESSION = re.compile(r"\$\{\{.*?\}\}", re.DOTALL)
+
+
+def bash_syntax_check_github_run_block(script: str) -> subprocess.CompletedProcess[str]:
+    # GitHub expands expressions before invoking the generated shell script.
+    # A plain, shell-safe token preserves quoting/word placement for syntax
+    # checking without asking Bash to parse the Actions expression language.
+    expanded = GITHUB_ACTIONS_EXPRESSION.sub("__XGC2_GITHUB_EXPRESSION__", script)
+    return subprocess.run(
+        ["bash", "-n"],
+        input=expanded,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+
+
 class FakeClock:
     def __init__(self, start: float = 1_000.0):
         self.value = start
@@ -52,6 +72,55 @@ class FakeClock:
 
 
 class WorkflowAuditTests(unittest.TestCase):
+    def test_central_workflow_run_blocks_are_valid_bash(self):
+        import yaml
+
+        workflow_paths = (
+            ROOT / ".github" / "workflows" / "catalog.yml",
+            ROOT / ".github" / "workflows" / "release-orchestrator.yml",
+        )
+        checked = 0
+        for workflow_path in workflow_paths:
+            workflow = yaml.safe_load(workflow_path.read_text(encoding="utf-8"))
+            for job_name, job in workflow["jobs"].items():
+                for step_index, step in enumerate(job.get("steps", []), start=1):
+                    script = step.get("run")
+                    if not isinstance(script, str):
+                        continue
+                    checked += 1
+                    result = bash_syntax_check_github_run_block(script)
+                    label = step.get("name", f"step {step_index}")
+                    self.assertEqual(
+                        0,
+                        result.returncode,
+                        f"{workflow_path.name}:{job_name}:{label}: {result.stderr}",
+                    )
+        self.assertGreater(checked, 0)
+
+    def test_run_block_syntax_check_understands_python_heredocs_and_bad_delimiters(self):
+        valid_python_heredoc = """\
+python3 - <<'PY'
+import json
+if True:
+    print(json.dumps({"ok": True}))
+PY
+"""
+        self.assertEqual(
+            0,
+            bash_syntax_check_github_run_block(valid_python_heredoc).returncode,
+        )
+
+        indented_delimiter = """\
+if [[ -s release-state.json ]]; then
+  python3 - <<'PY'
+  import json
+  PY
+fi
+"""
+        result = bash_syntax_check_github_run_block(indented_delimiter)
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("here-document", result.stderr)
+
     def test_orchestrator_never_interpolates_dispatch_inputs_inside_shell(self):
         import yaml
 

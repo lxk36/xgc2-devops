@@ -171,12 +171,7 @@ jobs:
           done
           if [[ -s .work/resume/release-state.json ]]; then
             cp .work/resume/release-state.json .work/release-state.json
-            python3 - <<'PY'
-            import json
-            state=json.load(open('.work/release-state.json', encoding='utf-8'))
-            if state.get('schema') != 'xgc2.release-state.v2':
-                raise SystemExit('resume state is not xgc2.release-state.v2')
-            PY
+            python3 -c 'import json, sys; state = json.load(open(".work/release-state.json", encoding="utf-8")); sys.exit(0 if state.get("schema") == "xgc2.release-state.v2" else "resume state is not xgc2.release-state.v2")'
           fi
           if [[ -s .work/resume/release-push-transaction.json ]]; then
             cp .work/resume/release-push-transaction.json .work/release-push-transaction.json
