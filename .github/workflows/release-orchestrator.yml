@@ -61,6 +61,11 @@ on:
         required: true
         default: 4
         type: number
+      apt_visibility_timeout_seconds:
+        description: Maximum wait for APT indexes and manifests after each server operation.
+        required: true
+        default: 120
+        type: number
       resume_run_id:
         description: Prior orchestrator run containing digest-bound release-state evidence.
         required: false
@@ -108,6 +113,7 @@ jobs:
           INPUT_SOURCE_TESTS: ${{ inputs.source_tests }}
           INPUT_REUSE_CI_ARTIFACTS: ${{ inputs.reuse_ci_artifacts }}
           INPUT_MAX_PARALLEL: ${{ inputs.max_parallel }}
+          INPUT_APT_VISIBILITY_TIMEOUT_SECONDS: ${{ inputs.apt_visibility_timeout_seconds }}
           INPUT_RESUME_RUN_ID: ${{ inputs.resume_run_id }}
         run: |
           set -euo pipefail
@@ -135,6 +141,12 @@ jobs:
           ):
               require(name, r"true|false")
           require("INPUT_MAX_PARALLEL", r"[1-4]")
+          require("INPUT_APT_VISIBILITY_TIMEOUT_SECONDS", r"[1-9][0-9]{1,2}")
+          visibility_timeout = int(os.environ["INPUT_APT_VISIBILITY_TIMEOUT_SECONDS"])
+          if not 30 <= visibility_timeout <= 300:
+              raise SystemExit(
+                  "INPUT_APT_VISIBILITY_TIMEOUT_SECONDS must be between 30 and 300"
+              )
           if os.environ["INPUT_RESUME_RUN_ID"] and os.environ["INPUT_EXECUTE"] != "true":
               raise SystemExit("resume_run_id requires execute=true")
           if (
@@ -147,7 +159,9 @@ jobs:
       - name: Download exact resume evidence
         if: ${{ inputs.resume_run_id != '' }}
         env:
-          GH_TOKEN: ${{ secrets.XGC2_RELEASE_ORCHESTRATOR_TOKEN || github.token }}
+          # Resume artifacts belong to this repository. Using the ephemeral run
+          # token keeps these reads off the shared cross-repository PAT quota.
+          GH_TOKEN: ${{ github.token }}
           RESUME_RUN_ID: ${{ inputs.resume_run_id }}
         run: |
           set -euo pipefail
@@ -256,6 +270,7 @@ jobs:
         with:
           name: xgc2-release-plan-${{ github.run_id }}
           path: .work
+          github-token: ${{ github.token }}
       - name: Install metadata dependencies
         run: python3 -m pip install --user --no-cache-dir PyYAML jsonschema
       - name: Configure release bot
@@ -290,6 +305,31 @@ jobs:
           fi
           echo "XGC2_RELEASE_ID=${release_id}" >> "$GITHUB_ENV"
           echo "XGC2_RELEASE_LOCK_DIGEST=$(sha256sum .work/release-lock.json | awk '{print $1}')" >> "$GITHUB_ENV"
+      - name: Register production log masks
+        env:
+          APT_REPO_HOST: ${{ secrets.APT_REPO_HOST }}
+          APT_REPO_USER: ${{ secrets.APT_REPO_USER }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          import socket
+
+          host = os.environ["APT_REPO_HOST"].strip()
+          user = os.environ["APT_REPO_USER"].strip()
+          if not host or not user:
+              raise SystemExit("APT repository host and user must be configured")
+
+          masks = {host, user}
+          for family, _, _, _, address in socket.getaddrinfo(
+              host, None, family=socket.AF_UNSPEC, type=socket.SOCK_STREAM
+          ):
+              if family in {socket.AF_INET, socket.AF_INET6}:
+                  masks.add(address[0])
+          for value in sorted(masks):
+              escaped = value.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+              print(f"::add-mask::{escaped}")
+          PY
       - name: Prepare, atomically promote, and verify release train
         env:
           GH_TOKEN: ${{ secrets.XGC2_RELEASE_ORCHESTRATOR_TOKEN }}
@@ -304,9 +344,10 @@ jobs:
           INPUT_QUALITY_REQUIRED: ${{ inputs.quality_required }}
           INPUT_SOURCE_TESTS: ${{ inputs.source_tests }}
           INPUT_REUSE_CI_ARTIFACTS: ${{ inputs.reuse_ci_artifacts }}
+          INPUT_APT_VISIBILITY_TIMEOUT_SECONDS: ${{ inputs.apt_visibility_timeout_seconds }}
         run: |
           set -euo pipefail
-          args=(--plan .work/release-plan.json --lock .work/release-lock.json --state .work/release-state.json --release-id "$XGC2_RELEASE_ID" --max-parallel "$INPUT_MAX_PARALLEL")
+          args=(--plan .work/release-plan.json --lock .work/release-lock.json --state .work/release-state.json --release-id "$XGC2_RELEASE_ID" --max-parallel "$INPUT_MAX_PARALLEL" --apt-timeout-seconds "$INPUT_APT_VISIBILITY_TIMEOUT_SECONDS")
           [[ "$INPUT_QUALITY_REQUIRED" != true ]] || args+=(--quality-required)
           [[ "$INPUT_SOURCE_TESTS" != true ]] || args+=(--source-tests)
           [[ "$INPUT_REUSE_CI_ARTIFACTS" != true ]] || args+=(--reuse-ci-artifacts)

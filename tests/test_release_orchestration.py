@@ -574,6 +574,129 @@ class SchedulerResilienceTests(unittest.TestCase):
             self.assertEqual(result["status"], status)
             self.assertEqual(result["returncode"], returncode)
 
+    def test_scheduler_passes_bounded_apt_visibility_timeout_to_worker(self):
+        with mock.patch.object(
+            scheduler.subprocess,
+            "run",
+            return_value=mock.Mock(returncode=0, stdout="ok"),
+        ) as invoked:
+            scheduler.run_product(
+                Path("runner.py"),
+                Path("plan.json"),
+                "product",
+                quality_required=False,
+                source_tests=False,
+                reuse_ci_artifacts=True,
+                apt_timeout_seconds=120,
+            )
+        command = invoked.call_args.args[0]
+        self.assertIn("--apt-timeout-seconds", command)
+        self.assertEqual(command[command.index("--apt-timeout-seconds") + 1], "120")
+
+    def test_shared_apt_circuit_enforces_global_backoff_across_products(self):
+        plan = {"layers": [[
+            {"id": "a", "dependencies": []},
+            {"id": "b", "dependencies": []},
+        ]]}
+        clock = FakeClock()
+        attempts: dict[str, int] = {}
+        calls: list[tuple[str, int, float]] = []
+        calls_lock = threading.Lock()
+
+        def fake_run_product(*args, **kwargs):
+            del kwargs
+            product_id = args[2]
+            with calls_lock:
+                attempt = attempts.get(product_id, 0) + 1
+                attempts[product_id] = attempt
+                calls.append((product_id, attempt, clock.time()))
+            if (product_id == "a" and attempt <= 3) or (
+                product_id == "b" and attempt == 1
+            ):
+                return {
+                    "status": "transient",
+                    "returncode": 75,
+                    "output": f"{product_id}: APT index/manifest not visible",
+                    "duration_seconds": 0.1,
+                }
+            return {
+                "status": "success", "returncode": 0,
+                "output": "ok", "duration_seconds": 0.1,
+            }
+
+        with tempfile.TemporaryDirectory() as directory, mock.patch.object(
+            scheduler, "run_product", side_effect=fake_run_product
+        ):
+            state = scheduler.schedule(
+                plan,
+                plan_path=Path(directory) / "plan.json",
+                state_path=Path(directory) / "state.json",
+                runner=Path("runner.py"),
+                max_parallel=2,
+                quality_required=False,
+                source_tests=False,
+                release_lock_digest="lock-1",
+                retry_delays=(15, 30, 60),
+                sleep_fn=clock.sleep,
+                now_fn=clock.time,
+            )
+
+        self.assertEqual(clock.sleeps, [15, 30, 60])
+        self.assertLess(calls.index(("a", 4, 1105.0)), calls.index(("b", 2, 1105.0)))
+        self.assertEqual(state["shared_infra_circuit_trips"], 1)
+        self.assertNotIn("shared_infra_circuit", state)
+        self.assertTrue(all(node["status"] == "success" for node in state["products"].values()))
+
+    def test_open_circuit_uses_pending_node_when_no_retry_wait_exists(self):
+        plan = {"layers": [[{"id": "pending", "dependencies": []}]]}
+        clock = FakeClock()
+        initial = {
+            "schema": "xgc2.release-state.v2",
+            "release_id": "test-release",
+            "plan_digest": scheduler.canonical_digest(plan),
+            "release_lock_digest": "lock-1",
+            "execution_policy_digest": "",
+            "started_at": int(clock.time()),
+            "phase": "preparing",
+            "products": {
+                "pending": {
+                    "status": "pending", "queued_at": int(clock.time()),
+                    "attempts": 0, "transient_retries": 0,
+                }
+            },
+            "shared_infra_circuit": {
+                "status": "open", "opened_by": "finished-node",
+                "opened_at": int(clock.time()), "next_probe_at": clock.time() + 15,
+            },
+        }
+        success = {
+            "status": "success", "returncode": 0,
+            "output": "ok", "duration_seconds": 0.1,
+        }
+        with tempfile.TemporaryDirectory() as directory, mock.patch.object(
+            scheduler, "initial_state", return_value=initial
+        ), mock.patch.object(
+            scheduler, "run_product", return_value=success
+        ) as run_product:
+            state = scheduler.schedule(
+                plan,
+                plan_path=Path(directory) / "plan.json",
+                state_path=Path(directory) / "state.json",
+                runner=Path("runner.py"),
+                max_parallel=1,
+                quality_required=False,
+                source_tests=False,
+                release_lock_digest="lock-1",
+                retry_delays=(15, 30, 60),
+                sleep_fn=clock.sleep,
+                now_fn=clock.time,
+            )
+
+        self.assertEqual(clock.sleeps, [15])
+        run_product.assert_called_once()
+        self.assertEqual(state["products"]["pending"]["status"], "success")
+        self.assertNotIn("shared_infra_circuit", state)
+
     def test_transient_exit_is_retried_three_times_and_metrics_are_recorded(self):
         plan = {"layers": [[{"id": "leaf", "dependencies": []}]]}
         results = deque(
@@ -1266,6 +1389,74 @@ class AptVisibilityEfficiencyTests(unittest.TestCase):
             all(call.kwargs["apt_index"] is fake_index for call in visible.call_args_list)
         )
 
+    def test_central_overlay_uses_production_packages_for_identical_skipped_deb(self):
+        product = {
+            "id": "xgc2-test",
+            "expected_source_sha": "a" * 40,
+            "expected_version": "1.2.3-4",
+            "apt_versions": {"focal": "1.2.3-4~focal"},
+            "apt_distributions": ["focal"],
+            "apt_packages": ["libxgc2-test"],
+        }
+        apt_sha = "d" * 64
+        production_stanza = {
+            "Package": "libxgc2-test",
+            "Version": "1.2.3-4~focal",
+            "Architecture": "amd64",
+            "SHA256": apt_sha,
+        }
+        overlay_manifest = {
+            "schema": "xgc2.release-artifact.v1",
+            "product": "xgc2-test",
+            "source_sha": "a" * 40,
+            "version": "1.2.3-4",
+            "distribution": "focal",
+            "architecture": "amd64",
+            "release_lock_digest": "b" * 64,
+            "build_manifest_digest": "c" * 64,
+            "debs": [{
+                "package": "libxgc2-test",
+                "version": "1.2.3-4~focal",
+                "architecture": "amd64",
+                "sha256": apt_sha,
+            }],
+        }
+
+        def indexes(base_url, _distribution, _arch):
+            return [] if base_url == "https://apt.example/staging/release-1" else [
+                production_stanza
+            ]
+
+        with mock.patch.dict(
+            runner.os.environ,
+            {"XGC2_RELEASE_LOCK_DIGEST": "b" * 64},
+            clear=False,
+        ), mock.patch.object(
+            runner, "apt_stanzas", side_effect=indexes
+        ) as apt_stanzas, mock.patch.object(
+            runner, "read_release_manifest", return_value=overlay_manifest
+        ) as read_manifest:
+            runner.verify_apt(
+                product,
+                apt_base_url="https://apt.example/staging/release-1",
+                apt_fallback_base_url="https://apt.example",
+                manifest_base_url="https://apt.example/staging/release-1/manifests",
+                arches=("amd64",),
+                timeout_seconds=1,
+                poll_seconds=0,
+                run_number=None,
+                require_current_lock=True,
+            )
+
+        self.assertEqual(
+            [call.args[0] for call in apt_stanzas.call_args_list],
+            ["https://apt.example/staging/release-1", "https://apt.example"],
+        )
+        self.assertIn(
+            "https://apt.example/staging/release-1/manifests/",
+            read_manifest.call_args.args[0],
+        )
+
     def test_publish_job_metric_does_not_include_apt_visibility(self):
         data = {
             "jobs": [
@@ -1920,7 +2111,7 @@ class CentralStagingTests(unittest.TestCase):
             self.assertEqual(checkpoint["phase"], "staged")
             self.assertEqual(checkpoint["artifact_source"], "server-recovered")
 
-    def test_local_staged_checkpoint_rejects_wrong_bundle_while_promoting(self):
+    def test_local_staged_checkpoint_restages_exact_run_when_server_bundle_is_absent(self):
         with tempfile.TemporaryDirectory() as directory, mock.patch.dict(
             os.environ,
             {
@@ -1938,6 +2129,7 @@ class CentralStagingTests(unittest.TestCase):
             receipt_dir = root / "release-stage-receipts"
             receipt_dir.mkdir()
             expected = self.staged_product()
+            expected["bundle_dir"] = str(root / "bundle-focal")
             (receipt_dir / "x.json").write_text(
                 json.dumps({"products": [expected]}), encoding="utf-8"
             )
@@ -1947,13 +2139,80 @@ class CentralStagingTests(unittest.TestCase):
                 stdout=json.dumps(self.server_stage_status(wrong)),
                 stderr="",
             )
+            # The exact run is immutable and can be downloaded/prepared again.
+            (root / "release-run-artifacts" / "x" / "5").mkdir(parents=True)
+            receipt = root / "release-stage-receipts" / "x.json"
+            receipt.write_text(
+                json.dumps({"products": [expected]}), encoding="utf-8"
+            )
+            ok = mock.Mock(returncode=0, stdout="{}", stderr="")
             with mock.patch.object(
-                runner, "subprocess_checked", return_value=completed
-            ), mock.patch.object(runner, "verify_apt") as visibility, self.assertRaisesRegex(
-                runner.ReleaseError, "does not contain checkpointed bundles"
-            ):
-                runner.execute_central(self.resumable_args(plan_path))
-            visibility.assert_not_called()
+                runner, "subprocess_checked", side_effect=[completed, ok, ok]
+            ) as command, mock.patch.object(
+                runner, "verify_release_lock_is_current"
+            ), mock.patch.object(
+                runner, "download_run_artifacts"
+            ), mock.patch.object(runner, "verify_apt") as visibility:
+                self.assertEqual(runner.execute_central(self.resumable_args(plan_path)), 0)
+
+            self.assertEqual(command.call_count, 3)
+            visibility.assert_called_once()
+            checkpoint = runner.load_node_checkpoint(plan_path, product)
+            self.assertEqual(checkpoint["phase"], "staged")
+            self.assertEqual(checkpoint["run_id"], 5)
+            self.assertEqual(checkpoint["artifact_source"], "fallback")
+
+    def test_stale_server_recovered_checkpoint_falls_back_to_trusted_ci(self):
+        with tempfile.TemporaryDirectory() as directory, mock.patch.dict(
+            os.environ,
+            {
+                "GH_TOKEN": "token", "XGC2_RELEASE_ID": "release-1",
+                "XGC2_RELEASE_LOCK_DIGEST": "b" * 64,
+                "XGC2_EXECUTION_POLICY_DIGEST": "c" * 64,
+            },
+            clear=False,
+        ):
+            root = Path(directory)
+            product = self.resumable_product()
+            plan_path = root / "plan.json"
+            plan_path.write_text(json.dumps({"layers": [[product]]}), encoding="utf-8")
+            runner.write_node_checkpoint(
+                plan_path,
+                product,
+                phase="staged",
+                artifact_source="server-recovered",
+            )
+            receipt_dir = root / "release-stage-receipts"
+            receipt_dir.mkdir()
+            expected = self.staged_product()
+            expected["bundle_dir"] = str(root / "bundle-focal")
+            (receipt_dir / "x.json").write_text(
+                json.dumps({"products": [expected]}), encoding="utf-8"
+            )
+            (root / "release-run-artifacts" / "x" / "77").mkdir(parents=True)
+            absent = mock.Mock(
+                returncode=0,
+                stdout=json.dumps({
+                    "status": "prepared", "bundles": {},
+                    "distributions": {"focal": {"published": True}},
+                }),
+                stderr="",
+            )
+            ok = mock.Mock(returncode=0, stdout="{}", stderr="")
+            with mock.patch.object(
+                runner, "subprocess_checked", side_effect=[absent, ok, ok]
+            ), mock.patch.object(
+                runner, "verify_release_lock_is_current"
+            ), mock.patch.object(
+                runner, "find_trusted_ci_run", return_value=77
+            ) as trusted, mock.patch.object(runner, "verify_apt"):
+                self.assertEqual(runner.execute_central(self.resumable_args(plan_path)), 0)
+
+            trusted.assert_called_once()
+            checkpoint = runner.load_node_checkpoint(plan_path, product)
+            self.assertEqual(checkpoint["phase"], "staged")
+            self.assertEqual(checkpoint["run_id"], 77)
+            self.assertEqual(checkpoint["artifact_source"], "push-ci")
 
 
 class FastPassManifestTests(unittest.TestCase):

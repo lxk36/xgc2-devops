@@ -19,7 +19,19 @@ from typing import Any, Callable
 TERMINAL = {"success", "failed", "blocked"}
 TRANSIENT_EXIT_CODE = 75
 TRANSIENT_RETRY_DELAYS = (15.0, 30.0, 60.0)
+DEFAULT_APT_TIMEOUT_SECONDS = 120
 RESULT_MARKER = "XGC2_RESULT="
+SHARED_INFRA_TRANSIENT_PATTERNS = (
+    "apt index/manifest not visible",
+    "apt visibility retry",
+    "cannot read apt index",
+    "cannot read release manifest",
+    "cannot inspect durable stage",
+    "central release command failed",
+    "publish lock",
+    "server not responding",
+    "banner exchange",
+)
 
 
 def canonical_digest(value: Any) -> str:
@@ -178,6 +190,7 @@ def run_product(
     verify_lock_only: bool = False,
     reconcile_ci: bool = False,
     timeout_seconds: int | None = None,
+    apt_timeout_seconds: int | None = None,
 ) -> dict[str, Any]:
     command = [sys.executable, str(runner), "--plan", str(plan_path), "--product", product_id]
     if quality_required:
@@ -192,6 +205,8 @@ def run_product(
         command.append("--reconcile-ci")
     if timeout_seconds is not None:
         command.extend(["--timeout-seconds", str(timeout_seconds)])
+    if apt_timeout_seconds is not None:
+        command.extend(["--apt-timeout-seconds", str(apt_timeout_seconds)])
     if central_prepare:
         command.append("--central-prepare")
     if verify_production or (central_prepare and resume_verify):
@@ -264,6 +279,15 @@ def result_metadata(output: str) -> dict[str, Any]:
     return {}
 
 
+def is_shared_infrastructure_transient(result: dict[str, Any]) -> bool:
+    """Identify exit-75 failures that share the single APT control plane."""
+
+    if result.get("status") != "transient":
+        return False
+    output = str(result.get("output", "")).lower()
+    return any(pattern in output for pattern in SHARED_INFRA_TRANSIENT_PATTERNS)
+
+
 def last_json_object(output: str) -> dict[str, Any]:
     for line in reversed(output.splitlines()):
         try:
@@ -288,6 +312,7 @@ def schedule(
     release_id: str = "test-release",
     reuse_ci_artifacts: bool = True,
     previous: dict[str, Any] | None = None,
+    apt_timeout_seconds: int = DEFAULT_APT_TIMEOUT_SECONDS,
     retry_delays: tuple[float, ...] = TRANSIENT_RETRY_DELAYS,
     sleep_fn: Callable[[float], None] = time.sleep,
     now_fn: Callable[[], float] = time.time,
@@ -298,6 +323,8 @@ def schedule(
         raise ValueError("release lock digest is required")
     if not release_id:
         raise ValueError("release id is required")
+    if apt_timeout_seconds <= 0:
+        raise ValueError("APT visibility timeout must be positive")
     items = plan_items(plan)
     validate_dependencies(items)
     policy = execution_policy_value(
@@ -352,6 +379,25 @@ def schedule(
                 and float(state["products"][product_id].get("next_retry_at", 0)) <= now
                 and all(statuses[dep] == "success" for dep in item.get("dependencies", []))
             ]
+            circuit = state.get("shared_infra_circuit")
+            if isinstance(circuit, dict) and circuit.get("status") == "open":
+                # Let already-running workers drain, then send exactly one
+                # retry as a health probe.  Pending products must not amplify
+                # a shared APT/SSH outage into a four-node retry storm.
+                next_probe_at = float(circuit.get("next_probe_at", 0))
+                if running or now < next_probe_at:
+                    ready = []
+                else:
+                    retry_ready = [
+                        product_id
+                        for product_id in ready
+                        if statuses[product_id] == "retry_wait"
+                    ]
+                    # Normally probe with the node that observed the outage.
+                    # If it has already become terminal, a single independent
+                    # pending node is also a valid health probe and prevents a
+                    # stale circuit from deadlocking the rest of the DAG.
+                    ready = (retry_ready or ready)[:1]
             while ready and len(running) < max_parallel:
                 product_id = ready.pop(0)
                 product_state = state["products"][product_id]
@@ -369,8 +415,13 @@ def schedule(
                     source_tests=source_tests,
                     reuse_ci_artifacts=reuse_ci_artifacts,
                     resume_verify=bool(product_state.get("resume_verification_required")),
+                    apt_timeout_seconds=apt_timeout_seconds,
                 )
                 running[future] = product_id
+                circuit = state.get("shared_infra_circuit")
+                if isinstance(circuit, dict) and circuit.get("status") == "open":
+                    circuit["probe_product"] = product_id
+                    circuit["probe_started_at"] = product_state["started_at"]
                 print(
                     f"scheduler: started {product_id} attempt {product_state['attempts']}",
                     flush=True,
@@ -385,8 +436,15 @@ def schedule(
                     for data in state["products"].values()
                     if data["status"] == "retry_wait" and "next_retry_at" in data
                 ]
-                if retry_times:
-                    delay = max(0.0, min(retry_times) - now_fn())
+                circuit = state.get("shared_infra_circuit")
+                circuit_open = isinstance(circuit, dict) and circuit.get("status") == "open"
+                if retry_times or circuit_open:
+                    next_wakeup = min(retry_times) if retry_times else now_fn()
+                    if circuit_open:
+                        next_wakeup = max(
+                            next_wakeup, float(circuit.get("next_probe_at", 0))
+                        )
+                    delay = max(0.0, next_wakeup - now_fn())
                     if delay:
                         sleep_fn(delay)
                     continue
@@ -405,6 +463,16 @@ def schedule(
             retry_timeout = (
                 max(0.0, min(retry_times) - now_fn()) if retry_times else None
             )
+            circuit = state.get("shared_infra_circuit")
+            if (
+                retry_timeout is not None
+                and isinstance(circuit, dict)
+                and circuit.get("status") == "open"
+            ):
+                retry_timeout = max(
+                    retry_timeout,
+                    max(0.0, float(circuit.get("next_probe_at", 0)) - now_fn()),
+                )
             done, _ = concurrent.futures.wait(
                 running,
                 timeout=retry_timeout,
@@ -452,6 +520,14 @@ def schedule(
                     else:
                         product_state[key] = value
 
+                circuit = state.get("shared_infra_circuit")
+                is_circuit_probe = bool(
+                    isinstance(circuit, dict)
+                    and circuit.get("status") == "open"
+                    and circuit.get("probe_product") == product_id
+                )
+                shared_infra_transient = is_shared_infrastructure_transient(result)
+
                 if result["status"] == "transient" and int(
                     product_state.get("transient_retries", 0)
                 ) < len(retry_delays):
@@ -465,6 +541,36 @@ def schedule(
                             "last_error": output[-4000:],
                         }
                     )
+                    if shared_infra_transient:
+                        current_circuit = state.get("shared_infra_circuit")
+                        if not isinstance(current_circuit, dict) or current_circuit.get(
+                            "status"
+                        ) != "open":
+                            state["shared_infra_circuit_trips"] = int(
+                                state.get("shared_infra_circuit_trips", 0)
+                            ) + 1
+                            state["shared_infra_circuit"] = {
+                                "status": "open",
+                                "opened_by": product_id,
+                                "opened_at": int(completed_at),
+                                "next_probe_at": completed_at + delay,
+                            }
+                            print(
+                                "scheduler: shared APT infrastructure circuit opened; "
+                                "draining active workers before one retry probe",
+                                flush=True,
+                            )
+                        else:
+                            current_circuit.pop("probe_product", None)
+                            current_circuit.pop("probe_started_at", None)
+                            current_circuit["next_probe_at"] = completed_at + delay
+                    elif is_circuit_probe:
+                        state.pop("shared_infra_circuit", None)
+                        print(
+                            "scheduler: probe no longer reports a shared APT failure; "
+                            "normal parallel scheduling resumed",
+                            flush=True,
+                        )
                     print(
                         f"scheduler: {product_id} transient failure; retry "
                         f"{retry_index + 1}/{len(retry_delays)} in {delay:g}s",
@@ -488,6 +594,12 @@ def schedule(
                 )
                 if result["status"] == "transient":
                     product_state["reason"] = "transient retries exhausted"
+                if is_circuit_probe:
+                    state.pop("shared_infra_circuit", None)
+                    print(
+                        "scheduler: shared APT infrastructure circuit closed after probe",
+                        flush=True,
+                    )
                 print(f"scheduler: {product_id} -> {terminal_status}", flush=True)
 
     state["completed_at"] = int(now_fn())
@@ -541,6 +653,7 @@ def verify_promoted_product(
     *,
     quality_required: bool,
     source_tests: bool,
+    apt_timeout_seconds: int = DEFAULT_APT_TIMEOUT_SECONDS,
     retry_delays: tuple[float, ...] = TRANSIENT_RETRY_DELAYS,
     sleep_fn: Callable[[float], None] = time.sleep,
 ) -> dict[str, Any]:
@@ -556,6 +669,7 @@ def verify_promoted_product(
                 reuse_ci_artifacts=False,
                 central_prepare=True,
                 verify_production=True,
+                apt_timeout_seconds=apt_timeout_seconds,
             )
         )
         if result["status"] != "transient" or retries >= len(retry_delays):
@@ -691,6 +805,7 @@ def finalize_release_train(
     max_parallel: int,
     quality_required: bool,
     source_tests: bool,
+    apt_timeout_seconds: int = DEFAULT_APT_TIMEOUT_SECONDS,
     retry_delays: tuple[float, ...] = TRANSIENT_RETRY_DELAYS,
     sleep_fn: Callable[[float], None] = time.sleep,
 ) -> dict[str, Any]:
@@ -790,6 +905,7 @@ def finalize_release_train(
                 product_id,
                 quality_required=quality_required,
                 source_tests=source_tests,
+                apt_timeout_seconds=apt_timeout_seconds,
                 retry_delays=retry_delays,
                 sleep_fn=sleep_fn,
             ): product_id
@@ -878,6 +994,17 @@ def main() -> int:
     parser.add_argument("--quality-required", action="store_true")
     parser.add_argument("--source-tests", action="store_true")
     parser.add_argument("--reuse-ci-artifacts", action="store_true")
+    parser.add_argument(
+        "--apt-timeout-seconds",
+        type=int,
+        default=int(
+            os.environ.get(
+                "XGC2_APT_VISIBILITY_TIMEOUT_SECONDS",
+                str(DEFAULT_APT_TIMEOUT_SECONDS),
+            )
+        ),
+        help="per-attempt APT index/manifest visibility timeout (default: 120s)",
+    )
     args = parser.parse_args()
     if not os.environ.get("GH_TOKEN") and not os.environ.get("GITHUB_TOKEN"):
         raise SystemExit("GH_TOKEN or GITHUB_TOKEN is required")
@@ -915,6 +1042,7 @@ def main() -> int:
         release_id=args.release_id,
         reuse_ci_artifacts=args.reuse_ci_artifacts,
         previous=previous,
+        apt_timeout_seconds=args.apt_timeout_seconds,
     )
     if state.get("phase") == "prepared":
         try:
@@ -929,6 +1057,7 @@ def main() -> int:
                 max_parallel=args.max_parallel,
                 quality_required=args.quality_required,
                 source_tests=args.source_tests,
+                apt_timeout_seconds=args.apt_timeout_seconds,
             )
         except Exception as exc:
             state["phase"] = "failed"

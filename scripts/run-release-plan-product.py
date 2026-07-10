@@ -796,6 +796,7 @@ def recover_server_staged_receipt(
     release_id: str,
     lock_digest: str,
     overlay_url: str,
+    production_apt_base_url: str,
     arches: tuple[str, ...],
     apt_timeout_seconds: int,
     poll_seconds: int,
@@ -873,12 +874,98 @@ def recover_server_staged_receipt(
         poll_seconds=poll_seconds,
         run_number=None,
         require_current_lock=True,
+        apt_fallback_base_url=production_apt_base_url,
     )
     write_node_checkpoint(
         plan_path, product, phase="staged", receipt=receipt.name,
         artifact_source="server-recovered",
     )
     return True
+
+
+def staged_checkpoint_is_durable(
+    product: dict[str, Any],
+    *,
+    status: dict[str, Any] | None,
+    receipt: dict[str, Any] | None,
+) -> bool:
+    """Return whether a local staged checkpoint still exists on the server.
+
+    Missing server entries are recoverable state drift: the exact immutable
+    artifact can be staged again.  A present bundle whose signed identity no
+    longer matches the local receipt is different and remains a deterministic
+    integrity failure.
+    """
+
+    if not isinstance(status, dict) or status.get("status") not in RECOVERABLE_STAGE_STATUSES:
+        return False
+    bundles = status.get("bundles")
+    distributions = status.get("distributions")
+    expected_products = (
+        [item for item in receipt.get("products", []) if isinstance(item, dict)]
+        if isinstance(receipt, dict)
+        else []
+    )
+    if not expected_products or not isinstance(bundles, dict) or not isinstance(
+        distributions, dict
+    ):
+        return False
+    identity_keys = (
+        "product", "distribution", "version", "source_sha", "bundle_digest",
+        "build_manifest_digests", "debs",
+    )
+    for item in expected_products:
+        if any(key not in item for key in identity_keys):
+            return False
+        digest = str(item.get("bundle_digest", ""))
+        bundle_state = bundles.get(digest) if digest else None
+        if not isinstance(bundle_state, dict) or not bundle_state.get("manifests"):
+            return False
+        server_product = bundle_state.get("product")
+        expected_identity = {key: item[key] for key in identity_keys}
+        if not isinstance(server_product, dict) or server_product != expected_identity:
+            raise ReleaseError(
+                f"{product['id']}: durable stage bundle identity does not match checkpoint"
+            )
+        distribution_state = distributions.get(str(item.get("distribution", "")))
+        if not isinstance(distribution_state, dict) or distribution_state.get(
+            "published"
+        ) is not True:
+            return False
+    return True
+
+
+def downgrade_stale_staged_checkpoint(
+    plan_path: Path,
+    product: dict[str, Any],
+    checkpoint: dict[str, Any],
+) -> dict[str, Any] | None:
+    """Rewind stale local stage state without weakening train identity checks."""
+
+    run_id = checkpoint.get("run_id")
+    if isinstance(run_id, int) and run_id > 0:
+        artifact_source = str(checkpoint.get("artifact_source") or "fallback")
+        if artifact_source not in {"push-ci", "fallback"}:
+            artifact_source = "fallback"
+        write_node_checkpoint(
+            plan_path,
+            product,
+            phase="artifact_ready",
+            run_id=run_id,
+            artifact_source=artifact_source,
+        )
+        print(
+            f"{product['id']}: server lost staged bundle; restaging exact run {run_id}",
+            flush=True,
+        )
+        return load_node_checkpoint(plan_path, product)
+    node_checkpoint_path(plan_path, str(product["id"])).unlink(missing_ok=True)
+    print(
+        f"{product['id']}: server lost staged bundle and no exact run was recorded; "
+        "resolving a trusted artifact again",
+        flush=True,
+    )
+    return None
 
 
 def run_completed_successfully(
@@ -1487,6 +1574,7 @@ def verify_apt(
     poll_seconds: int,
     run_number: int | None,
     require_current_lock: bool,
+    apt_fallback_base_url: str | None = None,
 ) -> None:
     if product.get("skip_apt_verify"):
         print(f"{product['id']}: apt verification skipped by product metadata")
@@ -1515,9 +1603,41 @@ def verify_apt(
         apt_indexes: dict[tuple[str, str], list[dict[str, str]]] = {}
         for distribution, arch in sorted({(item[0], item[1]) for item in pending}):
             try:
-                apt_indexes[(distribution, arch)] = apt_stanzas(
+                primary = apt_stanzas(
                     apt_base_url, distribution, arch
                 )
+                # Delta-stage protocol: an exact package/version/SHA remains in
+                # production while the overlay supplies its current-lock
+                # manifest.  Use production Packages only for identities absent
+                # from the overlay.  Manifest lookup stays pinned to
+                # ``manifest_base_url`` and therefore cannot fast-pass an old
+                # production manifest or release lock.
+                missing_from_primary = {
+                    (package, version)
+                    for pending_distribution, pending_arch, package, version in pending
+                    if pending_distribution == distribution
+                    and pending_arch == arch
+                    and not any(
+                        stanza.get("Package") == package
+                        and stanza.get("Version") == version
+                        for stanza in primary
+                    )
+                }
+                if apt_fallback_base_url and missing_from_primary:
+                    fallback = apt_stanzas(
+                        apt_fallback_base_url, distribution, arch
+                    )
+                    primary_identities = {
+                        (stanza.get("Package"), stanza.get("Version"))
+                        for stanza in primary
+                    }
+                    primary.extend(
+                        stanza
+                        for stanza in fallback
+                        if (stanza.get("Package"), stanza.get("Version"))
+                        not in primary_identities
+                    )
+                apt_indexes[(distribution, arch)] = primary
             except TransientReleaseError as exc:
                 last_transient = str(exc)
                 print(f"{product['id']}: APT visibility retry: {exc}")
@@ -1600,6 +1720,7 @@ def execute_central(args: argparse.Namespace) -> int:
         "artifact_download_seconds": 0.0,
     }
     checkpoint = load_node_checkpoint(plan_path, product)
+    allow_server_recovery = checkpoint is None
     if args.verify_production:
         if product.get("action") != RELEASE_ACTION:
             emit_result(metric)
@@ -1645,82 +1766,81 @@ def execute_central(args: argparse.Namespace) -> int:
         emit_result(metric)
         return 0
     if checkpoint and checkpoint["phase"] in {"staged", "compatibility_verified"}:
+        staged_checkpoint_durable = checkpoint["phase"] != "staged"
         if checkpoint["phase"] == "staged":
-            status_result = subprocess_checked(
-                [
-                    sys.executable,
-                    os.fspath(Path(__file__).with_name("release-train-publisher.py")),
-                    "status",
-                    "--release-id",
-                    release_id,
-                    "--release-lock-digest",
-                    lock_digest,
-                    "--validate-json",
-                ],
-                product_id=str(product["id"]),
-            )
             try:
-                status = json.loads(status_result.stdout)
-            except json.JSONDecodeError as exc:
-                raise ReleaseError(f"{product['id']}: stage status is not valid JSON") from exc
+                status_result = subprocess_checked(
+                    [
+                        sys.executable,
+                        os.fspath(Path(__file__).with_name("release-train-publisher.py")),
+                        "status",
+                        "--release-id",
+                        release_id,
+                        "--release-lock-digest",
+                        lock_digest,
+                        "--validate-json",
+                    ],
+                    product_id=str(product["id"]),
+                )
+            except ReleaseError as exc:
+                if "unknown release" not in str(exc).lower():
+                    raise
+                status = None
+            else:
+                try:
+                    status = json.loads(status_result.stdout)
+                except json.JSONDecodeError as exc:
+                    raise ReleaseError(
+                        f"{product['id']}: stage status is not valid JSON"
+                    ) from exc
             receipt_path = plan_path.parent / "release-stage-receipts" / f"{product['id']}.json"
-            if not receipt_path.is_file():
-                raise ReleaseError(f"{product['id']}: staged checkpoint is missing its receipt")
-            receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
-            expected_products = [
-                item for item in receipt.get("products", []) if isinstance(item, dict)
-            ]
-            expected_digests = {str(item.get("bundle_digest", "")) for item in expected_products}
-            bundles = status.get("bundles") if isinstance(status, dict) else None
-            distributions = status.get("distributions") if isinstance(status, dict) else None
-            if (
-                not expected_digests
-                or not isinstance(bundles, dict)
-                or not isinstance(distributions, dict)
-                or status.get("status") not in RECOVERABLE_STAGE_STATUSES
-                or any(
-                    not isinstance(bundles.get(str(item.get("bundle_digest", ""))), dict)
-                    or not bundles[str(item.get("bundle_digest", ""))].get("manifests")
-                    or bundles[str(item.get("bundle_digest", ""))].get("product")
-                    != {
-                        key: item[key]
-                        for key in (
-                            "product", "distribution", "version", "source_sha",
-                            "bundle_digest", "build_manifest_digests", "debs",
-                        )
-                    }
-                    or not isinstance(distributions.get(str(item.get("distribution", ""))), dict)
-                    or distributions[str(item.get("distribution", ""))].get("published") is not True
-                    for item in expected_products
-                )
-            ):
-                raise ReleaseError(
-                    f"{product['id']}: server stage status does not contain checkpointed bundles"
-                )
-            visibility_started = time.monotonic()
-            verify_apt(
+            receipt: dict[str, Any] | None = None
+            if receipt_path.is_file():
+                try:
+                    receipt_value = json.loads(receipt_path.read_text(encoding="utf-8"))
+                except (OSError, json.JSONDecodeError):
+                    receipt_value = None
+                if isinstance(receipt_value, dict):
+                    receipt = receipt_value
+            staged_checkpoint_durable = staged_checkpoint_is_durable(
                 product,
-                apt_base_url=overlay_url,
-                manifest_base_url=f"{overlay_url.rstrip('/')}/manifests",
-                arches=arches,
-                timeout_seconds=args.apt_timeout_seconds,
-                poll_seconds=args.poll_seconds,
-                run_number=None,
-                require_current_lock=True,
+                status=status if isinstance(status, dict) else None,
+                receipt=receipt,
             )
-            metric["apt_visibility_seconds"] = round(
-                time.monotonic() - visibility_started, 3
-            )
-        metric["fast_pass"] = True
-        metric["checkpoint"] = checkpoint["phase"]
-        metric["prepare_checkpoint"] = checkpoint["phase"]
-        if isinstance(checkpoint.get("run_id"), int):
-            metric["release_run_id"] = checkpoint["run_id"]
-        emit_result(metric)
-        return 0
+            if not staged_checkpoint_durable:
+                checkpoint = downgrade_stale_staged_checkpoint(
+                    plan_path, product, checkpoint
+                )
+                # Do not immediately rediscover the same stale server state.
+                allow_server_recovery = False
+            else:
+                visibility_started = time.monotonic()
+                verify_apt(
+                    product,
+                    apt_base_url=overlay_url,
+                    manifest_base_url=f"{overlay_url.rstrip('/')}/manifests",
+                    arches=arches,
+                    timeout_seconds=args.apt_timeout_seconds,
+                    poll_seconds=args.poll_seconds,
+                    run_number=None,
+                    require_current_lock=True,
+                    apt_fallback_base_url=args.apt_base_url,
+                )
+                metric["apt_visibility_seconds"] = round(
+                    time.monotonic() - visibility_started, 3
+                )
+        if staged_checkpoint_durable and checkpoint is not None:
+            metric["fast_pass"] = True
+            metric["checkpoint"] = checkpoint["phase"]
+            metric["prepare_checkpoint"] = checkpoint["phase"]
+            if isinstance(checkpoint.get("run_id"), int):
+                metric["release_run_id"] = checkpoint["run_id"]
+            emit_result(metric)
+            return 0
 
     if (
         checkpoint is None
+        and allow_server_recovery
         and product.get("action") == RELEASE_ACTION
         and recover_server_staged_receipt(
             plan_path,
@@ -1728,6 +1848,7 @@ def execute_central(args: argparse.Namespace) -> int:
             release_id=release_id,
             lock_digest=lock_digest,
             overlay_url=overlay_url,
+            production_apt_base_url=args.apt_base_url,
             arches=arches,
             apt_timeout_seconds=args.apt_timeout_seconds,
             poll_seconds=args.poll_seconds,
@@ -1933,6 +2054,7 @@ def execute_central(args: argparse.Namespace) -> int:
         poll_seconds=args.poll_seconds,
         run_number=None,
         require_current_lock=True,
+        apt_fallback_base_url=args.apt_base_url,
     )
     metric["apt_visibility_seconds"] = round(
         time.monotonic() - visibility_started, 3
