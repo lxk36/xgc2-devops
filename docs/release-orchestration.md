@@ -1,8 +1,11 @@
 # XGC2 APT Release Orchestration
 
-`xgc2-devops` is the only XGC2 APT release control plane. Product repositories
-build and test packages, but they do not hold APT credentials, create release
-manifests, or mutate repository indexes.
+`xgc2-devops` is the standard automated and batch XGC2 APT release control
+plane. Product repositories build and test packages, but they do not hold APT
+credentials, create release manifests, or mutate repository indexes. The
+server's WAF-protected administrator console remains available for explicit
+operator upload/delete maintenance; it uses the same global lock and atomic
+generation switch and is not a substitute for dependency-ordered batch release.
 
 ## Entry point
 
@@ -107,6 +110,14 @@ Only `lxk36/xgc2-devops` owns the `xgc2-apt-production` Environment:
 - `APT_REPO_KNOWN_HOSTS`
 
 Product workflows and scripts are audited for these names and for all direct
-SSH, aptly, reprepro, or publish helper calls. The APT service also disables the
-legacy publish command after migration, so restoring an old workflow cannot
-restore product-level write access.
+SSH, aptly, reprepro, or publish helper calls. Removing product-repository
+credentials prevents restoring an old workflow from restoring product-level
+write access. The WAF-authenticated server administrator console is retained as
+a separate human operations path and still performs atomic, globally locked
+mutations.
+
+Credential cleanup never disables the administrator console or its upload and
+exact-delete operations. A production server deployment must converge
+`ADMIN_UI_ENABLED=true` and `ALLOW_LEGACY_PUBLISH=true`, then verify the backend
+`/admin/manage` page and `/admin/api/status`; SafeLine remains the external
+authentication boundary.
