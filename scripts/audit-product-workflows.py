@@ -52,6 +52,16 @@ def workflow_has_event(text: str, event: str) -> bool:
     return bool(re.search(rf"(?m)^\s*{re.escape(event)}\s*:", text))
 
 
+def host_manifest_directory_precreated(text: str) -> bool:
+    return bool(
+        re.search(
+            r"(?m)^\s*(?:install\s+-d(?:\s+-m\s+\S+)?|mkdir\s+-p)\b"
+            r"[^\n]*\.ci/build-manifests(?:\"|\s|$)",
+            text,
+        )
+    )
+
+
 def workflow_input_names(text: str) -> set[str]:
     names: set[str] = set()
     in_dispatch = False
@@ -397,6 +407,24 @@ def audit_product(root: Path, product: dict[str, Any]) -> list[dict[str, str]]:
 
     for workflow in workflows:
         text = workflow.read_text(encoding="utf-8", errors="ignore")
+        if (
+            "docker run" in text
+            and "xgc2_artifact_manifest.py build" in text
+            and ".ci/build-manifests" in text
+            and not host_manifest_directory_precreated(text)
+        ):
+            issues.append(
+                {
+                    "product": str(product["id"]),
+                    "severity": "error",
+                    "code": "host-manifest-directory-ownership",
+                    "path": workflow.relative_to(root).as_posix(),
+                    "message": (
+                        "host runner must create .ci/build-manifests before a root "
+                        "Docker build can create .ci"
+                    ),
+                }
+            )
         quality_needs = workflow_quality_gates_other_jobs(workflow)
         if quality_needs:
             issues.append(

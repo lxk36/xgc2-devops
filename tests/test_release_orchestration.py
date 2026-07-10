@@ -31,6 +31,7 @@ scheduler = load_script("schedule-release-plan.py")
 runner = load_script("run-release-plan-product.py")
 manifest_tool = load_script("create-release-manifest.py")
 plan_validator = load_script("validate-release-plan.py")
+workflow_audit = load_script("audit-product-workflows.py")
 
 
 class FakeClock:
@@ -44,6 +45,24 @@ class FakeClock:
     def sleep(self, seconds: float) -> None:
         self.sleeps.append(seconds)
         self.value += seconds
+
+
+class WorkflowAuditTests(unittest.TestCase):
+    def test_host_manifest_directory_accepts_shell_parameter_forms(self):
+        for command in (
+            'install -d "$GITHUB_WORKSPACE/.ci/build-manifests"',
+            'install -d "${GITHUB_WORKSPACE}/.ci/build-manifests"',
+            "mkdir -p .ci/build-manifests",
+        ):
+            with self.subTest(command=command):
+                self.assertTrue(workflow_audit.host_manifest_directory_precreated(command))
+
+    def test_host_manifest_directory_rejects_unrelated_directories(self):
+        self.assertFalse(
+            workflow_audit.host_manifest_directory_precreated(
+                'install -d "$GITHUB_WORKSPACE/.ci/debs"'
+            )
+        )
 
 
 class DagTests(unittest.TestCase):
