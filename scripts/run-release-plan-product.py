@@ -63,6 +63,7 @@ CENTRAL_CHECKPOINT_PHASES = {
     "compatibility_verified",
     "production_verified",
 }
+RECOVERABLE_STAGE_STATUSES = {"prepared", "promoting", "promoted"}
 
 
 def load_node_checkpoint(plan_path: Path, product: dict[str, Any]) -> dict[str, Any] | None:
@@ -793,7 +794,7 @@ def recover_server_staged_receipt(
         status = json.loads(result.stdout)
     except json.JSONDecodeError as exc:
         raise ReleaseError(f"{product['id']}: durable stage status is invalid JSON") from exc
-    if not isinstance(status, dict) or status.get("status") not in {"prepared", "promoted"}:
+    if not isinstance(status, dict) or status.get("status") not in RECOVERABLE_STAGE_STATUSES:
         return False
     bundles = status.get("bundles")
     distributions = status.get("distributions")
@@ -1645,7 +1646,7 @@ def execute_central(args: argparse.Namespace) -> int:
                 not expected_digests
                 or not isinstance(bundles, dict)
                 or not isinstance(distributions, dict)
-                or status.get("status") not in {"prepared", "promoted"}
+                or status.get("status") not in RECOVERABLE_STAGE_STATUSES
                 or any(
                     not isinstance(bundles.get(str(item.get("bundle_digest", ""))), dict)
                     or not bundles[str(item.get("bundle_digest", ""))].get("manifests")

@@ -1433,6 +1433,52 @@ class CentralStagingTests(unittest.TestCase):
             "size": path.stat().st_size,
         }
 
+    @staticmethod
+    def resumable_product() -> dict[str, object]:
+        return {
+            "id": "x", "action": "release", "expected_source_sha": "a" * 40,
+            "expected_version": "1-1", "apt_versions": {"focal": "1-1"},
+            "apt_distributions": ["focal"], "apt_packages": ["x"],
+            "apt_install": ["x"], "dependency_set_digest": "d" * 64,
+        }
+
+    @staticmethod
+    def resumable_args(plan_path: Path) -> SimpleNamespace:
+        return SimpleNamespace(
+            plan=str(plan_path), product="x", apt_arch=[], verify_production=False,
+            verify_lock_only=False, reconcile_ci=False, apt_overlay_url="",
+            apt_base_url="https://apt.example",
+            manifest_base_url="https://apt.example/manifests",
+            apt_timeout_seconds=1, poll_seconds=0, reuse_ci_artifacts=True,
+            ci_wait_seconds=0, timeout_seconds=1, quality_required=False,
+            source_tests=False,
+        )
+
+    @staticmethod
+    def staged_product(bundle_digest: str = "e" * 64) -> dict[str, object]:
+        return {
+            "product": "x", "distribution": "focal", "version": "1-1",
+            "source_sha": "a" * 40, "bundle_digest": bundle_digest,
+            "build_manifest_digests": ["f" * 64],
+            "debs": [{
+                "package": "x", "version": "1-1", "architecture": "all",
+                "sha256": "1" * 64,
+            }],
+        }
+
+    @staticmethod
+    def server_stage_status(
+        staged_product: dict[str, object], *, status: str = "promoting"
+    ) -> dict[str, object]:
+        digest = str(staged_product["bundle_digest"])
+        return {
+            "status": status,
+            "bundles": {digest: {
+                "product": dict(staged_product), "manifests": [{"path": "x"}],
+            }},
+            "distributions": {"focal": {"published": True}},
+        }
+
     def test_trusted_artifacts_form_deterministic_bundle_and_release_train(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -1713,6 +1759,102 @@ class CentralStagingTests(unittest.TestCase):
                 visibility.call_args.kwargs["apt_base_url"],
                 "https://apt.example/staging/release-1",
             )
+
+    def test_local_staged_checkpoint_accepts_exact_promoting_server_state(self):
+        with tempfile.TemporaryDirectory() as directory, mock.patch.dict(
+            os.environ,
+            {
+                "GH_TOKEN": "token", "XGC2_RELEASE_ID": "release-1",
+                "XGC2_RELEASE_LOCK_DIGEST": "b" * 64,
+                "XGC2_EXECUTION_POLICY_DIGEST": "c" * 64,
+            },
+            clear=False,
+        ):
+            root = Path(directory)
+            product = self.resumable_product()
+            plan_path = root / "plan.json"
+            plan_path.write_text(json.dumps({"layers": [[product]]}), encoding="utf-8")
+            runner.write_node_checkpoint(plan_path, product, phase="staged", run_id=5)
+            receipt_dir = root / "release-stage-receipts"
+            receipt_dir.mkdir()
+            staged_product = self.staged_product()
+            (receipt_dir / "x.json").write_text(
+                json.dumps({"products": [staged_product]}), encoding="utf-8"
+            )
+            completed = mock.Mock(
+                returncode=0,
+                stdout=json.dumps(self.server_stage_status(staged_product)),
+                stderr="",
+            )
+            with mock.patch.object(
+                runner, "subprocess_checked", return_value=completed
+            ), mock.patch.object(runner, "verify_apt") as visibility:
+                self.assertEqual(runner.execute_central(self.resumable_args(plan_path)), 0)
+            visibility.assert_called_once()
+
+    def test_durable_recovery_without_local_checkpoint_accepts_promoting(self):
+        with tempfile.TemporaryDirectory() as directory, mock.patch.dict(
+            os.environ,
+            {
+                "GH_TOKEN": "token", "XGC2_RELEASE_ID": "release-1",
+                "XGC2_RELEASE_LOCK_DIGEST": "b" * 64,
+                "XGC2_EXECUTION_POLICY_DIGEST": "c" * 64,
+            },
+            clear=False,
+        ):
+            root = Path(directory)
+            product = self.resumable_product()
+            plan_path = root / "plan.json"
+            plan_path.write_text(json.dumps({"layers": [[product]]}), encoding="utf-8")
+            staged_product = self.staged_product()
+            completed = mock.Mock(
+                returncode=0,
+                stdout=json.dumps(self.server_stage_status(staged_product)),
+                stderr="",
+            )
+            with mock.patch.object(
+                runner, "run", return_value=completed
+            ), mock.patch.object(runner, "verify_apt") as visibility:
+                self.assertEqual(runner.execute_central(self.resumable_args(plan_path)), 0)
+            visibility.assert_called_once()
+            checkpoint = runner.load_node_checkpoint(plan_path, product)
+            self.assertEqual(checkpoint["phase"], "staged")
+            self.assertEqual(checkpoint["artifact_source"], "server-recovered")
+
+    def test_local_staged_checkpoint_rejects_wrong_bundle_while_promoting(self):
+        with tempfile.TemporaryDirectory() as directory, mock.patch.dict(
+            os.environ,
+            {
+                "GH_TOKEN": "token", "XGC2_RELEASE_ID": "release-1",
+                "XGC2_RELEASE_LOCK_DIGEST": "b" * 64,
+                "XGC2_EXECUTION_POLICY_DIGEST": "c" * 64,
+            },
+            clear=False,
+        ):
+            root = Path(directory)
+            product = self.resumable_product()
+            plan_path = root / "plan.json"
+            plan_path.write_text(json.dumps({"layers": [[product]]}), encoding="utf-8")
+            runner.write_node_checkpoint(plan_path, product, phase="staged", run_id=5)
+            receipt_dir = root / "release-stage-receipts"
+            receipt_dir.mkdir()
+            expected = self.staged_product()
+            (receipt_dir / "x.json").write_text(
+                json.dumps({"products": [expected]}), encoding="utf-8"
+            )
+            wrong = self.staged_product("9" * 64)
+            completed = mock.Mock(
+                returncode=0,
+                stdout=json.dumps(self.server_stage_status(wrong)),
+                stderr="",
+            )
+            with mock.patch.object(
+                runner, "subprocess_checked", return_value=completed
+            ), mock.patch.object(runner, "verify_apt") as visibility, self.assertRaisesRegex(
+                runner.ReleaseError, "does not contain checkpointed bundles"
+            ):
+                runner.execute_central(self.resumable_args(plan_path))
+            visibility.assert_not_called()
 
 
 class FastPassManifestTests(unittest.TestCase):
