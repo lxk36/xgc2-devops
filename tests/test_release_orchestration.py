@@ -9,6 +9,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import threading
 import unittest
 from collections import deque
 from pathlib import Path
@@ -601,7 +602,8 @@ class SchedulerResilienceTests(unittest.TestCase):
                     "output": (
                         "published\n"
                         'XGC2_RESULT={"build_seconds": 4.5, "reuse_seconds": 0.0, '
-                        '"publish_seconds": 1.25, "reused_ci_artifact": false}'
+                        '"publish_seconds": 1.25, "stage_queue_seconds": 2.75, '
+                        '"reused_ci_artifact": false}'
                     ),
                     "duration_seconds": 4.0,
                 },
@@ -636,6 +638,7 @@ class SchedulerResilienceTests(unittest.TestCase):
         self.assertEqual(node["build_seconds"], 4.5)
         self.assertEqual(node["reuse_seconds"], 0.0)
         self.assertEqual(node["publish_seconds"], 1.25)
+        self.assertEqual(node["stage_queue_seconds"], 2.75)
         self.assertFalse(node["reused_ci_artifact"])
         for field in ("queued_at", "first_started_at", "completed_at", "wait_seconds"):
             self.assertIn(field, node)
@@ -1511,6 +1514,53 @@ class CentralStagingTests(unittest.TestCase):
             "distributions": {"focal": {"published": True}},
         }
 
+    def test_publisher_stage_lock_serializes_two_callers(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            first_acquired = threading.Event()
+            second_attempting = threading.Event()
+            second_acquired = threading.Event()
+            release_first = threading.Event()
+            queue_seconds: dict[str, float] = {}
+            errors: list[BaseException] = []
+
+            def first() -> None:
+                try:
+                    with runner.publisher_stage_lock(root) as waited:
+                        queue_seconds["first"] = waited
+                        first_acquired.set()
+                        release_first.wait(2)
+                except BaseException as exc:  # pragma: no cover - surfaced below
+                    errors.append(exc)
+
+            def second() -> None:
+                try:
+                    second_attempting.set()
+                    with runner.publisher_stage_lock(root) as waited:
+                        queue_seconds["second"] = waited
+                        second_acquired.set()
+                except BaseException as exc:  # pragma: no cover - surfaced below
+                    errors.append(exc)
+
+            first_thread = threading.Thread(target=first)
+            second_thread = threading.Thread(target=second)
+            first_thread.start()
+            self.assertTrue(first_acquired.wait(1))
+            second_thread.start()
+            self.assertTrue(second_attempting.wait(1))
+            try:
+                self.assertFalse(second_acquired.wait(0.05))
+            finally:
+                release_first.set()
+            first_thread.join(2)
+            second_thread.join(2)
+
+            self.assertFalse(first_thread.is_alive())
+            self.assertFalse(second_thread.is_alive())
+            self.assertEqual(errors, [])
+            self.assertTrue(second_acquired.is_set())
+            self.assertGreaterEqual(queue_seconds["second"], 0.04)
+
     def test_trusted_artifacts_form_deterministic_bundle_and_release_train(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -1694,6 +1744,23 @@ class CentralStagingTests(unittest.TestCase):
             )
             with mock.patch.object(publisher, "run_remote", side_effect=[transport, incomplete]), \
                     self.assertRaises(SystemExit) as raised:
+                publisher.stage(SimpleNamespace(
+                    release_id="release-1", release_lock_digest="b" * 64,
+                    distribution="focal", bundle=str(bundle),
+                ))
+            self.assertEqual(raised.exception.code, 75)
+
+    def test_stage_transport_failure_with_unavailable_status_is_transient(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory)
+            (bundle / "payload").write_bytes(b"trusted")
+            transport = mock.Mock(returncode=255, stdout=b"", stderr=b"reset")
+            status_unavailable = mock.Mock(
+                returncode=255, stdout=b"", stderr=b"still unavailable"
+            )
+            with mock.patch.object(
+                publisher, "run_remote", side_effect=[transport, status_unavailable]
+            ), self.assertRaises(SystemExit) as raised:
                 publisher.stage(SimpleNamespace(
                     release_id="release-1", release_lock_digest="b" * 64,
                     distribution="focal", bundle=str(bundle),

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import fcntl
 import json
 import os
 import re
@@ -17,8 +18,9 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, Iterator
 
 
 DEFAULT_APT_BASE_URL = "https://xgc2.apt.xiaokang.ink"
@@ -64,6 +66,34 @@ CENTRAL_CHECKPOINT_PHASES = {
     "production_verified",
 }
 RECOVERABLE_STAGE_STATUSES = {"prepared", "promoting", "promoted"}
+
+
+@contextmanager
+def publisher_stage_lock(
+    work_root: Path,
+    *,
+    monotonic: Callable[[], float] | None = None,
+) -> Iterator[float]:
+    """Serialize remote APT staging while leaving artifact preparation parallel.
+
+    The scheduler runs each product in a separate process, so a thread-only lock
+    would not protect the shared APT staging indexes.  ``flock`` on a file in the
+    digest-bound plan work directory provides that cross-process boundary.  The
+    yielded value is time spent waiting for the lock, allowing the scheduler to
+    distinguish useful staging work from queueing.
+    """
+
+    clock = monotonic or time.monotonic
+    work_root.mkdir(parents=True, exist_ok=True)
+    lock_path = work_root / ".xgc2-apt-stage.lock"
+    queued_at = clock()
+    with lock_path.open("a+b") as handle:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        queue_seconds = max(0.0, clock() - queued_at)
+        try:
+            yield queue_seconds
+        finally:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
 
 
 def load_node_checkpoint(plan_path: Path, product: dict[str, Any]) -> dict[str, Any] | None:
@@ -1566,6 +1596,7 @@ def execute_central(args: argparse.Namespace) -> int:
         "build_seconds": 0.0,
         "publish_seconds": 0.0,
         "stage_seconds": 0.0,
+        "stage_queue_seconds": 0.0,
         "artifact_download_seconds": 0.0,
     }
     checkpoint = load_node_checkpoint(plan_path, product)
@@ -1855,23 +1886,30 @@ def execute_central(args: argparse.Namespace) -> int:
     )
     receipt_value = json.loads(receipt.read_text(encoding="utf-8"))
     publisher = Path(__file__).with_name("release-train-publisher.py")
-    for staged_product in receipt_value.get("products", []):
-        subprocess_checked(
-            [
-                sys.executable,
-                os.fspath(publisher),
-                "stage",
-                "--release-id",
-                release_id,
-                "--release-lock-digest",
-                lock_digest,
-                "--distribution",
-                str(staged_product["distribution"]),
-                "--bundle",
-                str(staged_product["bundle_dir"]),
-            ],
-            product_id=str(product["id"]),
+    stage_queue_seconds = 0.0
+    with publisher_stage_lock(work_root) as stage_queue_seconds:
+        print(
+            f"{product['id']}: acquired APT stage lock after "
+            f"{stage_queue_seconds:.3f}s",
+            flush=True,
         )
+        for staged_product in receipt_value.get("products", []):
+            subprocess_checked(
+                [
+                    sys.executable,
+                    os.fspath(publisher),
+                    "stage",
+                    "--release-id",
+                    release_id,
+                    "--release-lock-digest",
+                    lock_digest,
+                    "--distribution",
+                    str(staged_product["distribution"]),
+                    "--bundle",
+                    str(staged_product["bundle_dir"]),
+                ],
+                product_id=str(product["id"]),
+            )
     write_node_checkpoint(
         plan_path,
         product,
@@ -1880,7 +1918,11 @@ def execute_central(args: argparse.Namespace) -> int:
         receipt=receipt.name,
         artifact_source=artifact_source,
     )
-    metric["stage_seconds"] = round(time.monotonic() - stage_started, 3)
+    stage_total_seconds = time.monotonic() - stage_started
+    metric["stage_queue_seconds"] = round(stage_queue_seconds, 3)
+    metric["stage_seconds"] = round(
+        max(0.0, stage_total_seconds - stage_queue_seconds), 3
+    )
     visibility_started = time.monotonic()
     verify_apt(
         product,

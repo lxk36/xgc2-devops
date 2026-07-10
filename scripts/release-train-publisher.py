@@ -212,7 +212,8 @@ def stage(args: argparse.Namespace) -> int:
             distributions.get(args.distribution) if isinstance(distributions, dict) else None
         )
         if (
-            value.get("status") in {"prepared", "promoted"}
+            isinstance(value, dict)
+            and value.get("status") in {"prepared", "promoted"}
             and isinstance(bundle_state, dict)
             and isinstance(bundle_state.get("manifests"), list)
             and bool(bundle_state["manifests"])

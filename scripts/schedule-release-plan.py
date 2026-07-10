@@ -442,6 +442,7 @@ def schedule(
                     "build_seconds",
                     "publish_seconds",
                     "stage_seconds",
+                    "stage_queue_seconds",
                 }
                 for key, value in metadata.items():
                     if key in additive_metrics and isinstance(value, (int, float)):
@@ -835,8 +836,9 @@ def append_summary(state: dict[str, Any], path: Path) -> None:
         "## Release scheduler metrics",
         "",
         "| Product | Status | Wait (s) | Runner (s) | CI reuse (s) | "
-        "Build/workflow (s) | Stage (s) | Publish (s) | APT visibility (s) | Retries |",
-        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+        "Build/workflow (s) | Stage queue (s) | Stage (s) | Publish (s) | "
+        "APT visibility (s) | Retries |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for product_id, data in sorted(state["products"].items()):
         publish = data.get("publish_seconds")
@@ -844,7 +846,7 @@ def append_summary(state: dict[str, Any], path: Path) -> None:
         lines.append(
             (
                 "| {product} | {status} | {wait} | {runner} | {reuse} | {build} | "
-                "{stage} | {publish} | {visibility} | {retries} |"
+                "{stage_queue} | {stage} | {publish} | {visibility} | {retries} |"
             ).format(
                 product=product_id,
                 status=data.get("status", ""),
@@ -852,6 +854,7 @@ def append_summary(state: dict[str, Any], path: Path) -> None:
                 runner=data.get("runner_seconds", 0),
                 reuse=data.get("reuse_seconds", data.get("ci_artifact_wait_seconds", 0)),
                 build=data.get("build_seconds", 0),
+                stage_queue=data.get("stage_queue_seconds", 0),
                 stage=data.get("stage_seconds", 0),
                 publish=publish_display,
                 visibility=data.get("apt_visibility_seconds", 0),
