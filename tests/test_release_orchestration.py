@@ -48,6 +48,49 @@ class FakeClock:
 
 
 class WorkflowAuditTests(unittest.TestCase):
+    def test_release_boolean_input_types_are_explicit(self):
+        workflow = """
+on:
+  workflow_dispatch:
+    inputs:
+      publish_apt:
+        default: false
+        type: boolean
+      run_cpp_quality:
+        default: false
+        type: boolean
+      run_source_tests:
+        default: false
+"""
+        self.assertEqual(
+            {"publish_apt": "boolean", "run_cpp_quality": "boolean"},
+            workflow_audit.workflow_input_types(workflow),
+        )
+        self.assertEqual(
+            {"run_source_tests"},
+            workflow_audit.non_boolean_optional_release_inputs(workflow),
+        )
+
+    def test_release_boolean_input_type_audit_accepts_all_boolean_inputs(self):
+        workflow = """
+on:
+  workflow_dispatch:
+    inputs:
+      publish_apt:
+        default: false
+        type: boolean
+      run_cpp_quality:
+        default: false
+        type: boolean
+      run_source_tests:
+        default: false
+        type: boolean
+"""
+        self.assertEqual(
+            set(),
+            workflow_audit.non_boolean_optional_release_inputs(workflow),
+        )
+
     def test_host_manifest_directory_accepts_shell_parameter_forms(self):
         for command in (
             'install -d "$GITHUB_WORKSPACE/.ci/build-manifests"',
@@ -126,7 +169,7 @@ class DagTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "cycle"):
             planner.topo_layers(set(downstream), downstream)
 
-    def test_resume_keeps_successful_nodes_only_for_same_plan_and_lock(self):
+    def test_resume_requeues_successful_nodes_for_same_plan_and_lock_verification(self):
         items = {"a": {"id": "a"}, "b": {"id": "b"}}
         previous = {
             "schema": "xgc2.release-state.v1",
@@ -143,7 +186,9 @@ class DagTests(unittest.TestCase):
             plan_digest="plan-1",
             release_lock_digest="lock-1",
         )
-        self.assertEqual(state["products"]["a"]["status"], "success")
+        self.assertEqual(state["products"]["a"]["status"], "pending")
+        self.assertTrue(state["products"]["a"]["resume_verification_required"])
+        self.assertTrue(state["products"]["a"]["resumed"])
         self.assertEqual(state["products"]["b"]["status"], "pending")
 
     def test_resume_rejects_different_plan_digest(self):
@@ -188,6 +233,54 @@ class DagTests(unittest.TestCase):
                 plan_digest="plan-1",
                 release_lock_digest="lock-1",
             )
+
+    def test_resumed_success_must_reverify_before_releasing_downstream(self):
+        plan = {
+            "layers": [
+                [{"id": "upstream", "dependencies": []}],
+                [{"id": "downstream", "dependencies": ["upstream"]}],
+            ]
+        }
+        previous = {
+            "schema": "xgc2.release-state.v1",
+            "plan_digest": scheduler.canonical_digest(plan),
+            "release_lock_digest": "lock-1",
+            "products": {
+                "upstream": {"status": "success", "release_run_id": 101},
+                "downstream": {"status": "success", "release_run_id": 202},
+            },
+        }
+
+        def failed_verification(*args, **kwargs):
+            self.assertEqual(args[2], "upstream")
+            self.assertTrue(kwargs["resume_verify"])
+            return {
+                "status": "failed",
+                "returncode": 1,
+                "output": "release manifest identity/hash mismatch",
+                "duration_seconds": 0.1,
+            }
+
+        with tempfile.TemporaryDirectory() as directory, mock.patch.object(
+            scheduler, "run_product", side_effect=failed_verification
+        ) as run_product:
+            state = scheduler.schedule(
+                plan,
+                plan_path=Path(directory) / "plan.json",
+                state_path=Path(directory) / "state.json",
+                runner=Path("runner.py"),
+                max_parallel=2,
+                quality_required=False,
+                source_tests=False,
+                release_lock_digest="lock-1",
+                previous=previous,
+                retry_delays=(0, 0, 0),
+            )
+
+        self.assertEqual(run_product.call_count, 1)
+        self.assertEqual(state["products"]["upstream"]["status"], "failed")
+        self.assertEqual(state["products"]["downstream"]["status"], "blocked")
+        self.assertEqual(state["products"]["downstream"]["blocked_by"], ["upstream"])
 
 
 class SchedulerResilienceTests(unittest.TestCase):
@@ -494,6 +587,49 @@ class TrustedCiSelectionTests(unittest.TestCase):
 
 
 class PublishCheckpointTests(unittest.TestCase):
+    @staticmethod
+    def product() -> dict[str, object]:
+        return {
+            "id": "xgc2-test",
+            "action": "release",
+            "repository": "example/xgc2-test",
+            "ref": "main",
+            "workflow": "release.yml",
+            "workflow_inputs": [],
+            "expected_source_sha": "a" * 40,
+            "expected_version": "1.2.3-4",
+            "apt_versions": {"focal": "1.2.3-4~focal"},
+            "apt_distributions": ["focal"],
+            "apt_packages": ["libxgc2-test"],
+        }
+
+    @staticmethod
+    def args(plan_path: Path, **overrides):
+        values = {
+            "plan": str(plan_path),
+            "product": "xgc2-test",
+            "apt_arch": [],
+            "skip_apt_verify": False,
+            "no_fast_pass": False,
+            "verify_existing_release": False,
+            "reuse_ci_artifacts": False,
+            "quality_required": False,
+            "source_tests": False,
+            "apt_base_url": "https://apt.example",
+            "manifest_base_url": "https://apt.example/manifests",
+            "apt_timeout_seconds": 1,
+            "ci_wait_seconds": 0,
+            "timeout_seconds": 1,
+            "poll_seconds": 0,
+        }
+        values.update(overrides)
+        return SimpleNamespace(**values)
+
+    def write_plan(self, directory: str) -> Path:
+        path = Path(directory) / "release-plan.json"
+        path.write_text(json.dumps({"layers": [[self.product()]]}), encoding="utf-8")
+        return path
+
     def test_checkpoint_binds_source_and_lock_for_visibility_only_retry(self):
         product = {
             "id": "xgc2-test",
@@ -516,6 +652,7 @@ class PublishCheckpointTests(unittest.TestCase):
             self.assertIsNotNone(checkpoint)
             self.assertEqual(checkpoint["release_run_id"], 12345)
             self.assertEqual(checkpoint["release_run_number"], 67)
+            self.assertEqual(checkpoint["phase"], "workflow_succeeded")
 
             with mock.patch.dict(
                 runner.os.environ,
@@ -524,6 +661,197 @@ class PublishCheckpointTests(unittest.TestCase):
             ):
                 with self.assertRaisesRegex(runner.ReleaseError, "does not match"):
                     runner.load_publish_checkpoint(plan_path, product)
+
+    def test_exact_run_id_is_checkpointed_before_waiting(self):
+        with tempfile.TemporaryDirectory() as directory, mock.patch.dict(
+            runner.os.environ,
+            {"GH_TOKEN": "test", "XGC2_RELEASE_LOCK_DIGEST": "b" * 64},
+            clear=False,
+        ):
+            plan_path = self.write_plan(directory)
+            with mock.patch.object(runner, "verify_release_lock_is_current"), mock.patch.object(
+                runner, "fast_pass_ready", return_value=False
+            ), mock.patch.object(runner, "trigger", return_value=12345), mock.patch.object(
+                runner,
+                "wait_for_run",
+                side_effect=runner.TransientReleaseError("workflow run timed out"),
+            ):
+                with self.assertRaises(runner.TransientReleaseError):
+                    runner.execute(self.args(plan_path))
+
+            checkpoint = runner.load_publish_checkpoint(plan_path, self.product())
+            self.assertIsNotNone(checkpoint)
+            self.assertEqual(checkpoint["phase"], "dispatched")
+            self.assertEqual(checkpoint["release_run_id"], 12345)
+
+    def test_resume_waits_checkpointed_run_and_never_dispatches_again(self):
+        with tempfile.TemporaryDirectory() as directory, mock.patch.dict(
+            runner.os.environ,
+            {"GH_TOKEN": "test", "XGC2_RELEASE_LOCK_DIGEST": "b" * 64},
+            clear=False,
+        ):
+            plan_path = self.write_plan(directory)
+            runner.write_publish_checkpoint(
+                plan_path,
+                self.product(),
+                release_run_id=12345,
+                release_run_number=None,
+                phase="dispatched",
+                trusted_ci_run_id=678,
+                dispatched_at=runner.time.time(),
+            )
+            completed = {"number": 77, "conclusion": "success", "jobs": []}
+            with mock.patch.object(runner, "verify_release_lock_is_current"), mock.patch.object(
+                runner, "trigger"
+            ) as trigger, mock.patch.object(
+                runner, "wait_for_run", return_value=completed
+            ) as wait, mock.patch.object(runner, "verify_apt") as verify:
+                self.assertEqual(runner.execute(self.args(plan_path)), 0)
+
+            trigger.assert_not_called()
+            wait.assert_called_once()
+            self.assertEqual(wait.call_args.args[1], 12345)
+            verify.assert_called_once()
+            checkpoint = runner.load_publish_checkpoint(plan_path, self.product())
+            self.assertEqual(checkpoint["phase"], "workflow_succeeded")
+            self.assertEqual(checkpoint["release_run_number"], 77)
+
+    def test_completed_transient_run_is_cleared_for_safe_scheduler_redispatch(self):
+        with tempfile.TemporaryDirectory() as directory, mock.patch.dict(
+            runner.os.environ,
+            {"GH_TOKEN": "test", "XGC2_RELEASE_LOCK_DIGEST": "b" * 64},
+            clear=False,
+        ):
+            plan_path = self.write_plan(directory)
+            runner.write_publish_checkpoint(
+                plan_path,
+                self.product(),
+                release_run_id=12345,
+                release_run_number=None,
+                phase="dispatched",
+            )
+            with mock.patch.object(runner, "verify_release_lock_is_current"), mock.patch.object(
+                runner,
+                "wait_for_run",
+                side_effect=runner.CompletedTransientReleaseError("publish lock conflict"),
+            ):
+                with self.assertRaises(runner.CompletedTransientReleaseError):
+                    runner.execute(self.args(plan_path))
+
+            self.assertFalse(runner.node_checkpoint_path(plan_path, "xgc2-test").exists())
+
+    def test_resume_verification_without_checkpoint_never_dispatches(self):
+        with tempfile.TemporaryDirectory() as directory, mock.patch.dict(
+            runner.os.environ,
+            {"GH_TOKEN": "test", "XGC2_RELEASE_LOCK_DIGEST": "b" * 64},
+            clear=False,
+        ):
+            plan_path = self.write_plan(directory)
+            with mock.patch.object(runner, "verify_release_lock_is_current"), mock.patch.object(
+                runner, "trigger"
+            ) as trigger, mock.patch.object(
+                runner,
+                "verify_apt",
+                side_effect=runner.ReleaseError("release manifest identity/hash mismatch"),
+            ):
+                with self.assertRaisesRegex(runner.ReleaseError, "identity/hash mismatch"):
+                    runner.execute(
+                        self.args(plan_path, verify_existing_release=True)
+                    )
+
+            trigger.assert_not_called()
+
+
+class TransientClassificationTests(unittest.TestCase):
+    def test_common_tls_and_transport_failures_are_transient(self):
+        messages = (
+            "OpenSSL SSL_ERROR_SYSCALL in connection to api.github.com:443",
+            "TLS EOF while reading response",
+            "unexpected eof while reading",
+            "curl: (28) Operation timed out after 30001 milliseconds",
+            "read tcp: connection reset by peer",
+        )
+        for message in messages:
+            with self.subTest(message=message):
+                self.assertTrue(runner.is_transient_message(message))
+
+    def test_deterministic_build_and_identity_errors_stay_non_transient(self):
+        messages = (
+            "compiler error: no matching function for call",
+            "expected version 1.2.3-4, got 1.2.3-3",
+            "source SHA mismatch",
+            "release manifest deb SHA256 mismatch",
+            "unit test assertion failed",
+            "unit test assertion failed after operation timed out",
+            "compilation terminated after connection reset by peer",
+        )
+        for message in messages:
+            with self.subTest(message=message):
+                self.assertFalse(runner.is_transient_message(message))
+
+    def test_workflow_timeout_is_retryable_because_exact_run_is_known(self):
+        with self.assertRaises(runner.TransientReleaseError):
+            runner.wait_for_run(
+                {"id": "xgc2-test", "repository": "example/xgc2-test"},
+                12345,
+                timeout_seconds=0,
+                poll_seconds=0,
+                quality_required=False,
+            )
+
+
+class AptVisibilityEfficiencyTests(unittest.TestCase):
+    def test_packages_index_is_fetched_once_per_distribution_arch_each_round(self):
+        product = {
+            "id": "xgc2-test",
+            "expected_version": "1.2.3-4",
+            "apt_versions": {"focal": "1.2.3-4~focal"},
+            "apt_distributions": ["focal"],
+            "apt_packages": ["libxgc2-one", "libxgc2-two"],
+        }
+        fake_index = [
+            {"Package": package, "Version": "1.2.3-4~focal", "SHA256": "d" * 64}
+            for package in product["apt_packages"]
+        ]
+        with mock.patch.object(
+            runner, "apt_stanzas", return_value=fake_index
+        ) as apt_stanzas, mock.patch.object(
+            runner, "package_release_visible", return_value=True
+        ) as visible:
+            runner.verify_apt(
+                product,
+                apt_base_url="https://apt.example",
+                manifest_base_url="https://apt.example/manifests",
+                arches=("amd64", "arm64"),
+                timeout_seconds=1,
+                poll_seconds=0,
+                run_number=None,
+                require_current_lock=True,
+            )
+
+        self.assertEqual(apt_stanzas.call_count, 2)
+        self.assertEqual(visible.call_count, 4)
+        self.assertTrue(
+            all(call.kwargs["apt_index"] is fake_index for call in visible.call_args_list)
+        )
+
+    def test_publish_job_metric_does_not_include_apt_visibility(self):
+        data = {
+            "jobs": [
+                {
+                    "name": "publish-apt",
+                    "startedAt": "2026-07-10T01:00:00Z",
+                    "completedAt": "2026-07-10T01:00:12Z",
+                },
+                {
+                    "name": "build amd64",
+                    "startedAt": "2026-07-10T00:00:00Z",
+                    "completedAt": "2026-07-10T00:10:00Z",
+                },
+            ]
+        }
+        self.assertEqual(runner.publish_job_seconds(data), 12.0)
+        self.assertIsNone(runner.publish_job_seconds({"jobs": data["jobs"][1:]}))
 
 
 class ArtifactManifestTests(unittest.TestCase):
@@ -810,7 +1138,9 @@ class FastPassManifestTests(unittest.TestCase):
         def visible(_product, **kwargs):
             return visibility[(kwargs["arch"], kwargs["package"])]
 
-        with mock.patch.object(runner, "package_release_visible", side_effect=visible):
+        with mock.patch.object(
+            runner, "apt_stanzas", return_value=[]
+        ), mock.patch.object(runner, "package_release_visible", side_effect=visible):
             self.assertFalse(
                 runner.fast_pass_ready(
                     self.product,

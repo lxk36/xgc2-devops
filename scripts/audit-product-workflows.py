@@ -132,6 +132,57 @@ def workflow_input_defaults(text: str) -> dict[str, str]:
     return defaults
 
 
+def workflow_input_types(text: str) -> dict[str, str]:
+    types: dict[str, str] = {}
+    in_dispatch = False
+    dispatch_indent = 0
+    in_inputs = False
+    inputs_indent = 0
+    current_input = ""
+    current_input_indent = 0
+    for line in text.splitlines():
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        indent = len(line) - len(line.lstrip(" "))
+        if current_input and indent <= current_input_indent:
+            current_input = ""
+        if in_inputs and indent <= inputs_indent:
+            in_inputs = False
+            current_input = ""
+        if in_dispatch and indent <= dispatch_indent:
+            in_dispatch = False
+            current_input = ""
+        if not in_dispatch and re.match(r"^\s*workflow_dispatch\s*:", line):
+            in_dispatch = True
+            dispatch_indent = indent
+            continue
+        if in_dispatch and not in_inputs and re.match(r"^\s*inputs\s*:", line):
+            in_inputs = True
+            inputs_indent = indent
+            continue
+        if in_inputs and indent == inputs_indent + 2:
+            match = re.match(r"^\s*([A-Za-z_][A-Za-z0-9_-]*)\s*:", line)
+            if match:
+                current_input = match.group(1)
+                current_input_indent = indent
+            continue
+        if current_input:
+            match = re.match(r"^\s*type\s*:\s*(.+?)\s*$", line)
+            if match:
+                types[current_input] = match.group(1).strip().strip("'\"")
+    return types
+
+
+def non_boolean_optional_release_inputs(text: str) -> set[str]:
+    input_names = workflow_input_names(text)
+    input_types = workflow_input_types(text)
+    return {
+        name
+        for name in OPTIONAL_RELEASE_BOOLEAN_INPUTS & input_names
+        if input_types.get(name, "").lower() != "boolean"
+    }
+
+
 def infer_release_workflow(source_dir: Path, product: dict[str, Any]) -> Path:
     workflow_dir = source_dir / ".github" / "workflows"
     release_config = product.get("release") if isinstance(product.get("release"), dict) else {}
@@ -460,6 +511,20 @@ def audit_product(root: Path, product: dict[str, Any]) -> list[dict[str, str]]:
                         "code": "release-inputs-missing",
                         "path": workflow.relative_to(root).as_posix(),
                         "message": "missing inputs: " + ", ".join(missing),
+                    }
+                )
+            non_boolean_inputs = sorted(non_boolean_optional_release_inputs(text))
+            if non_boolean_inputs:
+                issues.append(
+                    {
+                        "product": str(product["id"]),
+                        "severity": "error",
+                        "code": "release-optional-input-types-invalid",
+                        "path": workflow.relative_to(root).as_posix(),
+                        "message": (
+                            "release optional boolean inputs must declare type boolean: "
+                            + ", ".join(non_boolean_inputs)
+                        ),
                     }
                 )
             if not release_cpp_quality_is_gated(text):

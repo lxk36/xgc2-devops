@@ -67,15 +67,23 @@ for isolated recovery after all prerequisites are already APT-visible.
 The workflow uses one dependency-ready queue instead of fixed layer barriers.
 Ready products start up to `max_parallel`; a failure blocks only its downstream
 closure. Supply `resume_run_id` to reuse the prior `release-state.json`, keeping
-successful nodes while retrying failed and blocked work. Resume is rejected when
-the plan digest or release-lock digest differs. Resume downloads the prior plan,
+successful nodes as verify-only work while retrying failed and blocked work.
+Every resumed success must re-confirm the current APT indexes and lock-bound
+manifests before it can release downstream nodes. Resume is rejected when the
+plan digest or release-lock digest differs. Resume downloads the prior plan,
 lock, state, and per-node publish checkpoints verbatim; it never replans or bumps
-versions. A node whose workflow already published but whose APT visibility check
-timed out resumes verification without dispatching another build. Only exit code 75 (temporary
-network, APT propagation, or publish-lock failure) is retried, after 15, 30, and
-60 seconds. Compile, test, version, metadata, and source-SHA failures are not
+versions. The exact child run ID is checkpointed immediately after dispatch. A
+workflow wait timeout resumes that run, and a node whose workflow already
+published but whose APT visibility check timed out resumes visibility
+verification, without dispatching another build. Only exit code 75 (temporary
+network/TLS, APT propagation, or publish-lock failure) is retried, after 15, 30,
+and 60 seconds. Compile, test, version, metadata, and source-SHA failures are not
 retried. `apt.depends` expresses installation dependencies; `release.requires`
 adds ordering-only dependencies.
+
+Visibility polling downloads each `(distribution, architecture)` Packages index
+once per poll and reuses it for every package in that product. Scheduler metrics
+report child workflow, publish-job, and APT visibility time separately.
 
 ## Trusted artifacts and APT single writer
 

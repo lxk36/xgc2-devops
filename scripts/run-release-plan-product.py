@@ -4,9 +4,11 @@
 from __future__ import annotations
 
 import argparse
+import datetime as dt
 import json
 import os
 import re
+import ssl
 import subprocess
 import sys
 import tempfile
@@ -45,6 +47,10 @@ class TransientReleaseError(ReleaseError):
     """A network, APT propagation, or publish-lock error safe to retry."""
 
 
+class CompletedTransientReleaseError(TransientReleaseError):
+    """A completed workflow failed transiently and may be dispatched again."""
+
+
 def node_checkpoint_path(plan_path: Path, product_id: str) -> Path:
     safe_id = re.sub(r"[^A-Za-z0-9_.-]", "_", product_id)
     return plan_path.resolve().parent / "release-node-checkpoints" / f"{safe_id}.json"
@@ -68,6 +74,10 @@ def load_publish_checkpoint(plan_path: Path, product: dict[str, Any]) -> dict[st
         raise ReleaseError(f"{product['id']}: publish checkpoint does not match this release lock")
     if not isinstance(value.get("release_run_id"), int):
         raise ReleaseError(f"{product['id']}: publish checkpoint lacks release_run_id")
+    phase = value.get("phase", "workflow_succeeded")
+    if phase not in {"dispatched", "workflow_succeeded"}:
+        raise ReleaseError(f"{product['id']}: publish checkpoint has invalid phase {phase!r}")
+    value["phase"] = phase
     return value
 
 
@@ -77,9 +87,18 @@ def write_publish_checkpoint(
     *,
     release_run_id: int,
     release_run_number: int | None,
+    phase: str = "workflow_succeeded",
+    trusted_ci_run_id: int | None = None,
+    dispatched_at: float | None = None,
+    release_workflow_seconds: float | None = None,
+    publish_seconds: float | None = None,
+    ci_artifact_wait_seconds: float | None = None,
 ) -> None:
+    if phase not in {"dispatched", "workflow_succeeded"}:
+        raise ValueError(f"invalid release checkpoint phase: {phase}")
     path = node_checkpoint_path(plan_path, str(product["id"]))
     path.parent.mkdir(parents=True, exist_ok=True)
+    now = time.time()
     value = {
         "schema": "xgc2.release-node-checkpoint.v1",
         "product": str(product["id"]),
@@ -87,11 +106,27 @@ def write_publish_checkpoint(
         "release_lock_digest": os.environ.get("XGC2_RELEASE_LOCK_DIGEST", ""),
         "release_run_id": release_run_id,
         "release_run_number": release_run_number,
-        "completed_at": int(time.time()),
+        "phase": phase,
+        "trusted_ci_run_id": trusted_ci_run_id,
+        "dispatched_at": dispatched_at if dispatched_at is not None else now,
     }
+    if phase == "workflow_succeeded":
+        value["completed_at"] = int(now)
+    if release_workflow_seconds is not None:
+        value["release_workflow_seconds"] = release_workflow_seconds
+    if publish_seconds is not None:
+        value["publish_seconds"] = publish_seconds
+    if ci_artifact_wait_seconds is not None:
+        value["ci_artifact_wait_seconds"] = ci_artifact_wait_seconds
     temporary = path.with_suffix(".json.tmp")
     temporary.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     temporary.replace(path)
+
+
+def clear_publish_checkpoint(plan_path: Path, product: dict[str, Any]) -> None:
+    """Forget only a confirmed-complete transient run before a safe redispatch."""
+
+    node_checkpoint_path(plan_path, str(product["id"])).unlink(missing_ok=True)
 
 
 def run(args: list[str], *, check: bool = True) -> subprocess.CompletedProcess[str]:
@@ -112,14 +147,41 @@ def command_details(result: subprocess.CompletedProcess[str]) -> str:
 
 def is_transient_message(message: str) -> bool:
     normalized = message.lower()
+    deterministic_patterns = (
+        "version mismatch",
+        "source sha mismatch",
+        "sha256 mismatch",
+        "manifest identity/hash mismatch",
+        "assertion failed",
+        "tests failed",
+        "test failure",
+        "test timed out",
+        "compilation terminated",
+        "undefined reference",
+        "no matching function",
+    )
+    expected_version_mismatch = re.search(
+        r"expected version[^\n]*(?:got|found|actual)", normalized
+    )
+    if expected_version_mismatch or any(
+        pattern in normalized for pattern in deterministic_patterns
+    ):
+        return False
     patterns = (
         "connection reset",
+        "connection was reset",
         "connection refused",
         "connection timed out",
         "network is unreachable",
         "temporary failure",
         "temporarily unavailable",
         "tls handshake timeout",
+        "tls eof",
+        "ssl_error_syscall",
+        "ssl error syscall",
+        "unexpected eof while reading",
+        "eof occurred in violation of protocol",
+        "operation timed out",
         "i/o timeout",
         "context deadline exceeded",
         "could not resolve host",
@@ -465,6 +527,43 @@ def run_completed_successfully(
     return False, f"failed jobs: {failed_names}"
 
 
+def publish_job_seconds(run_data: dict[str, Any]) -> float | None:
+    """Return observed APT publish job time without conflating index visibility.
+
+    Product workflows are not required to expose a publish timing output, but
+    GitHub's job metadata includes timestamps.  Only a clearly named APT publish
+    job is used; otherwise the metric remains unavailable rather than reporting
+    APT propagation time as publish time.
+    """
+
+    jobs = run_data.get("jobs")
+    if not isinstance(jobs, list):
+        return None
+    total = 0.0
+    matched = False
+    for job in jobs:
+        if not isinstance(job, dict):
+            continue
+        name = str(job.get("name", "")).lower()
+        if "publish" not in name or "apt" not in name:
+            continue
+        started = job.get("startedAt") or job.get("started_at")
+        completed = job.get("completedAt") or job.get("completed_at")
+        if not isinstance(started, str) or not isinstance(completed, str):
+            continue
+        try:
+            start_time = dt.datetime.fromisoformat(started.replace("Z", "+00:00"))
+            completed_time = dt.datetime.fromisoformat(completed.replace("Z", "+00:00"))
+        except ValueError:
+            continue
+        duration = (completed_time - start_time).total_seconds()
+        if duration < 0:
+            continue
+        total += duration
+        matched = True
+    return round(total, 3) if matched else None
+
+
 def failed_run_is_transient(product: dict[str, Any], run_id: int) -> bool:
     result = run(
         [
@@ -523,10 +622,10 @@ def wait_for_run(
                 return data
             message = f"{product['id']}: workflow failed ({reason}) {data.get('url')}"
             if failed_run_is_transient(product, run_id):
-                raise TransientReleaseError(message)
+                raise CompletedTransientReleaseError(message)
             raise ReleaseError(message)
         time.sleep(poll_seconds)
-    raise ReleaseError(
+    raise TransientReleaseError(
         f"{product['id']}: workflow run {run_id} timed out; refusing to dispatch a duplicate"
     )
 
@@ -537,10 +636,10 @@ def apt_stanzas(base_url: str, distribution: str, arch: str) -> list[dict[str, s
         with urllib.request.urlopen(url, timeout=30) as response:
             text = response.read().decode("utf-8", errors="replace")
     except urllib.error.HTTPError as exc:
-        if exc.code in {429, 502, 503, 504}:
+        if exc.code in {408, 429, 502, 503, 504}:
             raise TransientReleaseError(f"transient APT index response for {url}: {exc}") from exc
         raise ReleaseError(f"APT index request failed for {url}: {exc}") from exc
-    except (urllib.error.URLError, TimeoutError) as exc:
+    except (urllib.error.URLError, TimeoutError, ConnectionError, ssl.SSLError) as exc:
         raise TransientReleaseError(f"cannot read APT index {url}: {exc}") from exc
     stanzas: list[dict[str, str]] = []
     for block in text.split("\n\n"):
@@ -604,10 +703,10 @@ def read_release_manifest(url: str) -> dict[str, Any] | None:
     except urllib.error.HTTPError as exc:
         if exc.code == 404:
             return None
-        if exc.code in {429, 502, 503, 504}:
+        if exc.code in {408, 429, 502, 503, 504}:
             raise TransientReleaseError(f"transient manifest response for {url}: {exc}") from exc
         raise ReleaseError(f"cannot read release manifest {url}: {exc}") from exc
-    except (urllib.error.URLError, TimeoutError) as exc:
+    except (urllib.error.URLError, TimeoutError, ConnectionError, ssl.SSLError) as exc:
         raise TransientReleaseError(f"cannot read release manifest {url}: {exc}") from exc
     try:
         data = json.loads(payload)
@@ -676,11 +775,17 @@ def package_release_visible(
     version: str,
     require_current_lock: bool,
     strict_manifest_mismatch: bool,
+    apt_index: list[dict[str, str]] | None = None,
 ) -> bool:
+    stanzas = (
+        apt_index
+        if apt_index is not None
+        else apt_stanzas(apt_base_url, distribution, arch)
+    )
     stanza = next(
         (
             item
-            for item in apt_stanzas(apt_base_url, distribution, arch)
+            for item in stanzas
             if item.get("Package") == package and item.get("Version") == version
         ),
         None,
@@ -734,22 +839,26 @@ def fast_pass_ready(
     packages = product.get("apt_packages", [])
     if not versions or not packages:
         return False
-    return all(
-        package_release_visible(
-            product,
-            apt_base_url=apt_base_url,
-            manifest_base_url=manifest_base_url,
-            distribution=distribution,
-            arch=arch,
-            package=str(package),
-            version=version,
-            require_current_lock=True,
-            strict_manifest_mismatch=False,
-        )
-        for distribution, version in sorted(versions.items())
-        for arch in arches
-        for package in packages
-    )
+    apt_indexes: dict[tuple[str, str], list[dict[str, str]]] = {}
+    for distribution, version in sorted(versions.items()):
+        for arch in arches:
+            key = (distribution, arch)
+            apt_indexes[key] = apt_stanzas(apt_base_url, distribution, arch)
+            for package in packages:
+                if not package_release_visible(
+                    product,
+                    apt_base_url=apt_base_url,
+                    manifest_base_url=manifest_base_url,
+                    distribution=distribution,
+                    arch=arch,
+                    package=str(package),
+                    version=version,
+                    require_current_lock=True,
+                    strict_manifest_mismatch=False,
+                    apt_index=apt_indexes[key],
+                ):
+                    return False
+    return True
 
 
 def verify_apt(
@@ -782,8 +891,20 @@ def verify_apt(
     deadline = time.time() + timeout_seconds
     last_transient = ""
     while pending and time.time() < deadline:
+        apt_indexes: dict[tuple[str, str], list[dict[str, str]]] = {}
+        for distribution, arch in sorted({(item[0], item[1]) for item in pending}):
+            try:
+                apt_indexes[(distribution, arch)] = apt_stanzas(
+                    apt_base_url, distribution, arch
+                )
+            except TransientReleaseError as exc:
+                last_transient = str(exc)
+                print(f"{product['id']}: APT visibility retry: {exc}")
         for item in list(pending):
             distribution, arch, package, version = item
+            apt_index = apt_indexes.get((distribution, arch))
+            if apt_index is None:
+                continue
             try:
                 if package_release_visible(
                     product,
@@ -795,6 +916,7 @@ def verify_apt(
                     version=version,
                     require_current_lock=require_current_lock,
                     strict_manifest_mismatch=True,
+                    apt_index=apt_index,
                 ):
                     pending.remove(item)
             except TransientReleaseError as exc:
@@ -836,7 +958,7 @@ def execute(args: argparse.Namespace) -> int:
         "apt_visibility_seconds": 0.0,
         "reuse_seconds": 0.0,
         "build_seconds": 0.0,
-        "publish_seconds": 0.0,
+        "publish_seconds": None,
     }
 
     if product.get("action") == VERIFY_ACTION:
@@ -854,22 +976,90 @@ def execute(args: argparse.Namespace) -> int:
                 require_current_lock=False,
             )
         metric["apt_visibility_seconds"] = round(time.monotonic() - started, 3)
-        metric["publish_seconds"] = metric["apt_visibility_seconds"]
+        metric["publish_seconds"] = 0.0
         emit_result(metric)
         return 0
 
     verify_release_lock_is_current(product)
     checkpoint = load_publish_checkpoint(plan_path, product)
     if checkpoint is not None:
-        print(
-            f"{product['id']}: resuming APT visibility verification after release run "
-            f"{checkpoint['release_run_id']}"
+        run_id = int(checkpoint["release_run_id"])
+        metric["release_run_id"] = run_id
+        trusted_ci_run_id = checkpoint.get("trusted_ci_run_id")
+        if isinstance(trusted_ci_run_id, int):
+            metric["ci_run_id"] = trusted_ci_run_id
+            metric["reused_ci_artifact"] = True
+        metric["ci_artifact_wait_seconds"] = float(
+            checkpoint.get("ci_artifact_wait_seconds", 0.0)
         )
-        metric["release_run_id"] = checkpoint["release_run_id"]
-        metric["resumed_publish_verification"] = True
+        release_run_number = checkpoint.get("release_run_number")
+        if checkpoint["phase"] == "dispatched":
+            print(
+                f"{product['id']}: resuming exact release run {run_id}; "
+                "a duplicate will not be dispatched"
+            )
+            try:
+                data = wait_for_run(
+                    product,
+                    run_id,
+                    timeout_seconds=args.timeout_seconds,
+                    poll_seconds=args.poll_seconds,
+                    quality_required=args.quality_required,
+                )
+            except CompletedTransientReleaseError:
+                # The exact run is known to be complete, so a scheduler retry may
+                # safely create a replacement rather than re-waiting a dead run.
+                clear_publish_checkpoint(plan_path, product)
+                raise
+            release_run_number = data.get("number")
+            dispatched_at = checkpoint.get("dispatched_at")
+            if isinstance(dispatched_at, (int, float)):
+                metric["release_workflow_seconds"] = round(
+                    max(0.0, time.time() - float(dispatched_at)), 3
+                )
+            metric["publish_seconds"] = publish_job_seconds(data)
+            write_publish_checkpoint(
+                plan_path,
+                product,
+                release_run_id=run_id,
+                release_run_number=(
+                    release_run_number if isinstance(release_run_number, int) else None
+                ),
+                phase="workflow_succeeded",
+                trusted_ci_run_id=(
+                    trusted_ci_run_id if isinstance(trusted_ci_run_id, int) else None
+                ),
+                dispatched_at=(
+                    float(dispatched_at)
+                    if isinstance(dispatched_at, (int, float))
+                    else None
+                ),
+                release_workflow_seconds=metric["release_workflow_seconds"],
+                publish_seconds=metric["publish_seconds"],
+                ci_artifact_wait_seconds=metric["ci_artifact_wait_seconds"],
+            )
+            metric["resumed_release_run"] = True
+        else:
+            print(
+                f"{product['id']}: resuming APT visibility verification after release run "
+                f"{run_id}"
+            )
+            metric["release_workflow_seconds"] = float(
+                checkpoint.get("release_workflow_seconds", 0.0)
+            )
+            stored_publish = checkpoint.get("publish_seconds")
+            metric["publish_seconds"] = (
+                float(stored_publish) if isinstance(stored_publish, (int, float)) else None
+            )
+            metric["resumed_publish_verification"] = True
+        if metric["reused_ci_artifact"]:
+            metric["reuse_seconds"] = round(
+                metric["ci_artifact_wait_seconds"] + metric["release_workflow_seconds"], 3
+            )
+        else:
+            metric["build_seconds"] = metric["release_workflow_seconds"]
         verify_started = time.monotonic()
         if not args.skip_apt_verify:
-            run_number = checkpoint.get("release_run_number")
             verify_apt(
                 product,
                 apt_base_url=args.apt_base_url,
@@ -877,11 +1067,36 @@ def execute(args: argparse.Namespace) -> int:
                 arches=arches,
                 timeout_seconds=args.apt_timeout_seconds,
                 poll_seconds=args.poll_seconds,
-                run_number=run_number if isinstance(run_number, int) else None,
+                run_number=(
+                    release_run_number if isinstance(release_run_number, int) else None
+                ),
                 require_current_lock=True,
             )
         metric["apt_visibility_seconds"] = round(time.monotonic() - verify_started, 3)
-        metric["publish_seconds"] = metric["apt_visibility_seconds"]
+        emit_result(metric)
+        return 0
+    if getattr(args, "verify_existing_release", False):
+        if args.skip_apt_verify:
+            raise ReleaseError(
+                f"{product['id']}: resume verification cannot skip APT/manifest checks"
+            )
+        print(
+            f"{product['id']}: re-verifying prior success against the current release lock"
+        )
+        verify_started = time.monotonic()
+        verify_apt(
+            product,
+            apt_base_url=args.apt_base_url,
+            manifest_base_url=args.manifest_base_url,
+            arches=arches,
+            timeout_seconds=args.apt_timeout_seconds,
+            poll_seconds=args.poll_seconds,
+            run_number=None,
+            require_current_lock=True,
+        )
+        metric["apt_visibility_seconds"] = round(time.monotonic() - verify_started, 3)
+        metric["publish_seconds"] = 0.0
+        metric["resume_verified"] = True
         emit_result(metric)
         return 0
     if not args.no_fast_pass and fast_pass_ready(
@@ -892,6 +1107,7 @@ def execute(args: argparse.Namespace) -> int:
     ):
         print(f"{product['id']}: FAST-PASS package, hash, source SHA, and release lock match")
         metric["fast_pass"] = True
+        metric["publish_seconds"] = 0.0
         emit_result(metric)
         return 0
 
@@ -909,7 +1125,6 @@ def execute(args: argparse.Namespace) -> int:
         metric["ci_run_id"] = trusted_ci_run_id
         metric["reused_ci_artifact"] = trusted_ci_run_id is not None
 
-    workflow_started = time.monotonic()
     run_id = trigger(
         product,
         quality_required=args.quality_required,
@@ -918,20 +1133,44 @@ def execute(args: argparse.Namespace) -> int:
     )
     metric["release_run_id"] = run_id
     print(f"{product['id']}: triggered run {run_id}")
-    data = wait_for_run(
+    dispatched_at = time.time()
+    write_publish_checkpoint(
+        plan_path,
         product,
-        run_id,
-        timeout_seconds=args.timeout_seconds,
-        poll_seconds=args.poll_seconds,
-        quality_required=args.quality_required,
+        release_run_id=run_id,
+        release_run_number=None,
+        phase="dispatched",
+        trusted_ci_run_id=trusted_ci_run_id,
+        dispatched_at=dispatched_at,
+        ci_artifact_wait_seconds=metric["ci_artifact_wait_seconds"],
     )
-    metric["release_workflow_seconds"] = round(time.monotonic() - workflow_started, 3)
+    try:
+        data = wait_for_run(
+            product,
+            run_id,
+            timeout_seconds=args.timeout_seconds,
+            poll_seconds=args.poll_seconds,
+            quality_required=args.quality_required,
+        )
+    except CompletedTransientReleaseError:
+        clear_publish_checkpoint(plan_path, product)
+        raise
+    metric["release_workflow_seconds"] = round(
+        max(0.0, time.time() - dispatched_at), 3
+    )
+    metric["publish_seconds"] = publish_job_seconds(data)
     release_run_number = data.get("number")
     write_publish_checkpoint(
         plan_path,
         product,
         release_run_id=run_id,
         release_run_number=release_run_number if isinstance(release_run_number, int) else None,
+        phase="workflow_succeeded",
+        trusted_ci_run_id=trusted_ci_run_id,
+        dispatched_at=dispatched_at,
+        release_workflow_seconds=metric["release_workflow_seconds"],
+        publish_seconds=metric["publish_seconds"],
+        ci_artifact_wait_seconds=metric["ci_artifact_wait_seconds"],
     )
     if trusted_ci_run_id is None:
         metric["build_seconds"] = metric["release_workflow_seconds"]
@@ -954,7 +1193,6 @@ def execute(args: argparse.Namespace) -> int:
             require_current_lock=True,
         )
     metric["apt_visibility_seconds"] = round(time.monotonic() - verify_started, 3)
-    metric["publish_seconds"] = metric["apt_visibility_seconds"]
     emit_result(metric)
     return 0
 
@@ -966,6 +1204,11 @@ def main() -> int:
     parser.add_argument("--quality-required", action="store_true")
     parser.add_argument("--source-tests", action="store_true")
     parser.add_argument("--reuse-ci-artifacts", action="store_true")
+    parser.add_argument(
+        "--verify-existing-release",
+        action="store_true",
+        help="Strictly re-verify a resumed success and never dispatch a new workflow",
+    )
     parser.add_argument("--skip-apt-verify", action="store_true")
     parser.add_argument("--no-fast-pass", action="store_true")
     parser.add_argument("--apt-base-url", default=DEFAULT_APT_BASE_URL)

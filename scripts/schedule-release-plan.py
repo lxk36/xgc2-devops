@@ -67,7 +67,13 @@ def initial_state(
     release_lock_digest: str,
     now_fn: Callable[[], float] = time.time,
 ) -> dict[str, Any]:
-    """Create state and retain only successes from the exact same plan and lock."""
+    """Create state and re-queue prior successes for strict release verification.
+
+    A matching plan/lock proves that the resume evidence belongs to this release,
+    but it does not prove that the corresponding APT indexes and manifests are
+    still visible.  Prior successes therefore have to pass the product runner's
+    verify-only path before they may satisfy a dependency in this invocation.
+    """
 
     now = int(now_fn())
     state: dict[str, Any] = {
@@ -98,7 +104,14 @@ def initial_state(
         raise ValueError("resume state products must be an object")
     for product_id, data in previous_products.items():
         if product_id in items and isinstance(data, dict) and data.get("status") == "success":
-            state["products"][product_id] = {**data, "resumed": True}
+            resumed = state["products"][product_id]
+            resumed.update(
+                {
+                    "resumed": True,
+                    "resume_verification_required": True,
+                    "previous_release_run_id": data.get("release_run_id"),
+                }
+            )
     return state
 
 
@@ -117,6 +130,7 @@ def run_product(
     quality_required: bool,
     source_tests: bool,
     reuse_ci_artifacts: bool,
+    resume_verify: bool = False,
 ) -> dict[str, Any]:
     command = [sys.executable, str(runner), "--plan", str(plan_path), "--product", product_id]
     if quality_required:
@@ -125,6 +139,8 @@ def run_product(
         command.append("--source-tests")
     if reuse_ci_artifacts:
         command.append("--reuse-ci-artifacts")
+    if resume_verify:
+        command.append("--verify-existing-release")
     started = time.monotonic()
     result = subprocess.run(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     return {
@@ -265,6 +281,7 @@ def schedule(
                     quality_required=quality_required,
                     source_tests=source_tests,
                     reuse_ci_artifacts=reuse_ci_artifacts,
+                    resume_verify=bool(product_state.get("resume_verification_required")),
                 )
                 running[future] = product_id
                 print(
@@ -393,19 +410,26 @@ def append_summary(state: dict[str, Any], path: Path) -> None:
     lines = [
         "## Release scheduler metrics",
         "",
-        "| Product | Status | Wait (s) | Runner (s) | CI reuse (s) | Build (s) | Publish/visibility (s) | Retries |",
-        "|---|---:|---:|---:|---:|---:|---:|---:|",
+        "| Product | Status | Wait (s) | Runner (s) | CI reuse (s) | "
+        "Build/workflow (s) | Publish (s) | APT visibility (s) | Retries |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for product_id, data in sorted(state["products"].items()):
+        publish = data.get("publish_seconds")
+        publish_display = publish if isinstance(publish, (int, float)) else "n/a"
         lines.append(
-            "| {product} | {status} | {wait} | {runner} | {reuse} | {build} | {publish} | {retries} |".format(
+            (
+                "| {product} | {status} | {wait} | {runner} | {reuse} | {build} | "
+                "{publish} | {visibility} | {retries} |"
+            ).format(
                 product=product_id,
                 status=data.get("status", ""),
                 wait=data.get("wait_seconds", 0),
                 runner=data.get("runner_seconds", 0),
                 reuse=data.get("reuse_seconds", data.get("ci_artifact_wait_seconds", 0)),
                 build=data.get("build_seconds", 0),
-                publish=data.get("publish_seconds", data.get("apt_visibility_seconds", 0)),
+                publish=publish_display,
+                visibility=data.get("apt_visibility_seconds", 0),
                 retries=data.get("transient_retries", 0),
             )
         )

@@ -30,6 +30,10 @@ Required `release.yml` inputs:
 - `release_id`
 - `release_lock_digest`
 
+`publish_apt`, `run_cpp_quality`, and `run_source_tests` must explicitly declare
+`type: boolean`; an untyped `"false"` is a non-empty string and can accidentally
+enable optional work.
+
 `trusted_ci_run_id` is optional. When present, release downloads artifacts only
 from that exact run and validates `xgc2.build-artifact.v1` before publishing.
 
