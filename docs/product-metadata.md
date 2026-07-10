@@ -19,6 +19,7 @@ versions change.
 - `ros1-apt`
 - `ros2-apt`
 - `toolchain-apt`
+- `desktop-apt`
 - `webui-docker`
 - `app-store`
 - `docker-image`
@@ -79,3 +80,24 @@ usage:
 
 Generated catalogs can render these snippets without copying them into
 `xgc2-devops`.
+
+## Release ordering and CI artifacts
+
+`apt.depends` is the source of Debian runtime edges. Use `release.requires`
+only when a build or installation check needs another XGC2 product first but
+the relationship must not become a Debian `Depends` entry:
+
+```yaml
+release:
+  repository: lxk36/xgc2-gazebo-sim-tools
+  ref: noetic
+  workflow: release.yml
+  ci_workflow: ci.yml
+  requires:
+    - xgc2-scout-description
+```
+
+The release planner merges both edge sets, rejects cycles and hidden XGC2
+installation dependencies, and waits for both architecture indexes and trusted
+manifests before releasing downstream nodes. `ci_workflow` identifies the push
+workflow whose exact-source artifacts may be reused; it defaults to `ci.yml`.

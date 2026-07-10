@@ -142,3 +142,7 @@
 	path = products/ros1/robot/scout_msgs
 	url = git@github.com:lxk36/xgc2-scout-msgs.git
 	branch = main
+[submodule "products/webui/lichtblick-packaging"]
+	path = products/webui/lichtblick-packaging
+	url = git@github.com:lxk36/xgc2-lichtblick-packaging.git
+	branch = main

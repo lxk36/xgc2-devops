@@ -27,6 +27,11 @@ Required `release.yml` inputs:
 - `publish_apt`
 - `run_cpp_quality`
 - `run_source_tests`
+- `release_id`
+- `release_lock_digest`
+
+`trusted_ci_run_id` is optional. When present, release downloads artifacts only
+from that exact run and validates `xgc2.build-artifact.v1` before publishing.
 
 ## Top-Level Orchestration
 
@@ -37,8 +42,9 @@ Required `release.yml` inputs:
   and `apt.depends`.
 - Expands selected products with upstream prerequisites and downstream consumers.
 - Classifies nodes as `release` or `verify`.
-- Runs visible GitHub Actions matrix jobs per dependency layer.
-- Waits for child repository workflows and verifies APT visibility.
+- Runs one dependency-ready queue with at most four product releases in flight.
+- Waits for child workflows and verifies both architecture indexes plus release
+  manifests before making downstream nodes ready.
 
 `catalog.yml` remains lightweight. It validates metadata, shows module/DAG
 summaries, and runs workflow audits without triggering child releases.
@@ -49,10 +55,12 @@ and branch-specific workflow details.
 
 ## Release Reuse
 
-Fast-pass is allowed only when both are true:
+Fast-pass is allowed only when all are true:
 
 - The expected APT version exists for every required package, distribution, and
   architecture.
-- A release manifest for that version reports the expected source SHA.
+- The canonical release manifest reports the expected product, distribution,
+  target architecture, source SHA, and release-lock digest.
+- The manifest deb SHA256 equals the SHA256 in the APT Packages stanza.
 
 Version-only fast-pass is not allowed.

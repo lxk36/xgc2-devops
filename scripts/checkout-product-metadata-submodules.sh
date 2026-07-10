@@ -26,6 +26,7 @@ submodules=(
   products/common/state-machine
   products/common/tbb
   products/robotics/fs150
+  products/webui/lichtblick-packaging
   products/ros1/common/ros1-msgs
   products/ros1/common/ros1-utils
   products/ros1/communication/runtime-sync

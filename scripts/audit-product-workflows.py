@@ -17,6 +17,9 @@ STANDARD_RELEASE_INPUTS = {
     "publish_apt",
     "run_cpp_quality",
     "run_source_tests",
+    "release_id",
+    "release_lock_digest",
+    "trusted_ci_run_id",
 }
 OPTIONAL_RELEASE_BOOLEAN_INPUTS = {
     "publish_apt",
@@ -216,8 +219,11 @@ def workflow_quality_needs(text: str, quality_jobs: set[str] | None = None) -> s
 
 
 def publishes_apt(text: str) -> bool:
+    executable_text = "\n".join(
+        line for line in text.splitlines() if "bash -n" not in line
+    )
     return any(
-        token in text
+        token in executable_text
         for token in (
             "publish_apt_repo.sh",
             "publish_self_hosted_apt.sh",
@@ -257,7 +263,16 @@ def workflow_quality_gates_other_jobs(workflow: Path) -> set[str]:
         return set()
 
     text = workflow.read_text(encoding="utf-8", errors="ignore")
-    return workflow_quality_needs(text)
+    quality_jobs = workflow_pure_quality_jobs(text)
+    gated: set[str] = set()
+    for job_name, body in workflow_job_blocks(text).items():
+        # The final publication gate must wait for requested quality jobs; only
+        # build/test jobs are forbidden from using pure quality work as a
+        # prerequisite, because that creates false serialization.
+        if job_name in {"publish-apt", "release-ready", "release-gate"}:
+            continue
+        gated.update(workflow_quality_needs(body, quality_jobs))
+    return gated
 
 
 def release_cpp_quality_is_gated(text: str) -> bool:
@@ -314,6 +329,8 @@ def audit_product(root: Path, product: dict[str, Any]) -> list[dict[str, str]]:
 
     workflows = sorted(workflow_dir.glob("*.yml")) + sorted(workflow_dir.glob("*.yaml"))
     release_workflow = infer_release_workflow(source_dir, product)
+    release_config = product.get("release") if isinstance(product.get("release"), dict) else {}
+    ci_workflow = workflow_dir / str(release_config.get("ci_workflow", "ci.yml"))
     cpp_quality_script = source_dir / ".xgc2" / "scripts" / "check_cpp_quality.sh"
     if cpp_quality_script.exists() and not push_runs_cpp_quality(root, source_dir):
         issues.append(
@@ -345,6 +362,38 @@ def audit_product(root: Path, product: dict[str, Any]) -> list[dict[str, str]]:
                 "message": "APT product should expose workflow_dispatch release.yml",
             }
         )
+    if not ci_workflow.exists():
+        issues.append(
+            {
+                "product": str(product["id"]),
+                "severity": "error",
+                "code": "missing-push-ci-workflow",
+                "path": ci_workflow.relative_to(root).as_posix(),
+                "message": "APT product must expose an active push CI workflow",
+            }
+        )
+    else:
+        ci_text = ci_workflow.read_text(encoding="utf-8", errors="ignore")
+        if "xgc2_artifact_manifest.py build" not in ci_text:
+            issues.append(
+                {
+                    "product": str(product["id"]),
+                    "severity": "error",
+                    "code": "push-ci-build-manifest-missing",
+                    "path": ci_workflow.relative_to(root).as_posix(),
+                    "message": "push CI must upload xgc2.build-artifact.v1 with its debs",
+                }
+            )
+        if not re.search(r"(?m)^\s*retention-days:\s*14\s*$", ci_text):
+            issues.append(
+                {
+                    "product": str(product["id"]),
+                    "severity": "error",
+                    "code": "push-ci-artifact-retention",
+                    "path": ci_workflow.relative_to(root).as_posix(),
+                    "message": "trusted CI artifacts must be retained for 14 days",
+                }
+            )
 
     for workflow in workflows:
         text = workflow.read_text(encoding="utf-8", errors="ignore")
@@ -415,6 +464,74 @@ def audit_product(root: Path, product: dict[str, Any]) -> list[dict[str, str]]:
                             "release optional boolean inputs must default false: "
                             + ", ".join(non_false_defaults)
                         ),
+                    }
+                )
+            required_markers = {
+                "actions/download-artifact": "release must support exact-run artifact download",
+                "xgc2_artifact_manifest.py verify-build": "release must validate trusted/fallback build manifests",
+                "xgc2_artifact_manifest.py release": "release must create xgc2.release-artifact.v1",
+                "publish-apt:": "all architecture artifacts must converge on one publish job",
+                "xgc2-apt-": "release publish job must use repository-local concurrency",
+            }
+            for marker, message in required_markers.items():
+                if marker not in text:
+                    issues.append(
+                        {
+                            "product": str(product["id"]),
+                            "severity": "error",
+                            "code": "trusted-release-contract-missing",
+                            "path": workflow.relative_to(root).as_posix(),
+                            "message": message,
+                        }
+                    )
+            jobs = workflow_job_blocks(text)
+            publish_body = jobs.get("publish-apt", "")
+            gate_name = next(
+                (name for name in ("release-ready", "release-gate") if name in jobs),
+                "publish-apt",
+            )
+            gate_body = jobs.get(gate_name, "")
+            gate_needs = workflow_quality_needs(gate_body, set(jobs))
+            required_gate_jobs = {
+                name
+                for name in jobs
+                if name not in {"publish-apt", "release-ready", "release-gate"}
+                and (
+                    "compliance" in name
+                    or "quality" in name
+                    or "source-test" in name
+                    or "build" in name
+                    or name.startswith("deb-")
+                )
+            }
+            missing_gate_jobs = sorted(required_gate_jobs - gate_needs)
+            if gate_name != "publish-apt" and gate_name not in workflow_quality_needs(
+                publish_body, set(jobs)
+            ):
+                missing_gate_jobs.append(gate_name)
+            if missing_gate_jobs:
+                issues.append(
+                    {
+                        "product": str(product["id"]),
+                        "severity": "error",
+                        "code": "publish-validation-gate-missing",
+                        "path": workflow.relative_to(root).as_posix(),
+                        "message": "publish must wait for: " + ", ".join(missing_gate_jobs),
+                    }
+                )
+            optional_gate_jobs = {
+                name
+                for name in required_gate_jobs
+                if re.search(r"(?m)^    if:\s*.*inputs\.", jobs.get(name, ""))
+            }
+            if optional_gate_jobs and "always()" not in gate_body:
+                issues.append(
+                    {
+                        "product": str(product["id"]),
+                        "severity": "error",
+                        "code": "publish-optional-gate-unsafe",
+                        "path": workflow.relative_to(root).as_posix(),
+                        "message": "publish gate must use always() and inspect optional job results",
                     }
                 )
 

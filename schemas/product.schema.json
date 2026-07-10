@@ -27,6 +27,7 @@
         "ros1-apt",
         "ros2-apt",
         "toolchain-apt",
+        "desktop-apt",
         "webui-docker",
         "app-store",
         "docker-image",
@@ -193,6 +194,20 @@
         "workflow": {
           "type": "string",
           "minLength": 1
+        },
+        "ci_workflow": {
+          "description": "Push CI workflow that produces trusted xgc2.build-artifact.v1 artifacts.",
+          "type": "string",
+          "minLength": 1
+        },
+        "requires": {
+          "description": "Product ids that must be published and APT-visible before this release runs.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._-]*$"
+          },
+          "uniqueItems": true
         },
         "apt_versions": {
           "type": "object",

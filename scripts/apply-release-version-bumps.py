@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -92,9 +93,10 @@ def update_dependency_version(dependency: str, owner_versions: dict[str, str]) -
     version = owner_versions.get(package)
     if not version:
         return dependency
-    if "(" in dependency and ")" in dependency:
-        return f"{package} (>= {version})"
-    return dependency
+    match = re.match(r"^(?P<package>\S+)(?:\s+\([^)]*\))?(?P<remainder>.*)$", dependency)
+    if not match:
+        return dependency
+    return f"{package} (>= {version}){match.group('remainder')}"
 
 
 def split_dependency(dependency: str) -> tuple[str, str]:
@@ -151,6 +153,7 @@ def update_product_metadata(
     item: dict[str, Any],
     *,
     owner_versions: dict[str, str],
+    update_dependencies: bool,
     apply: bool,
 ) -> set[str]:
     if item.get("action") != RELEASE_ACTION:
@@ -168,6 +171,16 @@ def update_product_metadata(
     if should_consider and expected_version and expected_version != current_version:
         metadata["version"] = expected_version
         changed = True
+        compliance_path = source_dir / ".xgc2" / "scripts" / "check_package_compliance.sh"
+        if compliance_path.exists():
+            old_text = compliance_path.read_text(encoding="utf-8")
+            new_text = old_text.replace(
+                f"^version: {current_version}$", f"^version: {expected_version}$"
+            )
+            if new_text != old_text:
+                changed_paths.add(".xgc2/scripts/check_package_compliance.sh")
+                if apply:
+                    compliance_path.write_text(new_text, encoding="utf-8")
 
     apt_versions = item.get("apt_versions")
     if should_consider and isinstance(apt_versions, dict) and len(set(map(str, apt_versions.values()))) > 1:
@@ -180,7 +193,12 @@ def update_product_metadata(
             changed = True
 
     apt = metadata.get("apt")
-    if should_consider and isinstance(apt, dict) and isinstance(apt.get("depends"), list):
+    if (
+        should_consider
+        and update_dependencies
+        and isinstance(apt, dict)
+        and isinstance(apt.get("depends"), list)
+    ):
         old_depends = [str(dependency) for dependency in apt["depends"]]
         new_depends = [
             update_dependency_version(str(dependency), owner_versions)
@@ -207,6 +225,28 @@ def update_product_metadata(
             print(f"{item['id']}: {current_version} -> {expected_version}")
         else:
             print(f"{item['id']}: dependency minimums updated")
+
+    release_set_path = source_dir / ".xgc2" / "release-set.yml"
+    if should_consider and release_set_path.exists():
+        release_set = load_yaml(release_set_path)
+        entries = release_set.get("packages", {})
+        release_set_changed = False
+        if isinstance(entries, dict):
+            for entry in entries.values():
+                if not isinstance(entry, dict):
+                    continue
+                apt_package = str(entry.get("apt", ""))
+                planned = owner_versions.get(apt_package) if update_dependencies else None
+                if entry.get("local") and expected_version:
+                    planned = expected_version
+                if planned and str(entry.get("version", "")) != planned:
+                    entry["version"] = planned
+                    release_set_changed = True
+        if release_set_changed:
+            changed_paths.add(".xgc2/release-set.yml")
+            if apply:
+                dump_yaml(release_set_path, release_set)
+            print(f"{item['id']}: release-set versions updated")
     return changed_paths
 
 
@@ -307,6 +347,11 @@ def main() -> int:
     parser.add_argument("--apply", action="store_true")
     parser.add_argument("--commit", action="store_true")
     parser.add_argument("--push", action="store_true")
+    parser.add_argument(
+        "--skip-dependency-updates",
+        action="store_true",
+        help="bump local product/release-set versions without changing internal dependency minimums",
+    )
     args = parser.parse_args()
 
     root = Path(args.root).resolve()
@@ -320,7 +365,13 @@ def main() -> int:
     owner_versions = package_owner_versions(plan)
     for item in plan_items(plan):
         plan_items_by_source.setdefault(root / str(item["source"]), []).append(item)
-        changed_paths = update_product_metadata(root, item, owner_versions=owner_versions, apply=args.apply)
+        changed_paths = update_product_metadata(
+            root,
+            item,
+            owner_versions=owner_versions,
+            update_dependencies=not args.skip_dependency_updates,
+            apply=args.apply,
+        )
         if changed_paths:
             source_dir = root / str(item["source"])
             touched_repos.setdefault(source_dir, []).append(item)

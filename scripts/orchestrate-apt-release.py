@@ -5,20 +5,13 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
 import subprocess
-import sys
-import time
-import urllib.parse
-import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 
-DEFAULT_APT_BASE_URL = "https://xgc2.apt.xiaokang.ink"
-DEFAULT_ARCHES = ("amd64", "arm64")
 PREFERRED_WORKFLOWS = (
     "release.yml",
     "release.yaml",
@@ -35,6 +28,10 @@ STANDARD_WORKFLOW_INPUTS = {
     "publish_apt",
     "run_cpp_quality",
     "run_source_tests",
+    "release_id",
+    "release_lock_digest",
+    "trusted_ci_run_id",
+    "ci_run_id",
 }
 
 
@@ -175,6 +172,18 @@ class Product:
     def skip_apt_verify(self) -> bool:
         return bool(self.release.get("skip_apt_verify", False))
 
+    @property
+    def release_requires(self) -> tuple[str, ...]:
+        value = self.release.get("requires", [])
+        if not isinstance(value, list):
+            raise ValueError(f"{self.product_id}: release.requires must be a list")
+        return tuple(str(item) for item in value)
+
+    @property
+    def ci_workflow(self) -> str:
+        value = self.release.get("ci_workflow", "ci.yml")
+        return str(value) if value else "ci.yml"
+
 
 @dataclass(frozen=True)
 class ReleaseTarget:
@@ -244,12 +253,22 @@ def build_graph(products: list[Product]) -> tuple[dict[str, set[str]], dict[str,
 
     downstream: dict[str, set[str]] = {product.product_id: set() for product in active}
     upstream: dict[str, set[str]] = {product.product_id: set() for product in active}
+    active_ids = set(upstream)
     for product in active:
         for dependency in product.apt_depends:
             provider = owners.get(parse_dep_package(dependency))
             if provider and provider != product.product_id:
                 downstream[provider].add(product.product_id)
                 upstream[product.product_id].add(provider)
+        for provider in product.release_requires:
+            if provider not in active_ids:
+                raise ValueError(
+                    f"{product.product_id}: release.requires references unknown APT product {provider}"
+                )
+            if provider == product.product_id:
+                raise ValueError(f"{product.product_id}: release.requires cannot reference itself")
+            downstream[provider].add(product.product_id)
+            upstream[product.product_id].add(provider)
     return downstream, upstream
 
 
@@ -499,17 +518,23 @@ def planned_apt_versions(
         return versions
     if product.apt_version_template:
         return versions
-    if product.apt_version_overrides:
-        return {
-            distribution: bump_or_promote_version(version, version_series)
-            for distribution, version in versions.items()
-        }
     planned_version = planned_product_version(
         product,
         action,
         bump_release_versions=bump_release_versions,
         version_series=version_series,
     )
+    if product.apt_version_overrides:
+        # Distribution overrides are scoped views of the product version, not
+        # independent version counters. Preserve only the distro qualifier so
+        # stale overrides cannot drift behind product.yml (for example
+        # 0.5.6-2~focal while the product is 0.5.6-3).
+        scoped: dict[str, str] = {}
+        for distribution, version in versions.items():
+            suffix_match = re.search(r"([~+][A-Za-z0-9._:+~-]+)$", version)
+            suffix = suffix_match.group(1) if suffix_match else ""
+            scoped[distribution] = f"{planned_version}{suffix}"
+        return scoped
     return {distribution: planned_version for distribution in product.apt_distributions}
 
 
@@ -663,6 +688,7 @@ def target_plan_item(product_id: str, layer_index: int, target: ReleaseTarget) -
         "source_sha": target.source_sha,
         "expected_source_sha": target.source_sha,
         "workflow": target.workflow,
+        "ci_workflow": product.ci_workflow,
         "workflow_inputs": sorted(workflow_input_names(target.workflow_path)),
         "inputs": target.dispatch_inputs,
         "apt_packages": list(product.apt_packages or product.apt_install),
@@ -671,12 +697,28 @@ def target_plan_item(product_id: str, layer_index: int, target: ReleaseTarget) -
     }
 
 
-def product_plan_json(layers: list[list[str]], targets: dict[str, ReleaseTarget]) -> dict[str, Any]:
+def product_plan_json(
+    layers: list[list[str]],
+    targets: dict[str, ReleaseTarget],
+    downstream: dict[str, set[str]],
+) -> dict[str, Any]:
+    selected = set(targets)
+    dependencies: dict[str, list[str]] = {product_id: [] for product_id in selected}
+    for provider, consumers in downstream.items():
+        if provider not in selected:
+            continue
+        for consumer in consumers:
+            if consumer in selected:
+                dependencies[consumer].append(provider)
     return {
         "schema": "xgc2.release-plan.v1",
+        "max_parallel": 4,
         "layers": [
             [
-                target_plan_item(product_id, layer_index, targets[product_id])
+                {
+                    **target_plan_item(product_id, layer_index, targets[product_id]),
+                    "dependencies": sorted(dependencies[product_id]),
+                }
                 for product_id in layer
             ]
             for layer_index, layer in enumerate(layers, start=1)
@@ -754,7 +796,7 @@ def write_plan_outputs(
     targets: dict[str, ReleaseTarget],
     downstream: dict[str, set[str]],
 ) -> None:
-    plan = product_plan_json(layers, targets)
+    plan = product_plan_json(layers, targets, downstream)
     plan_path = root / plan_output
     plan_path.parent.mkdir(parents=True, exist_ok=True)
     with plan_path.open("w", encoding="utf-8") as handle:
@@ -807,244 +849,6 @@ def print_plan(layers: list[list[str]], targets: dict[str, ReleaseTarget]) -> No
             )
 
 
-def trigger_workflow(
-    target: ReleaseTarget,
-    *,
-    quality_required: bool,
-    source_tests: bool,
-) -> int:
-    verify_release_lock_is_current(target)
-    inputs = workflow_input_names(target.workflow_path)
-    command = [
-        "gh",
-        "workflow",
-        "run",
-        target.workflow,
-        "--repo",
-        target.repository,
-        "--ref",
-        target.ref,
-    ]
-    if "publish_apt" in inputs:
-        command.extend(["-f", f"publish_apt={str(target.action == RELEASE_ACTION).lower()}"])
-    if "expected_version" in inputs and target.expected_version:
-        command.extend(["-f", f"expected_version={target.expected_version}"])
-    if "expected_source_sha" in inputs and target.source_sha:
-        command.extend(["-f", f"expected_source_sha={target.source_sha}"])
-    if "run_cpp_quality" in inputs:
-        command.extend(["-f", f"run_cpp_quality={str(quality_required).lower()}"])
-    if "run_source_tests" in inputs:
-        command.extend(["-f", f"run_source_tests={str(source_tests).lower()}"])
-    for name, value in sorted(target.dispatch_inputs.items()):
-        if name in STANDARD_WORKFLOW_INPUTS:
-            continue
-        command.extend(["-f", f"{name}={value}"])
-
-    triggered_after = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time() - 10))
-    run(command, capture=False)
-    return find_workflow_run(target, triggered_after)
-
-
-def find_workflow_run(target: ReleaseTarget, triggered_after: str) -> int:
-    for _ in range(30):
-        result = run(
-            [
-                "gh",
-                "run",
-                "list",
-                "--repo",
-                target.repository,
-                "--workflow",
-                target.workflow,
-                "--event",
-                "workflow_dispatch",
-                "--limit",
-                "20",
-                "--json",
-                "databaseId,createdAt,headBranch,status,conclusion,url",
-            ],
-            check=False,
-        )
-        if result.returncode == 0:
-            runs = json.loads(result.stdout or "[]")
-            for item in runs:
-                if str(item.get("createdAt", "")) >= triggered_after:
-                    if target.ref and item.get("headBranch") not in (None, "", target.ref):
-                        continue
-                    run_id = item.get("databaseId")
-                    if isinstance(run_id, int):
-                        return run_id
-        time.sleep(5)
-    raise RuntimeError(f"{target.product.product_id}: could not find dispatched workflow run")
-
-
-def current_ref_sha(target: ReleaseTarget) -> str:
-    ref = urllib.parse.quote(target.ref, safe="")
-    result = run(
-        ["gh", "api", f"repos/{target.repository}/commits/{ref}", "--jq", ".sha"],
-        check=False,
-    )
-    if result.returncode != 0:
-        details = "\n".join(
-            part
-            for part in (result.stdout.strip(), result.stderr.strip())
-            if part
-        )
-        raise RuntimeError(
-            f"{target.product.product_id}: cannot resolve "
-            f"{target.repository}@{target.ref}: {details}"
-        )
-    return result.stdout.strip()
-
-
-def verify_release_lock_is_current(target: ReleaseTarget) -> None:
-    actual_source_sha = current_ref_sha(target)
-    if actual_source_sha != target.source_sha:
-        raise RuntimeError(
-            f"{target.product.product_id}: stale release lock for "
-            f"{target.repository}@{target.ref}; expected {target.source_sha}, "
-            f"current head is {actual_source_sha}. "
-            "Re-run release-orchestrator from the latest xgc2-devops commit."
-        )
-
-
-def run_completed_successfully(
-    run_data: dict[str, Any], *, quality_required: bool
-) -> tuple[bool, str]:
-    conclusion = run_data.get("conclusion")
-    if conclusion == "success":
-        return True, "success"
-    jobs = run_data.get("jobs")
-    if not isinstance(jobs, list):
-        return False, f"workflow conclusion is {conclusion}"
-    failed = [job for job in jobs if job.get("conclusion") not in ("success", "skipped")]
-    if not failed:
-        return conclusion == "success", f"workflow conclusion is {conclusion}"
-    if not quality_required and all("quality" in str(job.get("name", "")).lower() for job in failed):
-        return True, "only optional quality jobs failed"
-    failed_names = ", ".join(str(job.get("name", "unknown")) for job in failed)
-    return False, f"failed jobs: {failed_names}"
-
-
-def wait_for_run(
-    target: ReleaseTarget,
-    run_id: int,
-    *,
-    timeout_seconds: int,
-    poll_seconds: int,
-    quality_required: bool,
-) -> dict[str, Any]:
-    deadline = time.time() + timeout_seconds
-    print(f"{target.product.product_id}: waiting for {target.repository} run {run_id}")
-    while time.time() < deadline:
-        result = run(
-            [
-                "gh",
-                "run",
-                "view",
-                str(run_id),
-                "--repo",
-                target.repository,
-                "--json",
-                "status,conclusion,jobs,url,number",
-            ],
-            check=False,
-        )
-        if result.returncode == 0:
-            data = json.loads(result.stdout or "{}")
-            status = data.get("status")
-            if status == "completed":
-                ok, reason = run_completed_successfully(data, quality_required=quality_required)
-                if ok:
-                    print(f"{target.product.product_id}: workflow completed ({reason})")
-                    return data
-                raise RuntimeError(
-                    f"{target.product.product_id}: workflow failed ({reason}) {data.get('url')}"
-                )
-        time.sleep(poll_seconds)
-    raise TimeoutError(f"{target.product.product_id}: workflow run {run_id} timed out")
-
-
-def apt_stanzas(base_url: str, distribution: str, arch: str) -> list[dict[str, str]]:
-    url = f"{base_url.rstrip('/')}/dists/{distribution}/main/binary-{arch}/Packages"
-    with urllib.request.urlopen(url, timeout=30) as response:
-        text = response.read().decode("utf-8", errors="replace")
-    stanzas: list[dict[str, str]] = []
-    for block in text.split("\n\n"):
-        fields: dict[str, str] = {}
-        for line in block.splitlines():
-            if ":" not in line or line.startswith(" "):
-                continue
-            key, value = line.split(":", 1)
-            fields[key.strip()] = value.strip()
-        if fields:
-            stanzas.append(fields)
-    return stanzas
-
-
-def apt_has_package(
-    base_url: str, distribution: str, arch: str, package: str, version: str
-) -> bool:
-    return any(
-        stanza.get("Package") == package and stanza.get("Version") == version
-        for stanza in apt_stanzas(base_url, distribution, arch)
-    )
-
-
-def verify_apt_product(
-    target: ReleaseTarget,
-    *,
-    base_url: str,
-    arches: tuple[str, ...],
-    timeout_seconds: int,
-    poll_seconds: int,
-    run_number: int | None,
-) -> None:
-    product = target.product
-    if product.skip_apt_verify:
-        print(f"{product.product_id}: apt verification skipped by product metadata")
-        return
-    packages = product.apt_packages or product.apt_install
-    if not packages:
-        return
-
-    deadline = time.time() + timeout_seconds
-    pending: set[tuple[str, str, str, str]] = set()
-    for distribution in product.apt_distributions:
-        version = target.expected_apt_versions.get(distribution)
-        if not version:
-            version = expected_apt_version(product, distribution, run_number=run_number)
-        if not version:
-            raise RuntimeError(
-                f"{product.product_id}: apt version is required for {distribution}; "
-                "set version, release.apt_versions, release.apt_version_template, "
-                "or release.skip_apt_verify"
-            )
-        for arch in arches:
-            for package in packages:
-                pending.add((distribution, arch, package, version))
-
-    while pending and time.time() < deadline:
-        for item in list(pending):
-            distribution, arch, package, version = item
-            try:
-                if apt_has_package(base_url, distribution, arch, package, version):
-                    pending.remove(item)
-            except Exception as exc:  # noqa: BLE001 - keep retrying transient APT fetch errors.
-                print(f"{product.product_id}: apt check retry after {type(exc).__name__}: {exc}")
-        if pending:
-            time.sleep(poll_seconds)
-
-    if pending:
-        missing = ", ".join(
-            f"{dist}/{arch}:{pkg}={version}" for dist, arch, pkg, version in sorted(pending)
-        )
-        raise TimeoutError(
-            f"{product.product_id}: expected apt version(s) not visible for {missing}"
-        )
-    print(f"{product.product_id}: apt index contains expected version(s)")
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", default=".", help="xgc2-devops repository root")
@@ -1075,16 +879,11 @@ def main() -> int:
         default="",
         help="optional target series for 1.0.x release products, e.g. 1.1",
     )
-    parser.add_argument("--execute", action="store_true", help="trigger and monitor GitHub release workflows")
-    parser.add_argument("--no-wait", action="store_true", help="trigger workflows without waiting")
-    parser.add_argument("--skip-apt-verify", action="store_true", help="skip APT Packages index verification")
-    parser.add_argument("--quality-required", action="store_true", help="treat quality jobs as required")
-    parser.add_argument("--source-tests", action="store_true", help="request source tests when workflow supports it")
-    parser.add_argument("--apt-base-url", default=DEFAULT_APT_BASE_URL)
-    parser.add_argument("--apt-arch", action="append", default=[], help="APT arch to verify")
-    parser.add_argument("--timeout-seconds", type=int, default=3600)
-    parser.add_argument("--apt-timeout-seconds", type=int, default=900)
-    parser.add_argument("--poll-seconds", type=int, default=15)
+    parser.add_argument(
+        "--execute",
+        action="store_true",
+        help="deprecated safety guard; batch execution is only available in release-orchestrator",
+    )
     parser.add_argument("--plan-output", default=".work/release-plan.json")
     parser.add_argument("--lock-output", default=".work/release-lock.json")
     parser.add_argument("--summary-output", help="write a Markdown DAG summary")
@@ -1155,62 +954,12 @@ def main() -> int:
         downstream=downstream,
     )
 
-    if not args.execute:
-        print("dry-run only; pass --execute to trigger workflows")
-        return 0
-
-    if not os.environ.get("GH_TOKEN") and not os.environ.get("GITHUB_TOKEN"):
-        raise SystemExit("GH_TOKEN or GITHUB_TOKEN is required for --execute")
-
-    arches = tuple(args.apt_arch or DEFAULT_ARCHES)
-    for layer in layers:
-        run_ids: dict[str, int] = {}
-        for product_id in layer:
-            target = targets[product_id]
-            if target.action == VERIFY_ACTION:
-                print(f"{product_id}: verify-only target; no workflow dispatch")
-                if not args.skip_apt_verify:
-                    verify_apt_product(
-                        target,
-                        base_url=args.apt_base_url,
-                        arches=arches,
-                        timeout_seconds=args.apt_timeout_seconds,
-                        poll_seconds=args.poll_seconds,
-                        run_number=None,
-                    )
-                continue
-            run_ids[product_id] = trigger_workflow(
-                target,
-                quality_required=args.quality_required,
-                source_tests=args.source_tests,
-            )
-            print(f"{product_id}: triggered run {run_ids[product_id]}")
-
-        if args.no_wait:
-            continue
-
-        for product_id in layer:
-            target = targets[product_id]
-            if target.action == VERIFY_ACTION:
-                continue
-            run_data = wait_for_run(
-                target,
-                run_ids[product_id],
-                timeout_seconds=args.timeout_seconds,
-                poll_seconds=args.poll_seconds,
-                quality_required=args.quality_required,
-            )
-            if not args.skip_apt_verify:
-                run_number = run_data.get("number")
-                verify_apt_product(
-                    target,
-                    base_url=args.apt_base_url,
-                    arches=arches,
-                    timeout_seconds=args.apt_timeout_seconds,
-                    poll_seconds=args.poll_seconds,
-                    run_number=run_number if isinstance(run_number, int) else None,
-                )
-
+    if args.execute:
+        raise SystemExit(
+            "--execute is disabled: dispatch the xgc2-devops release-orchestrator "
+            "workflow so approvals, digest-bound recovery, and dynamic scheduling apply"
+        )
+    print("dry-run plan complete; execute it through the release-orchestrator workflow")
     return 0
 
 
