@@ -171,6 +171,7 @@ jobs:
           done
           if [[ -s .work/resume/release-state.json ]]; then
             cp .work/resume/release-state.json .work/release-state.json
+            cp .work/resume/release-state.json .work/release-resume-state.json
             python3 -c 'import json, sys; state = json.load(open(".work/release-state.json", encoding="utf-8")); sys.exit(0 if state.get("schema") == "xgc2.release-state.v2" else "resume state is not xgc2.release-state.v2")'
           fi
           if [[ -s .work/resume/release-push-transaction.json ]]; then
@@ -224,6 +225,7 @@ jobs:
             .work/release-lock.json
             .work/release-plan.md
             .work/release-state.json
+            .work/release-resume-state.json
             .work/release-push-transaction.json
             .work/release-node-checkpoints
             .work/release-stage-receipts
@@ -265,7 +267,7 @@ jobs:
         if: ${{ inputs.commit_version_bumps && inputs.bump_release_versions }}
         run: |
           set -euo pipefail
-          if [[ -s .work/resume/release-state.json ]]; then
+          if [[ -s .work/release-resume-state.json ]]; then
             echo "digest-bound release state already contains final version preparation"
           else
             python3 scripts/apply-release-version-bumps.py --root . --plan .work/release-plan.json --lock-output .work/release-lock.json --tracked-lock-output catalog/generated/latest-release-lock.json --transaction-output .work/release-push-transaction.json --apply --commit --push
@@ -308,7 +310,7 @@ jobs:
           [[ "$INPUT_QUALITY_REQUIRED" != true ]] || args+=(--quality-required)
           [[ "$INPUT_SOURCE_TESTS" != true ]] || args+=(--source-tests)
           [[ "$INPUT_REUSE_CI_ARTIFACTS" != true ]] || args+=(--reuse-ci-artifacts)
-          [[ ! -f .work/resume/release-state.json ]] || args+=(--resume-state .work/resume/release-state.json)
+          [[ ! -f .work/release-resume-state.json ]] || args+=(--resume-state .work/release-resume-state.json)
           python3 scripts/schedule-release-plan.py "${args[@]}"
       - name: Upload release evidence
         if: always()

@@ -133,6 +133,20 @@ fi
             for step in job.get("steps", []):
                 self.assertNotIn("${{ inputs.", str(step.get("run", "")))
 
+    def test_resume_state_is_preserved_across_plan_and_execute_jobs(self):
+        workflow_text = (
+            ROOT / ".github" / "workflows" / "release-orchestrator.yml"
+        ).read_text(encoding="utf-8")
+        self.assertIn(
+            "cp .work/resume/release-state.json .work/release-resume-state.json",
+            workflow_text,
+        )
+        self.assertIn(".work/release-resume-state.json", workflow_text)
+        self.assertIn(
+            "args+=(--resume-state .work/release-resume-state.json)",
+            workflow_text,
+        )
+
     def test_release_boolean_input_types_are_explicit(self):
         workflow = """
 on:
