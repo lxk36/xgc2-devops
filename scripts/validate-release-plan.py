@@ -124,14 +124,14 @@ def package_variants(package: str) -> list[tuple[str, str | None]]:
     if package.startswith("ros-noetic-"):
         suffix = package[len("ros-noetic-") :]
         variants.extend(
-            [(f"ros-${{ROS_DISTRO}}-{suffix}", "focal"), (f"ros-\${{ROS_DISTRO}}-{suffix}", "focal")]
+            [(f"ros-${{ROS_DISTRO}}-{suffix}", "focal"), (f"ros-\\${{ROS_DISTRO}}-{suffix}", "focal")]
         )
         variants[0] = (package, "focal")
     elif package.startswith("ros-melodic-"):
         variants[0] = (package, "bionic")
         suffix = package[len("ros-melodic-") :]
         variants.extend(
-            [(f"ros-${{ROS_DISTRO}}-{suffix}", "bionic"), (f"ros-\${{ROS_DISTRO}}-{suffix}", "bionic")]
+            [(f"ros-${{ROS_DISTRO}}-{suffix}", "bionic"), (f"ros-\\${{ROS_DISTRO}}-{suffix}", "bionic")]
         )
     return variants
 

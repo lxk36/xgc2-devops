@@ -23,6 +23,7 @@ submodules=(
   products/common/acados
   products/common/math
   products/common/mavlink-router
+  products/common/protobuf
   products/common/state-machine
   products/common/tbb
   products/common/vrpn-router

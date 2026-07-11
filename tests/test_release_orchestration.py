@@ -2413,6 +2413,24 @@ class CiReconciliationTests(unittest.TestCase):
 
 
 class ReleasePlanValidationTests(unittest.TestCase):
+    def test_ros_package_variants_preserve_shell_placeholder_forms(self):
+        self.assertEqual(
+            plan_validator.package_variants("ros-noetic-xgc2-provider"),
+            [
+                ("ros-noetic-xgc2-provider", "focal"),
+                ("ros-${ROS_DISTRO}-xgc2-provider", "focal"),
+                (r"ros-\${ROS_DISTRO}-xgc2-provider", "focal"),
+            ],
+        )
+        self.assertEqual(
+            plan_validator.package_variants("ros-melodic-xgc2-provider"),
+            [
+                ("ros-melodic-xgc2-provider", "bionic"),
+                ("ros-${ROS_DISTRO}-xgc2-provider", "bionic"),
+                (r"ros-\${ROS_DISTRO}-xgc2-provider", "bionic"),
+            ],
+        )
+
     @staticmethod
     def plan_item(source: str) -> dict[str, object]:
         return {

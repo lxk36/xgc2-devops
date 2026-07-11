@@ -8,7 +8,9 @@ workspaces are disposable Docker build views over those repositories.
 
 ## Directory Classes
 
-- `common/`: system-level libraries and tools that are not tied to ROS, such as `xgc2-acados`, `xgc2-tbb`, `libxgc2-state-machine-dev`, and `mavlink-routerd`.
+- `common/`: system-level libraries and tools that are not tied to ROS, such as
+  `xgc2-acados`, `xgc2-tbb`, the `xgc2-protobuf` schema package,
+  `libxgc2-state-machine-dev`, and `mavlink-routerd`.
 - `utils/`: host-level utility packages and services that are not tied to a
   ROS distribution.
 - `ros1/`: ROS Noetic products, grouped by domain. High-frequency source
