@@ -276,7 +276,7 @@ for run in $(seq -w 1 "${runs}"); do
     set -euo pipefail
     ${source_env}
     cd /xgc2-devops
-    exec /xgc2-devops/helper/uav-auto-takeoff-track.py --ns uav1 --height ${height} \
+    exec rosrun gazebo_sim_examples uav_auto_takeoff_track.py --ns uav1 --height ${height} \
       > /xgc2-devops/${run_dir#${repo_root}/}/auto.log 2>&1
   " >/dev/null
 
