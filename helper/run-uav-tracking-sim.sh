@@ -197,7 +197,7 @@ launch_args=(
 launch_args+=("${extra_roslaunch_args[@]}")
 
 launch_command="$(printf '%q ' roslaunch /xgc2-devops/helper/fs150_uav1_tracking_with_visualization.launch "${launch_args[@]}")"
-auto_command_launch="$(printf '%q ' /xgc2-devops/helper/uav-auto-takeoff-track.py --ns uav1 --height "${height}")"
+auto_command_launch="$(printf '%q ' rosrun gazebo_sim_examples uav_auto_takeoff_track.py --ns uav1 --height "${height}")"
 container_command="
   set -euo pipefail
   if [[ -r /etc/profile.d/xgc-ros1.sh ]]; then . /etc/profile.d/xgc-ros1.sh; else . /opt/ros/noetic/setup.bash; fi

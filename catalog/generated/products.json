@@ -358,7 +358,7 @@
           "ros-melodic-serial",
           "ros-melodic-std-msgs",
           "ros-melodic-std-srvs",
-          "ros-melodic-swarm-ros-bridge (>= 1.1.0-2)",
+          "ros-melodic-swarm-ros-bridge (>= 1.1.0-3)",
           "ros-melodic-tf",
           "ros-melodic-tf2",
           "ros-melodic-tf2-ros",
@@ -454,7 +454,7 @@
         "notes": "The launch defaults match the recovered vehicle startup chain:\nport=/dev/imu, baud=115200, topic=/imu/data_raw, frame_id=imu_link.\nThe IMU deb also installs a one-time udev setup script for /dev/imu:\n/opt/ros/melodic/share/agilex_onboard_imu/scripts/install_imu_udev_rule.sh.\nThe Scout chassis packages are split by ROS package so SDK, messages,\ndriver, and bringup can be installed independently. The compatible Scout\nmessage definitions are maintained in xgc2-scout-msgs and consumed as the\nexternal Debian package ros-melodic-scout-msgs.\nThe AgileX swarm bridge package only provides vehicle-specific YAML and\nlaunch files. It consumes the external generic package\nros-melodic-swarm-ros-bridge.\nThe onboard sensor packages are grouped under onboard/ros1/src/sensors and\nsplit into independent Debian packages for RealSense camera, RealSense\ndescription assets, and RoboSense LiDAR.\nThe optional autostart package installs systemd units, the IMU udev rule,\nlightweight ROS readiness probes, and default swarm bridge configuration.\nIt enables xgc2-agilex-onboard.target but does not start the target during\ninstallation.\nInternal Debian dependencies include >= version constraints so driver and\nbringup packages do not silently bind to older SDK/driver packages.\n",
         "smoke_test": "rospack find agilex_onboard_imu\nroslaunch --files agilex_onboard_imu imu_msg.launch\nrospack find scout_base\nroslaunch --files scout_bringup scout_minimal.launch\nrospack find agilex_swarm_ros_bridge\nroslaunch --files agilex_swarm_ros_bridge agilex_swarm_ros_bridge.launch\n"
       },
-      "version": "0.1.1-11"
+      "version": "0.1.1-12"
     },
     {
       "_source": "products/robotics/fs150/.xgc2/product.yml",
@@ -729,7 +729,7 @@
         "notes": "This package is the generic bridge binary. Robot-specific topic and peer\nconfiguration should live in the consuming robot product, not in this\npackage. The current compiled message set is sensor_msgs/Imu,\ngeometry_msgs/Twist, and std_msgs/String.\n",
         "smoke_test": "rospack find swarm_ros_bridge\nroslaunch --files swarm_ros_bridge test.launch\n"
       },
-      "version": "1.1.0-2"
+      "version": "1.1.0-3"
     },
     {
       "_source": "products/ros1/controller/.xgc2/product.yml",
@@ -1021,7 +1021,7 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-estimator-hover-thrust\n",
         "smoke_test": "roslaunch --files hover_thrust_estimator hover_thrust_estimator.launch\n"
       },
-      "version": "1.1.24-5"
+      "version": "1.1.24-6"
     },
     {
       "_source": "products/ros1/perception/rigid-state/.xgc2/product.yml",
@@ -1072,7 +1072,7 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-estimator-rigid-state\n",
         "smoke_test": "roslaunch --files estimator_vrpn_px4_rotor_state vrpn_px4_rotor_state_estimator.launch\nroslaunch --files estimator_vrpn_ugv_state vrpn_ugv_state_estimator.launch\n"
       },
-      "version": "1.1.6-5"
+      "version": "1.1.6-6"
     },
     {
       "_source": "products/ros1/perception/slam/.xgc2/product.yml",
@@ -1513,8 +1513,8 @@
       "_source": "products/ros1/simulator/gazebo-sim/.xgc2/product.yml",
       "apt": {
         "depends": [
-          "ros-noetic-xgc2-gazebo-sim-manager (>= 1.1.0-21)",
-          "ros-noetic-xgc2-gazebo-sim-examples (>= 1.1.0-21)",
+          "ros-noetic-xgc2-gazebo-sim-manager (>= 1.1.0-23)",
+          "ros-noetic-xgc2-gazebo-sim-examples (>= 1.1.0-23)",
           "ros-noetic-xgc2-robot-visualization (>= 0.1.0-5)",
           "ros-noetic-xgc2-gazebo-sim-visualization (>= 1.1.0-11)",
           "ros-noetic-xgc2-gazebo-sim-vrpn-bridge (>= 1.1.0-13)",
@@ -1559,9 +1559,9 @@
       "usage": {
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-gazebo-sim\n",
         "notes": "This repository is the verified Gazebo simulation suite entrypoint. Source packages live in child product repositories.\nThe aggregate package uses minimum child package versions so apt upgrades stale installed children when a quickstart requires newer launch assets.\nChild repositories may publish compatible packaging revisions independently; bump this product version only when the aggregate dependency set or compatibility contract changes.\n",
-        "smoke_test": "dpkg -s ros-noetic-xgc2-gazebo-sim\nroslaunch --files gazebo_sim_examples fs150_ugv_vrpn_stack.launch\nroslaunch --files gazebo_sim_visualization fs150_vrpn_tracking_rviz.launch rviz:=false\nroslaunch --files gazebo_sim_scout simple.launch rviz:=false\nroslaunch --files gazebo_sim_px4_1_12 iris.launch gui:=false\nroslaunch --files gazebo_sim_px4_1_14 iris.launch gui:=false\nroslaunch --files gazebo_sim_fs150_sitl fs150.launch gui:=false\n"
+        "smoke_test": "dpkg -s ros-noetic-xgc2-gazebo-sim\nroslaunch --files gazebo_sim_examples fs150_ugv_vrpn_stack.launch\nrosrun gazebo_sim_examples uav_auto_takeoff_track.py --help\nroslaunch --files gazebo_sim_visualization fs150_vrpn_tracking_rviz.launch rviz:=false\nroslaunch --files gazebo_sim_scout simple.launch rviz:=false\nroslaunch --files gazebo_sim_px4_1_12 iris.launch gui:=false\nroslaunch --files gazebo_sim_px4_1_14 iris.launch gui:=false\nroslaunch --files gazebo_sim_fs150_sitl fs150.launch gui:=false\n"
       },
-      "version": "1.1.0-35"
+      "version": "1.1.0-37"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/agilex/.xgc2/product.yml",
@@ -1937,9 +1937,12 @@
           "ros-noetic-xgc2-gazebo-sim-scout (>= 0.4.9-23)",
           "ros-noetic-xgc2-gazebo-sim-worlds (>= 1.1.0-10)",
           "ros-noetic-xgc2-multirotor-controller (>= 1.1.18-4)",
+          "ros-noetic-xgc2-px4-multirotor-controller-msgs (>= 1.2.0-3)",
           "ros-noetic-xgc2-ugv-controller (>= 1.1.4-9)",
-          "ros-noetic-xgc2-estimator-hover-thrust (>= 1.1.24-5)",
-          "ros-noetic-xgc2-estimator-rigid-state (>= 1.1.6-5)",
+          "ros-noetic-xgc2-estimator-hover-thrust (>= 1.1.24-6)",
+          "ros-noetic-xgc2-estimator-rigid-state (>= 1.1.6-6)",
+          "ros-noetic-xgc2-estimator-rigid-state-msgs (>= 1.2.0-3)",
+          "ros-noetic-std-msgs",
           "xgc2-vrpn-router (>= 0.1.0-4+focal)"
         ],
         "distribution": "focal",
@@ -1982,9 +1985,9 @@
       "usage": {
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-gazebo-sim-manager ros-noetic-xgc2-gazebo-sim-examples\n",
         "notes": "These are Gazebo Classic simulation tools. The full suite is installed through ros-noetic-xgc2-gazebo-sim-all from xgc2-gazebo-sim.\n",
-        "smoke_test": "roslaunch --files gazebo_session_manager session_manager.launch world_name:=/tmp/xgc2-empty.world\nroslaunch --files gazebo_sim_examples fs150_ugv_vrpn_stack.launch\nroslaunch --files gazebo_sim_examples fs150_uav1_nmpc_tracking.launch\nroslaunch --files gazebo_sim_visualization gazebo_auto_visualization_rviz.launch rviz:=false\nroslaunch --files gazebo_sim_vrpn_bridge vrpn_server.launch auto_track_known_models:=true\nroslaunch --files gazebo_sim_vrpn_bridge vrpn_client.launch trackers:=[uav1]\n"
+        "smoke_test": "roslaunch --files gazebo_session_manager session_manager.launch world_name:=/tmp/xgc2-empty.world\nroslaunch --files gazebo_sim_examples fs150_ugv_vrpn_stack.launch\nroslaunch --files gazebo_sim_examples fs150_uav1_nmpc_tracking.launch\nrosrun gazebo_sim_examples uav_auto_takeoff_track.py --help\nroslaunch --files gazebo_sim_visualization gazebo_auto_visualization_rviz.launch rviz:=false\nroslaunch --files gazebo_sim_vrpn_bridge vrpn_server.launch auto_track_known_models:=true\nroslaunch --files gazebo_sim_vrpn_bridge vrpn_client.launch trackers:=[uav1]\n"
       },
-      "version": "1.1.0-21"
+      "version": "1.1.0-23"
     },
     {
       "_source": "products/ros1/simulator/swarm-sync-sim/.xgc2/product.yml",
@@ -2154,6 +2157,10 @@
       "_source": "products/webui/lichtblick-packaging/.xgc2/product.yml",
       "apt": {
         "depends": [
+          "ca-certificates",
+          "libc6",
+          "libgcc-s1",
+          "libstdc++6",
           "libasound2",
           "libgtk-3-0",
           "libnotify4",
@@ -2167,9 +2174,10 @@
         ],
         "distribution": "focal,jammy,noble",
         "install": [
-          "xgc2-lichtblick"
+          "xgc2-lichtblick-web"
         ],
         "packages": [
+          "xgc2-lichtblick-web",
           "xgc2-lichtblick"
         ]
       },
@@ -2183,10 +2191,14 @@
         "desktop"
       ],
       "id": "xgc2-lichtblick",
-      "kind": "desktop-apt",
-      "name": "XGC2 Lichtblick Desktop",
+      "kind": "mixed",
+      "name": "XGC2 Lichtblick Web and Desktop",
       "ownership": {
         "paths": [
+          "/usr/bin/xgc2-lichtblick-web",
+          "/usr/lib/xgc2/lichtblick-web",
+          "/etc/xgc2/lichtblick-web.env",
+          "/usr/share/doc/xgc2-lichtblick-web",
           "/opt/Lichtblick",
           "/usr/bin/lichtblick",
           "/usr/share/applications/lichtblick.desktop",
@@ -2204,9 +2216,9 @@
       },
       "release": {
         "apt_versions": {
-          "focal": "1.25.0-4~focal",
-          "jammy": "1.25.0-4~jammy",
-          "noble": "1.25.0-4~noble"
+          "focal": "1.25.0-6~focal",
+          "jammy": "1.25.0-6~jammy",
+          "noble": "1.25.0-6~noble"
         },
         "ci_workflow": "ci.yml",
         "ref": "main",
@@ -2214,13 +2226,13 @@
         "workflow": "release.yml"
       },
       "schema": "xgc2.product.v1",
-      "summary": "Pinned, tested Lichtblick desktop packages for XGC2 Ubuntu workstations.",
+      "summary": "Pinned Lichtblick browser server with an optional Electron desktop package.",
       "usage": {
-        "install": "sudo apt update\nsudo apt install xgc2-lichtblick",
-        "notes": "This package owns the Lichtblick executable and desktop integration. It cannot be co-installed with the upstream lichtblick Debian package. Its built-in Electron updater is disabled; install upgrades through APT.",
-        "smoke_test": "dpkg-query -W -f='${Status} ${Version}\\n' xgc2-lichtblick"
+        "install": "sudo apt update\nsudo apt install xgc2-lichtblick-web",
+        "notes": "xgc2-lichtblick-web is the default browser-based package and never opens a desktop window. It recommends the release-matched Foxglove bridge (Noetic on focal, Humble on jammy, and Jazzy on noble) so standard installs add the live-data bridge automatically. The optional xgc2-lichtblick package retains Electron desktop integration and disables its built-in updater; install upgrades through APT.",
+        "smoke_test": "xgc2-lichtblick-web --help\ncurl --fail http://127.0.0.1:8080/healthz"
       },
-      "version": "1.25.0-4"
+      "version": "1.25.0-6"
     }
   ],
   "schema": "xgc2.catalog.v1"
