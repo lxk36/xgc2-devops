@@ -1567,10 +1567,10 @@
       "_source": "products/ros1/simulator/gazebo-sim/.xgc2/product.yml",
       "apt": {
         "depends": [
-          "ros-noetic-xgc2-gazebo-sim-manager (>= 1.1.0-23)",
-          "ros-noetic-xgc2-gazebo-sim-examples (>= 1.1.0-23)",
+          "ros-noetic-xgc2-gazebo-sim-manager (>= 1.1.0-24)",
+          "ros-noetic-xgc2-gazebo-sim-examples (>= 1.1.0-24)",
           "ros-noetic-xgc2-robot-visualization (>= 0.1.0-5)",
-          "ros-noetic-xgc2-gazebo-sim-visualization (>= 1.1.0-11)",
+          "ros-noetic-xgc2-gazebo-sim-visualization (>= 1.1.0-12)",
           "ros-noetic-xgc2-gazebo-sim-vrpn-bridge (>= 1.1.0-13)",
           "ros-noetic-xgc2-gazebo-sim-worlds (>= 1.1.0-10)",
           "ros-noetic-xgc2-gazebo-sim-scout (>= 0.4.9-23)",
@@ -1615,7 +1615,7 @@
         "notes": "This repository is the verified Gazebo simulation suite entrypoint. Source packages live in child product repositories.\nThe aggregate package uses minimum child package versions so apt upgrades stale installed children when a quickstart requires newer launch assets.\nChild repositories may publish compatible packaging revisions independently; bump this product version only when the aggregate dependency set or compatibility contract changes.\n",
         "smoke_test": "dpkg -s ros-noetic-xgc2-gazebo-sim\nroslaunch --files gazebo_sim_examples fs150_ugv_vrpn_stack.launch\nrosrun gazebo_sim_examples uav_auto_takeoff_track.py --help\nroslaunch --files gazebo_sim_visualization fs150_vrpn_tracking_rviz.launch rviz:=false\nroslaunch --files gazebo_sim_scout simple.launch rviz:=false\nroslaunch --files gazebo_sim_px4_1_12 iris.launch gui:=false\nroslaunch --files gazebo_sim_px4_1_14 iris.launch gui:=false\nroslaunch --files gazebo_sim_fs150_sitl fs150.launch gui:=false\n"
       },
-      "version": "1.1.0-37"
+      "version": "1.1.0-39"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/agilex/.xgc2/product.yml",
@@ -1852,6 +1852,7 @@
       "_source": "products/ros1/simulator/gazebo-sim/visualization/.xgc2/product.yml",
       "apt": {
         "depends": [
+          "ros-noetic-foxglove-msgs",
           "ros-noetic-gazebo-msgs",
           "ros-noetic-geometry-msgs",
           "ros-noetic-mavros-msgs",
@@ -1887,12 +1888,12 @@
         ]
       },
       "schema": "xgc2.product.v1",
-      "summary": "Gazebo Classic adapter for reusable XGC2 RViz robot visualizers.",
+      "summary": "Gazebo Classic adapter for reusable XGC2 RViz and Lichtblick robot visualizers.",
       "usage": {
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-gazebo-sim-visualization\n",
         "smoke_test": "roslaunch --files gazebo_sim_visualization gazebo_auto_visualization_rviz.launch rviz:=false\n"
       },
-      "version": "1.1.0-11"
+      "version": "1.1.0-12"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/vrpn_bridge/.xgc2/product.yml",
@@ -1985,7 +1986,7 @@
           "ros-noetic-vrpn-client-ros",
           "ros-noetic-rviz",
           "ros-noetic-robot-state-publisher",
-          "ros-noetic-xgc2-gazebo-sim-visualization (>= 1.1.0-11)",
+          "ros-noetic-xgc2-gazebo-sim-visualization (>= 1.1.0-12)",
           "ros-noetic-xgc2-gazebo-sim-vrpn-bridge (>= 1.1.0-13)",
           "ros-noetic-xgc2-gazebo-sim-fs150-sitl (>= 1.1.0-10)",
           "ros-noetic-xgc2-gazebo-sim-scout (>= 0.4.9-23)",
@@ -2041,7 +2042,7 @@
         "notes": "These are Gazebo Classic simulation tools. The full suite is installed through ros-noetic-xgc2-gazebo-sim-all from xgc2-gazebo-sim.\n",
         "smoke_test": "roslaunch --files gazebo_session_manager session_manager.launch world_name:=/tmp/xgc2-empty.world\nroslaunch --files gazebo_sim_examples fs150_ugv_vrpn_stack.launch\nroslaunch --files gazebo_sim_examples fs150_uav1_nmpc_tracking.launch\nrosrun gazebo_sim_examples uav_auto_takeoff_track.py --help\nroslaunch --files gazebo_sim_visualization gazebo_auto_visualization_rviz.launch rviz:=false\nroslaunch --files gazebo_sim_vrpn_bridge vrpn_server.launch auto_track_known_models:=true\nroslaunch --files gazebo_sim_vrpn_bridge vrpn_client.launch trackers:=[uav1]\n"
       },
-      "version": "1.1.0-23"
+      "version": "1.1.0-24"
     },
     {
       "_source": "products/ros1/simulator/swarm-sync-sim/.xgc2/product.yml",
@@ -2270,9 +2271,9 @@
       },
       "release": {
         "apt_versions": {
-          "focal": "1.25.0-6~focal",
-          "jammy": "1.25.0-6~jammy",
-          "noble": "1.25.0-6~noble"
+          "focal": "1.25.0-7~focal",
+          "jammy": "1.25.0-7~jammy",
+          "noble": "1.25.0-7~noble"
         },
         "ci_workflow": "ci.yml",
         "ref": "main",
@@ -2286,7 +2287,7 @@
         "notes": "xgc2-lichtblick-web is the default browser-based package and never opens a desktop window. It recommends the release-matched Foxglove bridge (Noetic on focal, Humble on jammy, and Jazzy on noble) so standard installs add the live-data bridge automatically. The optional xgc2-lichtblick package retains Electron desktop integration and disables its built-in updater; install upgrades through APT.",
         "smoke_test": "xgc2-lichtblick-web --help\ncurl --fail http://127.0.0.1:8080/healthz"
       },
-      "version": "1.25.0-6"
+      "version": "1.25.0-7"
     }
   ],
   "schema": "xgc2.catalog.v1"
