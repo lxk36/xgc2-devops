@@ -9,6 +9,7 @@
 # find_package() prefers source-built configs over /opt/ros/noetic.
 cmake products/common/math
 cmake products/common/state-machine
+cmake products/common/adapter-link-client-cpp
 
 catkin products/ros1/common/ros1-msgs/state_machine_msgs
 catkin products/ros1/common/ros1-msgs/hover_thrust_estimator_msgs
@@ -16,7 +17,8 @@ catkin products/ros1/common/ros1-msgs/rigid_state_estimator_msgs
 catkin products/ros1/common/ros1-msgs/multirotor_reference_trajectory_msgs
 catkin products/ros1/common/ros1-msgs/px4_multirotor_controller_msgs
 catkin products/ros1/common/ros1-msgs/unicycle_reference_trajectory_msgs
-catkin products/ros1/communication/ros1-adapter/src/xgc_ros1_adapter
+catkin products/ros1/communication/ros1-adapter/src/xgc_px4_multirotor_ros1_adapter
+catkin products/ros1/communication/ros1-adapter/src/xgc_scout_mini_ros1_adapter
 catkin products/ros1/controller/multirotor-controller/multirotor_reference_trajectory
 catkin products/ros1/controller/multirotor-controller/px4_multirotor_controller
 catkin products/ros1/controller/ugv-controller/unicycle_reference_trajectory

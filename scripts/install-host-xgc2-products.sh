@@ -144,7 +144,7 @@ safe_source_prefixes = (
 )
 safe_integration_products = {
     "xgc2-ros-msgs",
-    "xgc2-ros1-adapter",
+    "xgc2-ros1-adapters",
     "xgc2-ros1-utils",
     "xgc2-runtime-sync",
 }

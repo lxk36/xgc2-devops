@@ -21,6 +21,7 @@ fi
 
 submodules=(
   products/common/acados
+  products/common/adapter-link-client-cpp
   products/common/math
   products/common/mavlink-router
   products/common/protobuf

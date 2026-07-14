@@ -150,3 +150,7 @@
 	path = products/webui/lichtblick-packaging
 	url = git@github.com:lxk36/xgc2-lichtblick-packaging.git
 	branch = main
+[submodule "products/common/adapter-link-client-cpp"]
+	path = products/common/adapter-link-client-cpp
+	url = git@github.com:lxk36/xgc2-adapter-link-client-cpp.git
+	branch = main

@@ -55,6 +55,55 @@
       "version": "0.1.0-10"
     },
     {
+      "_source": "products/common/adapter-link-client-cpp/.xgc2/product.yml",
+      "apt": {
+        "depends": [
+          "xgc2-protobuf-dev",
+          "libgrpc++-dev",
+          "libprotobuf-dev"
+        ],
+        "distribution": "focal,jammy,noble",
+        "install": [
+          "libxgc2-adapter-link-client-dev"
+        ],
+        "packages": [
+          "libxgc2-adapter-link-client-dev"
+        ]
+      },
+      "id": "libxgc2-adapter-link-client-dev",
+      "kind": "toolchain-apt",
+      "name": "XGC2 AdapterLink C++ Client",
+      "ownership": {
+        "paths": [
+          "/usr/include/xgc2/adapter_link",
+          "/usr/include/xgc",
+          "/usr/lib/*/libxgc2_adapter_link_client.so*",
+          "/usr/lib/*/libxgc2_adapter_link_protocol.so*",
+          "/usr/lib/*/cmake/xgc2_adapter_link_client",
+          "/usr/lib/*/pkgconfig/xgc2-adapter-link-client.pc"
+        ]
+      },
+      "release": {
+        "apt_versions": {
+          "focal": "0.1.0-1~focal",
+          "jammy": "0.1.0-1~jammy",
+          "noble": "0.1.0-1~noble"
+        },
+        "ci_workflow": "ci.yml",
+        "ref": "main",
+        "repository": "lxk36/xgc2-adapter-link-client-cpp",
+        "workflow": "release.yml"
+      },
+      "schema": "xgc2.product.v1",
+      "summary": "ROS-independent C++ AdapterLink client, generated protocol bindings, and development metadata for native XGC2 robot adapters.",
+      "usage": {
+        "install": "sudo apt update\nsudo apt install libxgc2-adapter-link-client-dev\n",
+        "notes": "CMake consumers use find_package(xgc2_adapter_link_client REQUIRED CONFIG)\nand link xgc2::adapter_link_client. The package exports generated XGC2\nprotobuf C++ headers and xgc2::adapter_link_protocol; consumers must not\ngenerate a second binding copy.\n",
+        "smoke_test": "pkg-config --modversion xgc2-adapter-link-client\n"
+      },
+      "version": "0.1.0-1"
+    },
+    {
       "_source": "products/common/math/.xgc2/product.yml",
       "apt": {
         "depends": [
@@ -173,9 +222,9 @@
       },
       "release": {
         "apt_versions": {
-          "focal": "0.1.0-2~focal",
-          "jammy": "0.1.0-2~jammy",
-          "noble": "0.1.0-2~noble"
+          "focal": "0.2.0-1~focal",
+          "jammy": "0.2.0-1~jammy",
+          "noble": "0.2.0-1~noble"
         },
         "ci_workflow": "ci.yml",
         "ref": "master",
@@ -189,7 +238,7 @@
         "notes": "This package installs schema sources and language-neutral discovery metadata only.\nConsumers generate or own their language runtime bindings explicitly.\n",
         "smoke_test": "cmake --find-package -DNAME=xgc2_protobuf -DCOMPILER_ID=GNU -DLANGUAGE=CXX -DMODE=EXIST\npkg-config --variable=proto_root xgc2-protobuf\n"
       },
-      "version": "0.1.0-2"
+      "version": "0.2.0-1"
     },
     {
       "_source": "products/common/state-machine/.xgc2/product.yml",
@@ -597,49 +646,54 @@
       "_source": "products/ros1/communication/ros1-adapter/.xgc2/product.yml",
       "apt": {
         "depends": [
-          "libgrpc++1",
-          "libprotobuf17",
-          "libre2-5",
+          "libxgc2-adapter-link-client-dev",
+          "xgc2-protobuf-dev",
           "ros-noetic-geometry-msgs",
           "ros-noetic-mavros-msgs",
+          "ros-noetic-nav-msgs",
           "ros-noetic-roscpp",
-          "ros-noetic-sensor-msgs",
-          "ros-noetic-std-msgs",
-          "ros-noetic-tf2"
+          "ros-noetic-scout-msgs",
+          "ros-noetic-sensor-msgs"
         ],
         "distribution": "focal",
         "install": [
-          "ros-noetic-xgc2-ros1-adapter"
+          "ros-noetic-xgc2-px4-multirotor-adapter",
+          "ros-noetic-xgc2-scout-mini-adapter"
         ],
         "packages": [
-          "ros-noetic-xgc2-ros1-adapter"
+          "ros-noetic-xgc2-px4-multirotor-adapter",
+          "ros-noetic-xgc2-scout-mini-adapter"
         ]
       },
-      "id": "xgc2-ros1-adapter",
+      "id": "xgc2-ros1-adapters",
       "kind": "ros1-apt",
-      "name": "XGC2 ROS1 Adapter",
+      "name": "XGC2 ROS1 Robot Adapters",
       "ownership": {
         "paths": [
-          "/opt/ros/noetic/share/xgc_ros1_adapter",
-          "/opt/ros/noetic/include/xgc_ros1_adapter",
-          "/opt/ros/noetic/lib/xgc_ros1_adapter/xgc_ros1_adapter_node"
+          "/opt/ros/noetic/share/xgc_px4_multirotor_ros1_adapter",
+          "/opt/ros/noetic/include/xgc_px4_multirotor_ros1_adapter",
+          "/opt/ros/noetic/lib/xgc_px4_multirotor_ros1_adapter/xgc_px4_multirotor_ros1_adapter_node",
+          "/opt/ros/noetic/share/xgc_scout_mini_ros1_adapter",
+          "/opt/ros/noetic/include/xgc_scout_mini_ros1_adapter",
+          "/opt/ros/noetic/lib/xgc_scout_mini_ros1_adapter/xgc_scout_mini_ros1_adapter_node"
         ]
       },
       "ros": {
         "distro": "noetic",
         "packages": [
-          "xgc_ros1_adapter"
+          "xgc_px4_multirotor_ros1_adapter",
+          "xgc_scout_mini_ros1_adapter"
         ],
         "workspace": "catkin"
       },
       "schema": "xgc2.product.v1",
-      "summary": "ROS1 semantic adapter for XGC2 Go Core robot state and command bridging.",
+      "summary": "Separate PX4 multirotor and Scout Mini ROS1 semantic adapters.",
       "usage": {
-        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-ros1-adapter\n",
-        "notes": "The runtime process is managed by XGC Go Core as ros1-adapter and connects\nto the AdapterIngress gRPC UDS, defaulting to /tmp/xgc2/adapter-ingress.sock.\n",
-        "smoke_test": "rospack find xgc_ros1_adapter\ntest -x /opt/ros/noetic/lib/xgc_ros1_adapter/xgc_ros1_adapter_node\n"
+        "install": "sudo apt update\nsudo apt install \\\n  ros-noetic-xgc2-px4-multirotor-adapter \\\n  ros-noetic-xgc2-scout-mini-adapter\n",
+        "notes": "Each process advertises exactly one AdapterLink profile and can manage all\nsame-type robots in the immutable AdapterPlan for its experiment run.\n",
+        "smoke_test": "rospack find xgc_px4_multirotor_ros1_adapter\nrospack find xgc_scout_mini_ros1_adapter\ntest -x /opt/ros/noetic/lib/xgc_px4_multirotor_ros1_adapter/xgc_px4_multirotor_ros1_adapter_node\ntest -x /opt/ros/noetic/lib/xgc_scout_mini_ros1_adapter/xgc_scout_mini_ros1_adapter_node\n"
       },
-      "version": "0.1.0-4"
+      "version": "0.3.0-2"
     },
     {
       "_source": "products/ros1/communication/runtime-sync/.xgc2/product.yml",
