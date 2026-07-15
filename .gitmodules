@@ -154,3 +154,7 @@
 	path = products/common/adapter-link-client-cpp
 	url = git@github.com:lxk36/xgc2-adapter-link-client-cpp.git
 	branch = main
+[submodule "products/ros1/communication/ros1-automation-gateway"]
+	path = products/ros1/communication/ros1-automation-gateway
+	url = git@github.com:lxk36/xgc2-ros1-automation-gateway.git
+	branch = noetic

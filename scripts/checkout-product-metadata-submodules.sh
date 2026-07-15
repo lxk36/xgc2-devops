@@ -34,6 +34,7 @@ submodules=(
   products/ros1/common/ros1-msgs
   products/ros1/common/ros1-utils
   products/ros1/communication/ros1-adapter
+  products/ros1/communication/ros1-automation-gateway
   products/ros1/communication/runtime-sync
   products/ros1/communication/swarm-ros-bridge
   products/ros1/controller
