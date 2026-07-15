@@ -189,6 +189,12 @@ def dependency_replacements(old_dependency: str, new_dependency: str) -> dict[st
         return {}
     old_package, old_suffix = split_dependency(old_dependency)
     new_package, new_suffix = split_dependency(new_dependency)
+    # A bare, unchanged metadata dependency only declares that the package is
+    # needed. It must not authorize downgrading a stronger relationship that a
+    # packaging script intentionally emits (for example libasound2 on Noble).
+    # With no planned name or version change there is nothing to rewrite.
+    if old_dependency == new_dependency and not old_suffix:
+        return {}
     replacements = {old_dependency: new_dependency}
     old_ros_prefix = "ros-noetic-"
     new_ros_prefix = "ros-noetic-"

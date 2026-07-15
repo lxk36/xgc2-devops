@@ -2631,6 +2631,28 @@ class VersionBumpSafetyTests(unittest.TestCase):
         self.assertIn("xgc2-fs150-description (>= 0.1.0-4)", text)
         self.assertNotIn(") (", text)
 
+    def test_unchanged_bare_dependency_preserves_stronger_script_relation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory)
+            scripts = source / ".xgc2" / "scripts"
+            scripts.mkdir(parents=True)
+            path = scripts / "build_deb.sh"
+            path.write_text(
+                'dependency = "libasound2 (>= 1.0.16)"\n'
+                'fallback = "libasound2 (>= 1.0.16)"\n',
+                encoding="utf-8",
+            )
+            original = path.read_bytes()
+            changed = version_bumper.update_script_dependency_versions(
+                source,
+                ["libasound2"],
+                ["libasound2"],
+                apply=True,
+            )
+            rewritten = path.read_bytes()
+        self.assertEqual(changed, set())
+        self.assertEqual(rewritten, original)
+
     def test_distribution_specific_alternative_dependency_is_byte_stable(self):
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory)
