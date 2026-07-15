@@ -85,9 +85,9 @@
       },
       "release": {
         "apt_versions": {
-          "focal": "0.1.0-1~focal",
-          "jammy": "0.1.0-1~jammy",
-          "noble": "0.1.0-1~noble"
+          "focal": "0.2.0-1~focal",
+          "jammy": "0.2.0-1~jammy",
+          "noble": "0.2.0-1~noble"
         },
         "ci_workflow": "ci.yml",
         "ref": "main",
@@ -101,7 +101,7 @@
         "notes": "CMake consumers use find_package(xgc2_adapter_link_client REQUIRED CONFIG)\nand link xgc2::adapter_link_client. The package exports generated XGC2\nprotobuf C++ headers and xgc2::adapter_link_protocol; consumers must not\ngenerate a second binding copy.\n",
         "smoke_test": "pkg-config --modversion xgc2-adapter-link-client\n"
       },
-      "version": "0.1.0-1"
+      "version": "0.2.0-1"
     },
     {
       "_source": "products/common/math/.xgc2/product.yml",
@@ -222,9 +222,9 @@
       },
       "release": {
         "apt_versions": {
-          "focal": "0.2.0-1~focal",
-          "jammy": "0.2.0-1~jammy",
-          "noble": "0.2.0-1~noble"
+          "focal": "0.3.0-1~focal",
+          "jammy": "0.3.0-1~jammy",
+          "noble": "0.3.0-1~noble"
         },
         "ci_workflow": "ci.yml",
         "ref": "master",
@@ -238,7 +238,7 @@
         "notes": "This package installs schema sources and language-neutral discovery metadata only.\nConsumers generate or own their language runtime bindings explicitly.\n",
         "smoke_test": "cmake --find-package -DNAME=xgc2_protobuf -DCOMPILER_ID=GNU -DLANGUAGE=CXX -DMODE=EXIST\npkg-config --variable=proto_root xgc2-protobuf\n"
       },
-      "version": "0.2.0-1"
+      "version": "0.3.0-1"
     },
     {
       "_source": "products/common/state-machine/.xgc2/product.yml",
@@ -693,7 +693,63 @@
         "notes": "Each process advertises exactly one AdapterLink profile and can manage all\nsame-type robots in the immutable AdapterPlan for its experiment run.\n",
         "smoke_test": "rospack find xgc_px4_multirotor_ros1_adapter\nrospack find xgc_scout_mini_ros1_adapter\ntest -x /opt/ros/noetic/lib/xgc_px4_multirotor_ros1_adapter/xgc_px4_multirotor_ros1_adapter_node\ntest -x /opt/ros/noetic/lib/xgc_scout_mini_ros1_adapter/xgc_scout_mini_ros1_adapter_node\n"
       },
-      "version": "0.3.0-2"
+      "version": "0.4.0-1"
+    },
+    {
+      "_source": "products/ros1/communication/ros1-automation-gateway/.xgc2/product.yml",
+      "apt": {
+        "depends": [
+          "libjsoncpp1",
+          "ros-noetic-mavros-msgs",
+          "ros-noetic-ros-babel-fish",
+          "ros-noetic-roscpp",
+          "ros-noetic-roslib",
+          "ros-noetic-std-msgs",
+          "ros-noetic-std-srvs"
+        ],
+        "distribution": "focal",
+        "install": [
+          "ros-noetic-xgc2-ros1-automation-gateway"
+        ],
+        "packages": [
+          "ros-noetic-xgc2-ros1-automation-gateway"
+        ]
+      },
+      "groups": [
+        "ros1",
+        "communication",
+        "automation"
+      ],
+      "id": "xgc2-ros1-automation-gateway",
+      "kind": "ros1-apt",
+      "name": "XGC2 ROS1 Automation Gateway",
+      "ownership": {
+        "paths": [
+          "/opt/ros/noetic/share/xgc_ros1_automation_gateway",
+          "/opt/ros/noetic/lib/xgc_ros1_automation_gateway/xgc_ros1_automation_gateway_node"
+        ]
+      },
+      "release": {
+        "ci_workflow": "ci.yml",
+        "ref": "noetic",
+        "repository": "lxk36/xgc2-ros1-automation-gateway",
+        "workflow": "release.yml"
+      },
+      "ros": {
+        "distro": "noetic",
+        "packages": [
+          "xgc_ros1_automation_gateway"
+        ],
+        "workspace": "catkin"
+      },
+      "schema": "xgc2.product.v1",
+      "summary": "Local Unix-socket gateway for dynamically publishing ROS1 messages and calling ROS1 services from XGC2 workflows.",
+      "usage": {
+        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-ros1-automation-gateway\n",
+        "notes": "XGC2 Agent starts one process per ROS context on demand and supplies a\ncontext-specific Unix socket. The package does not install a systemd unit\nor expose a network listener.\n",
+        "smoke_test": "rospack find xgc_ros1_automation_gateway\ntest -x /opt/ros/noetic/lib/xgc_ros1_automation_gateway/xgc_ros1_automation_gateway_node\n"
+      },
+      "version": "0.1.0-1"
     },
     {
       "_source": "products/ros1/communication/runtime-sync/.xgc2/product.yml",
@@ -2271,9 +2327,9 @@
       },
       "release": {
         "apt_versions": {
-          "focal": "1.25.0-7~focal",
-          "jammy": "1.25.0-7~jammy",
-          "noble": "1.25.0-7~noble"
+          "focal": "1.25.0-8~focal",
+          "jammy": "1.25.0-8~jammy",
+          "noble": "1.25.0-8~noble"
         },
         "ci_workflow": "ci.yml",
         "ref": "main",
@@ -2287,7 +2343,7 @@
         "notes": "xgc2-lichtblick-web is the default browser-based package and never opens a desktop window. It recommends the release-matched Foxglove bridge (Noetic on focal, Humble on jammy, and Jazzy on noble) so standard installs add the live-data bridge automatically. The optional xgc2-lichtblick package retains Electron desktop integration and disables its built-in updater; install upgrades through APT.",
         "smoke_test": "xgc2-lichtblick-web --help\ncurl --fail http://127.0.0.1:8080/healthz"
       },
-      "version": "1.25.0-7"
+      "version": "1.25.0-8"
     }
   ],
   "schema": "xgc2.catalog.v1"
