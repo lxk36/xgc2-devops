@@ -45,6 +45,8 @@ BUILD_ARTIFACT_JOB_MARKERS = {
     "package_debs.sh",
     "dpkg-deb",
 }
+BUILD_ARTIFACT_SCHEMA = "xgc2.build-artifact.v1"
+LEGACY_BUILD_ARTIFACT_SCHEMAS = {"xgc2.artifact-manifest.v1"}
 PREFERRED_RELEASE_WORKFLOWS = (
     "release.yml",
     "release.yaml",
@@ -102,6 +104,16 @@ def host_manifest_directory_precreated(text: str) -> bool:
             r"[^\n]*\.ci/build-manifests(?:\"|\s|$)",
             text,
         )
+    )
+
+
+def build_manifest_tool_uses_current_schema(source_dir: Path) -> bool:
+    tool = source_dir / ".xgc2" / "scripts" / "xgc2_artifact_manifest.py"
+    if not tool.is_file():
+        return False
+    text = tool.read_text(encoding="utf-8", errors="ignore")
+    return BUILD_ARTIFACT_SCHEMA in text and not any(
+        schema in text for schema in LEGACY_BUILD_ARTIFACT_SCHEMAS
     )
 
 
@@ -362,6 +374,17 @@ def audit_product(root: Path, product: dict[str, Any]) -> list[dict[str, str]]:
     ci_workflow = workflow_dir / str(release_config.get("ci_workflow", "ci.yml"))
     release_workflow = infer_release_workflow(source_dir, product)
     issues: list[dict[str, str]] = []
+
+    if not build_manifest_tool_uses_current_schema(source_dir):
+        issues.append(
+            issue(
+                product,
+                "build-manifest-schema",
+                source_dir / ".xgc2" / "scripts" / "xgc2_artifact_manifest.py",
+                root,
+                f"trusted artifact generator must emit {BUILD_ARTIFACT_SCHEMA}",
+            )
+        )
 
     if push_requires_version_bump(source_dir):
         issues.append(

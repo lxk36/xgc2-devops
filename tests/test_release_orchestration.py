@@ -225,6 +225,33 @@ on:
             )
         )
 
+    def test_build_manifest_schema_audit_rejects_legacy_generator(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source_dir = Path(directory)
+            tool = source_dir / ".xgc2" / "scripts" / "xgc2_artifact_manifest.py"
+            tool.parent.mkdir(parents=True)
+            tool.write_text(
+                'SCHEMA = "xgc2.artifact-manifest.v1"\n', encoding="utf-8"
+            )
+            self.assertFalse(
+                workflow_audit.build_manifest_tool_uses_current_schema(source_dir)
+            )
+            tool.write_text(
+                'SCHEMA = "xgc2.build-artifact.v1"\n'
+                '# xgc2.artifact-manifest.v1 must remain rejected\n',
+                encoding="utf-8",
+            )
+            self.assertFalse(
+                workflow_audit.build_manifest_tool_uses_current_schema(source_dir)
+            )
+            tool.write_text(
+                'SCHEMA = "xgc2.build-artifact.v1"\n',
+                encoding="utf-8",
+            )
+            self.assertTrue(
+                workflow_audit.build_manifest_tool_uses_current_schema(source_dir)
+            )
+
 
 class DagTests(unittest.TestCase):
     def test_mixed_product_with_deb_metadata_is_an_apt_product(self):
