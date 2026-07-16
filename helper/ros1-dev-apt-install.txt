@@ -12,11 +12,14 @@ g++
 gdb
 git
 libeigen3-dev
+libavcodec-dev
+libavutil-dev
 libgrpc++-dev
 libgtest-dev
 libgoogle-glog-dev
 libprotobuf-dev
 libre2-dev
+libswscale-dev
 libyaml-cpp-dev
 make
 mesa-utils
@@ -33,9 +36,14 @@ python3-yaml
 # Stable ROS/Gazebo runtime dependencies used by SITL, RViz, VRPN and local
 # catkin builds.
 gazebo11
+ros-noetic-camera-calibration
+ros-noetic-camera-info-manager
+ros-noetic-cv-bridge
+ros-noetic-diagnostic-updater
 ros-noetic-gazebo-plugins
 ros-noetic-gazebo-ros
 ros-noetic-gazebo-ros-pkgs
+ros-noetic-image-transport
 ros-noetic-mavros
 ros-noetic-mavros-extras
 ros-noetic-robot-state-publisher

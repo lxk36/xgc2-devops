@@ -22,6 +22,7 @@ fi
 submodules=(
   products/common/acados
   products/common/adapter-link-client-cpp
+  products/common/camera-core
   products/common/math
   products/common/mavlink-router
   products/common/protobuf
@@ -38,6 +39,7 @@ submodules=(
   products/ros1/communication/runtime-sync
   products/ros1/communication/swarm-ros-bridge
   products/ros1/controller
+  products/ros1/driver/camera
   products/ros1/driver/livox_ros_driver
   products/ros1/driver/livox_ros_driver2
   products/ros1/perception/detection
@@ -50,6 +52,7 @@ submodules=(
   products/ros1/robot/scout_msgs
   products/ros1/robot/xgc2_robot_visualization
   products/ros1/simulator/convex_geometry
+  products/ros1/simulator/gazebo-camera
   products/ros1/simulator/gazebo-sim
   products/ros1/simulator/gazebo-sim-tools
   products/ros1/simulator/swarm-sync-sim

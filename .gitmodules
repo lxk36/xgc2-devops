@@ -158,3 +158,15 @@
 	path = products/ros1/communication/ros1-automation-gateway
 	url = git@github.com:lxk36/xgc2-ros1-automation-gateway.git
 	branch = noetic
+[submodule "products/common/camera-core"]
+	path = products/common/camera-core
+	url = git@github.com:lxk36/xgc2-camera-core.git
+	branch = main
+[submodule "products/ros1/driver/camera"]
+	path = products/ros1/driver/camera
+	url = git@github.com:lxk36/xgc2-camera-ros1.git
+	branch = main
+[submodule "products/ros1/simulator/gazebo-camera"]
+	path = products/ros1/simulator/gazebo-camera
+	url = git@github.com:lxk36/xgc2-gazebo-sim-camera.git
+	branch = main
