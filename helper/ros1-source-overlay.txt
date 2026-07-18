@@ -9,7 +9,7 @@
 # find_package() prefers source-built configs over /opt/ros/noetic.
 cmake products/common/math
 cmake products/common/state-machine
-cmake products/common/adapter-link-client-cpp
+cmake products/common/adapter-runtime-client-cpp
 cmake products/common/camera-core
 
 catkin products/ros1/common/ros1-msgs/state_machine_msgs
@@ -39,6 +39,6 @@ catkin products/ros1/simulator/gazebo-sim/px4-sitl-112
 catkin products/ros1/simulator/gazebo-sim/px4-sitl-114
 catkin products/ros1/simulator/gazebo-sim/visualization
 catkin products/ros1/simulator/gazebo-sim/vrpn_bridge
-catkin products/ros1/simulator/gazebo-camera/gazebo_sim_camera
+catkin products/ros1/simulator/gazebo-camera
 catkin products/ros1/simulator/gazebo-sim-tools/gazebo_session_manager
 catkin products/ros1/simulator/gazebo-sim-tools/gazebo_sim_examples

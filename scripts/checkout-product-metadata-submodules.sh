@@ -21,7 +21,7 @@ fi
 
 submodules=(
   products/common/acados
-  products/common/adapter-link-client-cpp
+  products/common/adapter-runtime-client-cpp
   products/common/camera-core
   products/common/math
   products/common/mavlink-router
@@ -35,7 +35,7 @@ submodules=(
   products/ros1/common/ros1-msgs
   products/ros1/common/ros1-utils
   products/ros1/communication/ros1-adapter
-  products/ros1/communication/ros1-automation-gateway
+  products/ros1/communication/ros1-tools-adapter
   products/ros1/communication/runtime-sync
   products/ros1/communication/swarm-ros-bridge
   products/ros1/controller

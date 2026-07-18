@@ -55,7 +55,7 @@
       "version": "0.1.0-10"
     },
     {
-      "_source": "products/common/adapter-link-client-cpp/.xgc2/product.yml",
+      "_source": "products/common/adapter-runtime-client-cpp/.xgc2/product.yml",
       "apt": {
         "depends": [
           "xgc2-protobuf-dev",
@@ -64,44 +64,92 @@
         ],
         "distribution": "focal,jammy,noble",
         "install": [
-          "libxgc2-adapter-link-client-dev"
+          "libxgc2-adapter-runtime-client-dev"
         ],
         "packages": [
-          "libxgc2-adapter-link-client-dev"
+          "libxgc2-adapter-runtime-client-dev"
         ]
       },
-      "id": "libxgc2-adapter-link-client-dev",
+      "id": "libxgc2-adapter-runtime-client-dev",
       "kind": "toolchain-apt",
-      "name": "XGC2 AdapterLink C++ Client",
+      "name": "XGC2 Adapter Runtime C++ SDK",
       "ownership": {
         "paths": [
-          "/usr/include/xgc2/adapter_link",
+          "/usr/include/xgc2/adapter_runtime",
           "/usr/include/xgc",
-          "/usr/lib/*/libxgc2_adapter_link_client.so*",
-          "/usr/lib/*/libxgc2_adapter_link_protocol.so*",
-          "/usr/lib/*/cmake/xgc2_adapter_link_client",
-          "/usr/lib/*/pkgconfig/xgc2-adapter-link-client.pc"
+          "/usr/lib/*/libxgc2_adapter_runtime_client.so*",
+          "/usr/lib/*/libxgc2_adapter_runtime_protocol.so*",
+          "/usr/lib/*/cmake/xgc2_adapter_runtime_client",
+          "/usr/lib/*/pkgconfig/xgc2-adapter-runtime-client.pc"
         ]
       },
       "release": {
         "apt_versions": {
-          "focal": "0.2.0-1~focal",
-          "jammy": "0.2.0-1~jammy",
-          "noble": "0.2.0-1~noble"
+          "focal": "0.5.0-1~focal",
+          "jammy": "0.5.0-1~jammy",
+          "noble": "0.5.0-1~noble"
         },
         "ci_workflow": "ci.yml",
         "ref": "main",
-        "repository": "lxk36/xgc2-adapter-link-client-cpp",
+        "repository": "lxk36/xgc2-adapter-runtime-client-cpp",
         "workflow": "release.yml"
       },
       "schema": "xgc2.product.v1",
-      "summary": "ROS-independent C++ AdapterLink client, generated protocol bindings, and development metadata for native XGC2 robot adapters.",
+      "summary": "Generic C++ SDK for capability-first XGC2 AdapterRuntimeLink sessions, generated protocol bindings, fencing, dispatch, and flow control.",
       "usage": {
-        "install": "sudo apt update\nsudo apt install libxgc2-adapter-link-client-dev\n",
-        "notes": "CMake consumers use find_package(xgc2_adapter_link_client REQUIRED CONFIG)\nand link xgc2::adapter_link_client. The package exports generated XGC2\nprotobuf C++ headers and xgc2::adapter_link_protocol; consumers must not\ngenerate a second binding copy.\n",
-        "smoke_test": "pkg-config --modversion xgc2-adapter-link-client\n"
+        "install": "sudo apt update\nsudo apt install libxgc2-adapter-runtime-client-dev\n",
+        "notes": "CMake consumers use find_package(xgc2_adapter_runtime_client REQUIRED CONFIG)\nand link xgc2::adapter_runtime_client. The package exports generated Runtime\nLink protobuf C++ headers and xgc2::adapter_runtime_protocol.\n",
+        "smoke_test": "pkg-config --modversion xgc2-adapter-runtime-client\n"
       },
-      "version": "0.2.0-1"
+      "version": "0.5.0-1"
+    },
+    {
+      "_source": "products/common/camera-core/.xgc2/product.yml",
+      "apt": {
+        "depends": [
+          "libc6",
+          "libgcc-s1",
+          "libstdc++6"
+        ],
+        "distribution": "focal,jammy,noble",
+        "install": [
+          "libxgc2-camera-dev"
+        ],
+        "packages": [
+          "libxgc2-camera-dev"
+        ]
+      },
+      "id": "libxgc2-camera-dev",
+      "kind": "toolchain-apt",
+      "name": "XGC2 Camera Core",
+      "ownership": {
+        "paths": [
+          "/usr/include/xgc2/camera",
+          "/usr/lib/*/libxgc2_camera.so*",
+          "/usr/lib/*/cmake/xgc2_camera",
+          "/usr/lib/*/pkgconfig/xgc2-camera.pc",
+          "/usr/bin/xgc2-camera-inspect"
+        ]
+      },
+      "release": {
+        "apt_versions": {
+          "focal": "0.1.0-1~focal",
+          "jammy": "0.1.0-1~jammy",
+          "noble": "0.1.0-1~noble"
+        },
+        "ci_workflow": "ci.yml",
+        "ref": "main",
+        "repository": "lxk36/xgc2-camera-core",
+        "workflow": "release.yml"
+      },
+      "schema": "xgc2.product.v1",
+      "summary": "ROS-independent C++14 V4L2 camera capture library, inspection tool, and development metadata for XGC2 camera adapters.",
+      "usage": {
+        "install": "sudo apt update\nsudo apt install libxgc2-camera-dev\n",
+        "notes": "CMake consumers use find_package(xgc2_camera REQUIRED CONFIG) and link\nxgc2::camera. This product is intentionally independent of ROS, Catkin,\nimage decoders, simulators, and device-specific platform integrations.\n",
+        "smoke_test": "xgc2-camera-inspect --synthetic --format nv12 --mode multi --capture 2\n"
+      },
+      "version": "0.1.0-1"
     },
     {
       "_source": "products/common/math/.xgc2/product.yml",
@@ -222,9 +270,9 @@
       },
       "release": {
         "apt_versions": {
-          "focal": "0.3.0-1~focal",
-          "jammy": "0.3.0-1~jammy",
-          "noble": "0.3.0-1~noble"
+          "focal": "0.5.0-1~focal",
+          "jammy": "0.5.0-1~jammy",
+          "noble": "0.5.0-1~noble"
         },
         "ci_workflow": "ci.yml",
         "ref": "master",
@@ -232,13 +280,13 @@
         "workflow": "release.yml"
       },
       "schema": "xgc2.product.v1",
-      "summary": "Versioned XGC2 protobuf schemas, descriptors, registries, and adapter profiles for language-neutral protocol development.",
+      "summary": "Versioned XGC2 capability-first Adapter Runtime Link schemas, semantic payloads, descriptors, and registries for language-neutral protocol development.",
       "usage": {
         "install": "sudo apt update\nsudo apt install xgc2-protobuf-dev\n",
         "notes": "This package installs schema sources and language-neutral discovery metadata only.\nConsumers generate or own their language runtime bindings explicitly.\n",
         "smoke_test": "cmake --find-package -DNAME=xgc2_protobuf -DCOMPILER_ID=GNU -DLANGUAGE=CXX -DMODE=EXIST\npkg-config --variable=proto_root xgc2-protobuf\n"
       },
-      "version": "0.3.0-1"
+      "version": "0.5.0-1"
     },
     {
       "_source": "products/common/state-machine/.xgc2/product.yml",
@@ -646,11 +694,13 @@
       "_source": "products/ros1/communication/ros1-adapter/.xgc2/product.yml",
       "apt": {
         "depends": [
-          "libxgc2-adapter-link-client-dev",
+          "libxgc2-adapter-runtime-client-dev",
           "xgc2-protobuf-dev",
           "ros-noetic-geometry-msgs",
           "ros-noetic-mavros-msgs",
           "ros-noetic-nav-msgs",
+          "python3-jsonschema",
+          "python3-yaml",
           "ros-noetic-roscpp",
           "ros-noetic-scout-msgs",
           "ros-noetic-sensor-msgs"
@@ -665,17 +715,28 @@
           "ros-noetic-xgc2-scout-mini-adapter"
         ]
       },
+      "groups": [
+        "ros1",
+        "communication",
+        "adapter",
+        "robot"
+      ],
       "id": "xgc2-ros1-adapters",
       "kind": "ros1-apt",
       "name": "XGC2 ROS1 Robot Adapters",
       "ownership": {
         "paths": [
           "/opt/ros/noetic/share/xgc_px4_multirotor_ros1_adapter",
-          "/opt/ros/noetic/include/xgc_px4_multirotor_ros1_adapter",
           "/opt/ros/noetic/lib/xgc_px4_multirotor_ros1_adapter/xgc_px4_multirotor_ros1_adapter_node",
+          "/opt/ros/noetic/lib/xgc_px4_multirotor_ros1_adapter/xgc_px4_multirotor_ros1_adapter_service_helper",
           "/opt/ros/noetic/share/xgc_scout_mini_ros1_adapter",
-          "/opt/ros/noetic/include/xgc_scout_mini_ros1_adapter",
-          "/opt/ros/noetic/lib/xgc_scout_mini_ros1_adapter/xgc_scout_mini_ros1_adapter_node"
+          "/opt/ros/noetic/lib/xgc_scout_mini_ros1_adapter/xgc_scout_mini_ros1_adapter_node",
+          "/usr/share/xgc2/adapter-definitions/xgc2-px4-multirotor-ros1-adapter.json",
+          "/usr/share/xgc2/adapter-definitions/xgc2-scout-mini-ros1-adapter.json",
+          "/usr/share/xgc2/process-definitions/xgc2-px4-multirotor-ros1-adapter.json",
+          "/usr/share/xgc2/process-definitions/xgc2-scout-mini-ros1-adapter.json",
+          "/usr/share/xgc2/robot-adapter-profiles/xgc2-px4-multirotor-ros1-adapter.json",
+          "/usr/share/xgc2/robot-adapter-profiles/xgc2-scout-mini-ros1-adapter.json"
         ]
       },
       "ros": {
@@ -687,20 +748,21 @@
         "workspace": "catkin"
       },
       "schema": "xgc2.product.v1",
-      "summary": "Separate PX4 multirotor and Scout Mini ROS1 semantic adapters.",
+      "summary": "Robot-owned PX4 multirotor and Scout Mini ROS1 semantic adapters.",
       "usage": {
         "install": "sudo apt update\nsudo apt install \\\n  ros-noetic-xgc2-px4-multirotor-adapter \\\n  ros-noetic-xgc2-scout-mini-adapter\n",
-        "notes": "Each process advertises exactly one AdapterLink profile and can manage all\nsame-type robots in the immutable AdapterPlan for its experiment run.\n",
-        "smoke_test": "rospack find xgc_px4_multirotor_ros1_adapter\nrospack find xgc_scout_mini_ros1_adapter\ntest -x /opt/ros/noetic/lib/xgc_px4_multirotor_ros1_adapter/xgc_px4_multirotor_ros1_adapter_node\ntest -x /opt/ros/noetic/lib/xgc_scout_mini_ros1_adapter/xgc_scout_mini_ros1_adapter_node\n"
+        "notes": "Each robot Adapter is a domain-specific Adapter Runtime application. Core\nresolves its provider definition from the installed robot profile catalog;\nno robot identity is built into the Adapter base class. This product owns\nROS1-native profile mappings and native safety behavior, while protobuf owns\nthe cross-language robot and semantic messages.\n",
+        "smoke_test": "rospack find xgc_px4_multirotor_ros1_adapter\nrospack find xgc_scout_mini_ros1_adapter\ntest -x /opt/ros/noetic/lib/xgc_px4_multirotor_ros1_adapter/xgc_px4_multirotor_ros1_adapter_node\ntest -x /opt/ros/noetic/lib/xgc_px4_multirotor_ros1_adapter/xgc_px4_multirotor_ros1_adapter_service_helper\ntest -x /opt/ros/noetic/lib/xgc_scout_mini_ros1_adapter/xgc_scout_mini_ros1_adapter_node\ntest -f /opt/ros/noetic/share/xgc_px4_multirotor_ros1_adapter/profiles/ros1/px4-multirotor-ros1-v5.yaml\ntest -f /opt/ros/noetic/share/xgc_scout_mini_ros1_adapter/profiles/ros1/scout-mini-ros1-v3.yaml\ntest -f /usr/share/xgc2/adapter-definitions/xgc2-px4-multirotor-ros1-adapter.json\ntest -f /usr/share/xgc2/adapter-definitions/xgc2-scout-mini-ros1-adapter.json\ntest -f /usr/share/xgc2/process-definitions/xgc2-px4-multirotor-ros1-adapter.json\ntest -f /usr/share/xgc2/process-definitions/xgc2-scout-mini-ros1-adapter.json\ntest -f /usr/share/xgc2/robot-adapter-profiles/xgc2-px4-multirotor-ros1-adapter.json\ntest -f /usr/share/xgc2/robot-adapter-profiles/xgc2-scout-mini-ros1-adapter.json\n"
       },
-      "version": "0.4.0-1"
+      "version": "0.5.0-1"
     },
     {
-      "_source": "products/ros1/communication/ros1-automation-gateway/.xgc2/product.yml",
+      "_source": "products/ros1/communication/ros1-tools-adapter/.xgc2/product.yml",
       "apt": {
         "depends": [
           "libjsoncpp1",
-          "ros-noetic-mavros-msgs",
+          "libxgc2-adapter-runtime-client-dev",
+          "xgc2-protobuf-dev",
           "ros-noetic-ros-babel-fish",
           "ros-noetic-roscpp",
           "ros-noetic-roslib",
@@ -709,47 +771,50 @@
         ],
         "distribution": "focal",
         "install": [
-          "ros-noetic-xgc2-ros1-automation-gateway"
+          "ros-noetic-xgc2-ros1-tools-adapter"
         ],
         "packages": [
-          "ros-noetic-xgc2-ros1-automation-gateway"
+          "ros-noetic-xgc2-ros1-tools-adapter"
         ]
       },
       "groups": [
         "ros1",
         "communication",
-        "automation"
+        "adapter"
       ],
-      "id": "xgc2-ros1-automation-gateway",
+      "id": "xgc2-ros1-tools-adapter",
       "kind": "ros1-apt",
-      "name": "XGC2 ROS1 Automation Gateway",
+      "name": "XGC2 ROS1 Tools Adapter",
       "ownership": {
         "paths": [
-          "/opt/ros/noetic/share/xgc_ros1_automation_gateway",
-          "/opt/ros/noetic/lib/xgc_ros1_automation_gateway/xgc_ros1_automation_gateway_node"
+          "/opt/ros/noetic/share/xgc_ros1_tools_adapter",
+          "/opt/ros/noetic/lib/xgc_ros1_tools_adapter/xgc_ros1_tools_adapter_node",
+          "/opt/ros/noetic/lib/xgc_ros1_tools_adapter/xgc_ros1_tools_adapter_service_helper",
+          "/usr/share/xgc2/adapter-definitions/xgc2-ros1-tools-adapter.json",
+          "/usr/share/xgc2/process-definitions/xgc2-ros1-tools-adapter.json"
         ]
       },
       "release": {
         "ci_workflow": "ci.yml",
         "ref": "noetic",
-        "repository": "lxk36/xgc2-ros1-automation-gateway",
+        "repository": "lxk36/xgc2-ros1-tools-adapter",
         "workflow": "release.yml"
       },
       "ros": {
         "distro": "noetic",
         "packages": [
-          "xgc_ros1_automation_gateway"
+          "xgc_ros1_tools_adapter"
         ],
         "workspace": "catkin"
       },
       "schema": "xgc2.product.v1",
-      "summary": "Local Unix-socket gateway for dynamically publishing ROS1 messages and calling ROS1 services from XGC2 workflows.",
+      "summary": "Generic typed ROS1 topic-publish and service-call capabilities provided as an XGC2 Adapter Runtime application.",
       "usage": {
-        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-ros1-automation-gateway\n",
-        "notes": "XGC2 Agent starts one process per ROS context on demand and supplies a\ncontext-specific Unix socket. The package does not install a systemd unit\nor expose a network listener.\n",
-        "smoke_test": "rospack find xgc_ros1_automation_gateway\ntest -x /opt/ros/noetic/lib/xgc_ros1_automation_gateway/xgc_ros1_automation_gateway_node\n"
+        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-ros1-tools-adapter\n",
+        "notes": "Core or Agent supervises one process per ROS1 native context and supplies a\nmode-0600 binary AdapterProcessBootstrap. The process exposes no listener\nother than its outbound connection to the target-local Adapter Runtime.\nRelease packages require the 0.5.0 Runtime client ABI and matching 0.5.0\nXGC2 protocol package exactly.\n",
+        "smoke_test": "rospack find xgc_ros1_tools_adapter\ntest -x /opt/ros/noetic/lib/xgc_ros1_tools_adapter/xgc_ros1_tools_adapter_node\ntest -x /opt/ros/noetic/lib/xgc_ros1_tools_adapter/xgc_ros1_tools_adapter_service_helper\ntest -f /usr/share/xgc2/adapter-definitions/xgc2-ros1-tools-adapter.json\ntest -f /usr/share/xgc2/process-definitions/xgc2-ros1-tools-adapter.json\n"
       },
-      "version": "0.1.0-1"
+      "version": "0.1.2-1"
     },
     {
       "_source": "products/ros1/communication/runtime-sync/.xgc2/product.yml",
@@ -975,6 +1040,98 @@
         "smoke_test": "roslaunch --files unicycle_reference_trajectory ugv_unicycle_reference_trajectory.launch\nroslaunch --files unicycle_ugv_controller ugv_unicycle_nmpc_controller.launch\n"
       },
       "version": "1.1.4-9"
+    },
+    {
+      "_source": "products/ros1/driver/camera/.xgc2/product.yml",
+      "apt": {
+        "depends": [
+          "libavcodec58",
+          "libavutil56",
+          "libopencv-core4.2",
+          "libopencv-imgcodecs4.2",
+          "libopencv-imgproc4.2",
+          "libswscale5",
+          "libxgc2-camera-dev (>= 0.1.0-1~focal)",
+          "python3-numpy",
+          "python3-opencv",
+          "python3-pyqt5",
+          "python3-yaml",
+          "ros-noetic-camera-calibration",
+          "ros-noetic-camera-info-manager",
+          "ros-noetic-cv-bridge",
+          "ros-noetic-diagnostic-msgs",
+          "ros-noetic-diagnostic-updater",
+          "ros-noetic-geometry-msgs",
+          "ros-noetic-image-transport",
+          "ros-noetic-rosbash",
+          "ros-noetic-roscpp",
+          "ros-noetic-roslaunch",
+          "ros-noetic-rospy",
+          "ros-noetic-rostopic",
+          "ros-noetic-sensor-msgs",
+          "ros-noetic-tf2-ros"
+        ],
+        "distribution": "focal",
+        "install": [
+          "ros-noetic-xgc-camera-driver",
+          "ros-noetic-xgc-camera-calibration"
+        ],
+        "package_architectures": {
+          "ros-noetic-xgc-camera-calibration": [
+            "amd64",
+            "arm64"
+          ],
+          "ros-noetic-xgc-camera-driver": [
+            "amd64",
+            "arm64"
+          ]
+        },
+        "packages": [
+          "ros-noetic-xgc-camera-driver",
+          "ros-noetic-xgc-camera-calibration"
+        ]
+      },
+      "id": "xgc2-camera-ros1",
+      "kind": "ros1-apt",
+      "name": "XGC2 ROS1 Camera",
+      "ownership": {
+        "paths": [
+          "/opt/ros/noetic/share/xgc_camera_driver",
+          "/opt/ros/noetic/lib/xgc_camera_driver",
+          "/opt/ros/noetic/share/xgc_camera_calibration",
+          "/opt/ros/noetic/lib/xgc_camera_calibration",
+          "/opt/ros/noetic/lib/python3/dist-packages/xgc_camera_calibration",
+          "/usr/share/xgc2/process-definitions/xgc2-camera-ros1.json"
+        ]
+      },
+      "release": {
+        "apt_versions": {
+          "focal": "0.1.0-1"
+        },
+        "ci_workflow": "ci.yml",
+        "ref": "main",
+        "repository": "lxk36/xgc2-camera-ros1",
+        "requires": [
+          "libxgc2-camera-dev"
+        ],
+        "workflow": "release.yml"
+      },
+      "ros": {
+        "distro": "noetic",
+        "packages": [
+          "xgc_camera_driver",
+          "xgc_camera_calibration"
+        ],
+        "workspace": "catkin"
+      },
+      "schema": "xgc2.product.v1",
+      "summary": "Productized ROS Noetic camera adapter and optional assisted calibration tools.",
+      "usage": {
+        "install": "sudo apt update\nsudo apt install ros-noetic-xgc-camera-driver\nsudo apt install ros-noetic-xgc-camera-calibration  # optional GUI/tools\n",
+        "notes": "One process owns one camera. The compatibility launch publishes\n/usb_cam/image_raw and /usb_cam/camera_info with a shared stamp and optical\nframe. The driver is a ROS adapter over the separately released,\nROS-independent libxgc2-camera-dev product.\n",
+        "smoke_test": "roslaunch xgc_camera_driver camera.launch backend:=synthetic pixel_format:=bgr24\nrostopic echo -n 1 /usb_cam/camera_info\n"
+      },
+      "version": "0.1.0-1"
     },
     {
       "_source": "products/ros1/driver/livox_ros_driver/.xgc2/product.yml",
@@ -1618,6 +1775,72 @@
         "smoke_test": "rospack find xgc2_geometry_msgs\nrospack find cluttered_environment\nrospack find mockamap\n"
       },
       "version": "1.1.4-10"
+    },
+    {
+      "_source": "products/ros1/simulator/gazebo-camera/.xgc2/product.yml",
+      "apt": {
+        "depends": [
+          "ros-noetic-gazebo-plugins",
+          "ros-noetic-gazebo-ros",
+          "ros-noetic-rospy",
+          "ros-noetic-roslaunch",
+          "ros-noetic-rostopic",
+          "ros-noetic-rviz",
+          "ros-noetic-sensor-msgs",
+          "ros-noetic-tf",
+          "ros-noetic-xacro",
+          "ros-noetic-xgc2-gazebo-sim-vrpn-bridge (>= 1.1.0-13)"
+        ],
+        "distribution": "focal",
+        "install": [
+          "ros-noetic-xgc2-gazebo-sim-camera"
+        ],
+        "package_architectures": {
+          "ros-noetic-xgc2-gazebo-sim-camera": [
+            "amd64",
+            "arm64"
+          ]
+        },
+        "packages": [
+          "ros-noetic-xgc2-gazebo-sim-camera"
+        ]
+      },
+      "id": "xgc2-gazebo-sim-camera",
+      "kind": "ros1-apt",
+      "name": "XGC2 Gazebo Sim Camera",
+      "ownership": {
+        "paths": [
+          "/opt/ros/noetic/share/gazebo_sim_camera",
+          "/opt/ros/noetic/lib/gazebo_sim_camera",
+          "/usr/share/xgc2/process-definitions/gazebo-static-camera.json"
+        ]
+      },
+      "release": {
+        "apt_versions": {
+          "focal": "0.1.0-1"
+        },
+        "ci_workflow": "ci.yml",
+        "ref": "main",
+        "repository": "lxk36/xgc2-gazebo-sim-camera",
+        "requires": [
+          "xgc2-gazebo-sim-vrpn-bridge"
+        ],
+        "workflow": "release.yml"
+      },
+      "ros": {
+        "distro": "noetic",
+        "packages": [
+          "gazebo_sim_camera"
+        ]
+      },
+      "schema": "xgc2.product.v1",
+      "summary": "Independent fixed-site RGB camera, calibration targets, and RViz AR scene for Gazebo Classic 11.",
+      "usage": {
+        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-gazebo-sim-camera\n",
+        "notes": "This product owns only an independent fixed-site camera. It does not modify\nor depend on any FS150, Scout, UAV, or other vehicle camera model.\n",
+        "smoke_test": "roslaunch --files gazebo_sim_camera static_camera.launch gui:=false\nroslaunch --files gazebo_sim_camera intrinsic_calibration_world.launch gui:=false\nroslaunch --files gazebo_sim_camera extrinsic_calibration_world.launch gui:=false start_vrpn:=false\n"
+      },
+      "version": "0.1.0-1"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/.xgc2/product.yml",
