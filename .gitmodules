@@ -150,11 +150,23 @@
 	path = products/webui/lichtblick-packaging
 	url = git@github.com:lxk36/xgc2-lichtblick-packaging.git
 	branch = main
-[submodule "products/common/adapter-link-client-cpp"]
-	path = products/common/adapter-link-client-cpp
-	url = git@github.com:lxk36/xgc2-adapter-link-client-cpp.git
+[submodule "products/common/adapter-runtime-client-cpp"]
+	path = products/common/adapter-runtime-client-cpp
+	url = git@github.com:lxk36/xgc2-adapter-runtime-client-cpp.git
 	branch = main
-[submodule "products/ros1/communication/ros1-automation-gateway"]
-	path = products/ros1/communication/ros1-automation-gateway
-	url = git@github.com:lxk36/xgc2-ros1-automation-gateway.git
+[submodule "products/ros1/communication/ros1-tools-adapter"]
+	path = products/ros1/communication/ros1-tools-adapter
+	url = git@github.com:lxk36/xgc2-ros1-tools-adapter.git
 	branch = noetic
+[submodule "products/common/camera-core"]
+	path = products/common/camera-core
+	url = git@github.com:lxk36/xgc2-camera-core.git
+	branch = main
+[submodule "products/ros1/driver/camera"]
+	path = products/ros1/driver/camera
+	url = git@github.com:lxk36/xgc2-camera-ros1.git
+	branch = main
+[submodule "products/ros1/simulator/gazebo-camera"]
+	path = products/ros1/simulator/gazebo-camera
+	url = git@github.com:lxk36/xgc2-gazebo-sim-camera.git
+	branch = main
