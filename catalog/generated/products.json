@@ -1054,7 +1054,7 @@
           "libxgc2-camera-dev (>= 0.1.0-1~focal)",
           "python3-numpy",
           "python3-opencv",
-          "python3-pyqt5",
+          "python3-rospkg",
           "python3-yaml",
           "ros-noetic-camera-calibration",
           "ros-noetic-camera-info-manager",
@@ -1074,21 +1074,21 @@
         "distribution": "focal",
         "install": [
           "ros-noetic-xgc-camera-driver",
-          "ros-noetic-xgc-camera-calibration"
+          "ros-noetic-xgc2-camera-calibration"
         ],
         "package_architectures": {
-          "ros-noetic-xgc-camera-calibration": [
+          "ros-noetic-xgc-camera-driver": [
             "amd64",
             "arm64"
           ],
-          "ros-noetic-xgc-camera-driver": [
+          "ros-noetic-xgc2-camera-calibration": [
             "amd64",
             "arm64"
           ]
         },
         "packages": [
           "ros-noetic-xgc-camera-driver",
-          "ros-noetic-xgc-camera-calibration"
+          "ros-noetic-xgc2-camera-calibration"
         ]
       },
       "id": "xgc2-camera-ros1",
@@ -1106,7 +1106,7 @@
       },
       "release": {
         "apt_versions": {
-          "focal": "0.1.0-1"
+          "focal": "0.2.0-1"
         },
         "ci_workflow": "ci.yml",
         "ref": "main",
@@ -1127,11 +1127,11 @@
       "schema": "xgc2.product.v1",
       "summary": "Productized ROS Noetic camera adapter and optional assisted calibration tools.",
       "usage": {
-        "install": "sudo apt update\nsudo apt install ros-noetic-xgc-camera-driver\nsudo apt install ros-noetic-xgc-camera-calibration  # optional GUI/tools\n",
-        "notes": "One process owns one camera. The compatibility launch publishes\n/usb_cam/image_raw and /usb_cam/camera_info with a shared stamp and optical\nframe. The driver is a ROS adapter over the separately released,\nROS-independent libxgc2-camera-dev product.\n",
+        "install": "sudo apt update\nsudo apt install ros-noetic-xgc-camera-driver\nsudo apt install ros-noetic-xgc2-camera-calibration  # optional WebUI/tools\n",
+        "notes": "One process owns one camera. The compatibility launch publishes\n/usb_cam/image_raw and /usb_cam/camera_info with a shared stamp and optical\nframe. The driver is a ROS adapter over the separately released,\nROS-independent libxgc2-camera-dev product.\nThe extrinsic calibrator is a loopback-bound Python HTTP service with a\ndependency-free browser frontend; it does not require a desktop toolkit.\n",
         "smoke_test": "roslaunch xgc_camera_driver camera.launch backend:=synthetic pixel_format:=bgr24\nrostopic echo -n 1 /usb_cam/camera_info\n"
       },
-      "version": "0.1.0-1"
+      "version": "0.2.0-1"
     },
     {
       "_source": "products/ros1/driver/livox_ros_driver/.xgc2/product.yml",
