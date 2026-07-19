@@ -1106,7 +1106,7 @@
       },
       "release": {
         "apt_versions": {
-          "focal": "0.2.0-1"
+          "focal": "0.2.0-2"
         },
         "ci_workflow": "ci.yml",
         "ref": "main",
@@ -1131,7 +1131,7 @@
         "notes": "One process owns one camera. The compatibility launch publishes\n/usb_cam/image_raw and /usb_cam/camera_info with a shared stamp and optical\nframe. The driver is a ROS adapter over the separately released,\nROS-independent libxgc2-camera-dev product.\nThe extrinsic calibrator is a loopback-bound Python HTTP service with a\ndependency-free browser frontend; it does not require a desktop toolkit.\n",
         "smoke_test": "roslaunch xgc_camera_driver camera.launch backend:=synthetic pixel_format:=bgr24\nrostopic echo -n 1 /usb_cam/camera_info\n"
       },
-      "version": "0.2.0-1"
+      "version": "0.2.0-2"
     },
     {
       "_source": "products/ros1/driver/livox_ros_driver/.xgc2/product.yml",
@@ -1780,13 +1780,13 @@
       "_source": "products/ros1/simulator/gazebo-sim/.xgc2/product.yml",
       "apt": {
         "depends": [
-          "ros-noetic-xgc2-gazebo-sim-manager (>= 1.1.0-24)",
-          "ros-noetic-xgc2-gazebo-sim-examples (>= 1.1.0-24)",
+          "ros-noetic-xgc2-gazebo-sim-manager (>= 1.1.0-25)",
+          "ros-noetic-xgc2-gazebo-sim-examples (>= 1.1.0-25)",
           "ros-noetic-xgc2-robot-visualization (>= 0.1.0-5)",
           "ros-noetic-xgc2-gazebo-sim-visualization (>= 1.1.0-12)",
           "ros-noetic-xgc2-gazebo-sim-vrpn-bridge (>= 1.1.0-13)",
-          "ros-noetic-xgc2-gazebo-sim-worlds (>= 1.1.0-10)",
-          "ros-noetic-xgc2-gazebo-sim-scout (>= 0.4.9-23)",
+          "ros-noetic-xgc2-gazebo-sim-worlds (>= 1.1.0-11)",
+          "ros-noetic-xgc2-gazebo-sim-scout (>= 0.4.9-24)",
           "ros-noetic-xgc2-gazebo-sim-px4-1-12 (>= 1.12.3-15)",
           "ros-noetic-xgc2-gazebo-sim-px4-1-14 (>= 1.14.4-13)",
           "ros-noetic-xgc2-gazebo-sim-fs150-sitl (>= 1.1.0-10)",
@@ -1828,7 +1828,7 @@
         "notes": "This repository is the verified Gazebo simulation suite entrypoint. Source packages live in child product repositories.\nThe aggregate package uses minimum child package versions so apt upgrades stale installed children when a quickstart requires newer launch assets.\nChild repositories may publish compatible packaging revisions independently; bump this product version only when the aggregate dependency set or compatibility contract changes.\n",
         "smoke_test": "dpkg -s ros-noetic-xgc2-gazebo-sim\nroslaunch --files gazebo_sim_examples fs150_ugv_vrpn_stack.launch\nrosrun gazebo_sim_examples uav_auto_takeoff_track.py --help\nroslaunch --files gazebo_sim_visualization fs150_vrpn_tracking_rviz.launch rviz:=false\nroslaunch --files gazebo_sim_scout simple.launch rviz:=false\nroslaunch --files gazebo_sim_px4_1_12 iris.launch gui:=false\nroslaunch --files gazebo_sim_px4_1_14 iris.launch gui:=false\nroslaunch --files gazebo_sim_fs150_sitl fs150.launch gui:=false\n"
       },
-      "version": "1.1.0-39"
+      "version": "1.1.0-42"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/agilex/.xgc2/product.yml",
@@ -1836,7 +1836,7 @@
         "depends": [
           "ros-noetic-scout-msgs (>= 0.3.3-5)",
           "ros-noetic-xgc2-scout-description (>= 0.4.10-8)",
-          "ros-noetic-xgc2-gazebo-sim-worlds (>= 1.1.0-10)",
+          "ros-noetic-xgc2-gazebo-sim-worlds (>= 1.1.0-11)",
           "ros-noetic-xgc2-gazebo-sim-vrpn-bridge (>= 1.1.0-13)"
         ],
         "distribution": "focal",
@@ -1874,12 +1874,15 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-gazebo-sim-scout\n",
         "smoke_test": "roslaunch --files gazebo_sim_scout simple.launch rviz:=false\n"
       },
-      "version": "0.4.9-23"
+      "version": "0.4.9-24"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/camera/.xgc2/product.yml",
       "apt": {
         "depends": [
+          "python3-numpy",
+          "python3-opencv",
+          "ros-noetic-gazebo-msgs",
           "ros-noetic-gazebo-plugins",
           "ros-noetic-gazebo-ros",
           "ros-noetic-rospy",
@@ -1917,7 +1920,7 @@
       },
       "release": {
         "apt_versions": {
-          "focal": "0.1.0-1"
+          "focal": "0.1.0-2"
         },
         "ci_workflow": "ci.yml",
         "ref": "main",
@@ -1940,7 +1943,7 @@
         "notes": "This product owns only an independent fixed-site camera. It does not modify\nor depend on any FS150, Scout, UAV, or other vehicle camera model.\n",
         "smoke_test": "roslaunch --files gazebo_sim_camera static_camera.launch gui:=false\nroslaunch --files gazebo_sim_camera intrinsic_calibration_world.launch gui:=false\nroslaunch --files gazebo_sim_camera extrinsic_calibration_world.launch gui:=false start_vrpn:=false\n"
       },
-      "version": "0.1.0-1"
+      "version": "0.1.0-2"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/cerlab-uav-sim/.xgc2/product.yml",
@@ -1951,7 +1954,7 @@
           "ros-noetic-mavros",
           "ros-noetic-mavros-extras",
           "ros-noetic-topic-tools",
-          "ros-noetic-xgc2-gazebo-sim-worlds (>= 1.1.0-10)",
+          "ros-noetic-xgc2-gazebo-sim-worlds (>= 1.1.0-11)",
           "python3-numpy",
           "python3-yaml"
         ],
@@ -1985,7 +1988,7 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-gazebo-sim-cerlab-uav\n",
         "smoke_test": "roslaunch --files xgc2_cerlab_uav_simulator start.launch\nroslaunch --files xgc2_cerlab_uav_simulator px4_start.launch\n"
       },
-      "version": "1.1.0-9"
+      "version": "1.1.0-10"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/fs150-sitl/.xgc2/product.yml",
@@ -2256,7 +2259,7 @@
         "notes": "This product owns reusable world and model assets only. Scenario launch files remain in gazebo_sim_examples.\n",
         "smoke_test": "rospack find gazebo_sim_worlds\ntest -f /opt/ros/noetic/share/gazebo_sim_worlds/worlds/empty/empty.world\ntest -f /opt/ros/noetic/lib/libobstaclePathPlugin.so\ntest -f /opt/ros/noetic/share/gazebo_sim_worlds/models/corridor/model.sdf\n"
       },
-      "version": "1.1.0-10"
+      "version": "1.1.0-11"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim-tools/.xgc2/product.yml",
@@ -2268,8 +2271,8 @@
           "ros-noetic-xgc2-gazebo-sim-visualization (>= 1.1.0-12)",
           "ros-noetic-xgc2-gazebo-sim-vrpn-bridge (>= 1.1.0-13)",
           "ros-noetic-xgc2-gazebo-sim-fs150-sitl (>= 1.1.0-10)",
-          "ros-noetic-xgc2-gazebo-sim-scout (>= 0.4.9-23)",
-          "ros-noetic-xgc2-gazebo-sim-worlds (>= 1.1.0-10)",
+          "ros-noetic-xgc2-gazebo-sim-scout (>= 0.4.9-24)",
+          "ros-noetic-xgc2-gazebo-sim-worlds (>= 1.1.0-11)",
           "ros-noetic-xgc2-multirotor-controller (>= 1.1.18-4)",
           "ros-noetic-xgc2-px4-multirotor-controller-msgs (>= 1.2.0-3)",
           "ros-noetic-xgc2-ugv-controller (>= 1.1.4-9)",
@@ -2321,7 +2324,7 @@
         "notes": "These are Gazebo Classic simulation tools. The full suite is installed through ros-noetic-xgc2-gazebo-sim-all from xgc2-gazebo-sim.\n",
         "smoke_test": "roslaunch --files gazebo_session_manager session_manager.launch world_name:=/tmp/xgc2-empty.world\nroslaunch --files gazebo_sim_examples fs150_ugv_vrpn_stack.launch\nroslaunch --files gazebo_sim_examples fs150_uav1_nmpc_tracking.launch\nrosrun gazebo_sim_examples uav_auto_takeoff_track.py --help\nroslaunch --files gazebo_sim_visualization gazebo_auto_visualization_rviz.launch rviz:=false\nroslaunch --files gazebo_sim_vrpn_bridge vrpn_server.launch auto_track_known_models:=true\nroslaunch --files gazebo_sim_vrpn_bridge vrpn_client.launch trackers:=[uav1]\n"
       },
-      "version": "1.1.0-24"
+      "version": "1.1.0-25"
     },
     {
       "_source": "products/ros1/simulator/swarm-sync-sim/.xgc2/product.yml",
