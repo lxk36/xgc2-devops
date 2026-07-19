@@ -1777,72 +1777,6 @@
       "version": "1.1.4-10"
     },
     {
-      "_source": "products/ros1/simulator/gazebo-camera/.xgc2/product.yml",
-      "apt": {
-        "depends": [
-          "ros-noetic-gazebo-plugins",
-          "ros-noetic-gazebo-ros",
-          "ros-noetic-rospy",
-          "ros-noetic-roslaunch",
-          "ros-noetic-rostopic",
-          "ros-noetic-rviz",
-          "ros-noetic-sensor-msgs",
-          "ros-noetic-tf",
-          "ros-noetic-xacro",
-          "ros-noetic-xgc2-gazebo-sim-vrpn-bridge (>= 1.1.0-13)"
-        ],
-        "distribution": "focal",
-        "install": [
-          "ros-noetic-xgc2-gazebo-sim-camera"
-        ],
-        "package_architectures": {
-          "ros-noetic-xgc2-gazebo-sim-camera": [
-            "amd64",
-            "arm64"
-          ]
-        },
-        "packages": [
-          "ros-noetic-xgc2-gazebo-sim-camera"
-        ]
-      },
-      "id": "xgc2-gazebo-sim-camera",
-      "kind": "ros1-apt",
-      "name": "XGC2 Gazebo Sim Camera",
-      "ownership": {
-        "paths": [
-          "/opt/ros/noetic/share/gazebo_sim_camera",
-          "/opt/ros/noetic/lib/gazebo_sim_camera",
-          "/usr/share/xgc2/process-definitions/gazebo-static-camera.json"
-        ]
-      },
-      "release": {
-        "apt_versions": {
-          "focal": "0.1.0-1"
-        },
-        "ci_workflow": "ci.yml",
-        "ref": "main",
-        "repository": "lxk36/xgc2-gazebo-sim-camera",
-        "requires": [
-          "xgc2-gazebo-sim-vrpn-bridge"
-        ],
-        "workflow": "release.yml"
-      },
-      "ros": {
-        "distro": "noetic",
-        "packages": [
-          "gazebo_sim_camera"
-        ]
-      },
-      "schema": "xgc2.product.v1",
-      "summary": "Independent fixed-site RGB camera, calibration targets, and RViz AR scene for Gazebo Classic 11.",
-      "usage": {
-        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-gazebo-sim-camera\n",
-        "notes": "This product owns only an independent fixed-site camera. It does not modify\nor depend on any FS150, Scout, UAV, or other vehicle camera model.\n",
-        "smoke_test": "roslaunch --files gazebo_sim_camera static_camera.launch gui:=false\nroslaunch --files gazebo_sim_camera intrinsic_calibration_world.launch gui:=false\nroslaunch --files gazebo_sim_camera extrinsic_calibration_world.launch gui:=false start_vrpn:=false\n"
-      },
-      "version": "0.1.0-1"
-    },
-    {
       "_source": "products/ros1/simulator/gazebo-sim/.xgc2/product.yml",
       "apt": {
         "depends": [
@@ -1941,6 +1875,72 @@
         "smoke_test": "roslaunch --files gazebo_sim_scout simple.launch rviz:=false\n"
       },
       "version": "0.4.9-23"
+    },
+    {
+      "_source": "products/ros1/simulator/gazebo-sim/camera/.xgc2/product.yml",
+      "apt": {
+        "depends": [
+          "ros-noetic-gazebo-plugins",
+          "ros-noetic-gazebo-ros",
+          "ros-noetic-rospy",
+          "ros-noetic-roslaunch",
+          "ros-noetic-rostopic",
+          "ros-noetic-rviz",
+          "ros-noetic-sensor-msgs",
+          "ros-noetic-tf",
+          "ros-noetic-xacro",
+          "ros-noetic-xgc2-gazebo-sim-vrpn-bridge (>= 1.1.0-13)"
+        ],
+        "distribution": "focal",
+        "install": [
+          "ros-noetic-xgc2-gazebo-sim-camera"
+        ],
+        "package_architectures": {
+          "ros-noetic-xgc2-gazebo-sim-camera": [
+            "amd64",
+            "arm64"
+          ]
+        },
+        "packages": [
+          "ros-noetic-xgc2-gazebo-sim-camera"
+        ]
+      },
+      "id": "xgc2-gazebo-sim-camera",
+      "kind": "ros1-apt",
+      "name": "XGC2 Gazebo Sim Camera",
+      "ownership": {
+        "paths": [
+          "/opt/ros/noetic/share/gazebo_sim_camera",
+          "/opt/ros/noetic/lib/gazebo_sim_camera",
+          "/usr/share/xgc2/process-definitions/gazebo-static-camera.json"
+        ]
+      },
+      "release": {
+        "apt_versions": {
+          "focal": "0.1.0-1"
+        },
+        "ci_workflow": "ci.yml",
+        "ref": "main",
+        "repository": "lxk36/xgc2-gazebo-sim-camera",
+        "requires": [
+          "xgc2-gazebo-sim-vrpn-bridge"
+        ],
+        "workflow": "release.yml"
+      },
+      "ros": {
+        "distro": "noetic",
+        "packages": [
+          "gazebo_sim_camera"
+        ]
+      },
+      "schema": "xgc2.product.v1",
+      "summary": "Independent fixed-site RGB camera, calibration targets, and RViz AR scene for Gazebo Classic 11.",
+      "usage": {
+        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-gazebo-sim-camera\n",
+        "notes": "This product owns only an independent fixed-site camera. It does not modify\nor depend on any FS150, Scout, UAV, or other vehicle camera model.\n",
+        "smoke_test": "roslaunch --files gazebo_sim_camera static_camera.launch gui:=false\nroslaunch --files gazebo_sim_camera intrinsic_calibration_world.launch gui:=false\nroslaunch --files gazebo_sim_camera extrinsic_calibration_world.launch gui:=false start_vrpn:=false\n"
+      },
+      "version": "0.1.0-1"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/cerlab-uav-sim/.xgc2/product.yml",

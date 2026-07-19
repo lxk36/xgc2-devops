@@ -166,7 +166,3 @@
 	path = products/ros1/driver/camera
 	url = git@github.com:lxk36/xgc2-camera-ros1.git
 	branch = main
-[submodule "products/ros1/simulator/gazebo-camera"]
-	path = products/ros1/simulator/gazebo-camera
-	url = git@github.com:lxk36/xgc2-gazebo-sim-camera.git
-	branch = main

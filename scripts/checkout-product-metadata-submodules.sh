@@ -52,7 +52,6 @@ submodules=(
   products/ros1/robot/scout_msgs
   products/ros1/robot/xgc2_robot_visualization
   products/ros1/simulator/convex_geometry
-  products/ros1/simulator/gazebo-camera
   products/ros1/simulator/gazebo-sim
   products/ros1/simulator/gazebo-sim-tools
   products/ros1/simulator/swarm-sync-sim
