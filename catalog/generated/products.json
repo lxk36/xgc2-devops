@@ -1828,7 +1828,7 @@
         "notes": "This repository is the verified Gazebo simulation suite entrypoint. Source packages live in child product repositories.\nThe aggregate package uses minimum child package versions so apt upgrades stale installed children when a quickstart requires newer launch assets.\nChild repositories may publish compatible packaging revisions independently; bump this product version only when the aggregate dependency set or compatibility contract changes.\n",
         "smoke_test": "dpkg -s ros-noetic-xgc2-gazebo-sim\nroslaunch --files gazebo_sim_examples fs150_ugv_vrpn_stack.launch\nrosrun gazebo_sim_examples uav_auto_takeoff_track.py --help\nroslaunch --files gazebo_sim_visualization fs150_vrpn_tracking_rviz.launch rviz:=false\nroslaunch --files gazebo_sim_scout simple.launch rviz:=false\nroslaunch --files gazebo_sim_px4_1_12 iris.launch gui:=false\nroslaunch --files gazebo_sim_px4_1_14 iris.launch gui:=false\nroslaunch --files gazebo_sim_fs150_sitl fs150.launch gui:=false\n"
       },
-      "version": "1.1.0-42"
+      "version": "1.1.0-43"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/agilex/.xgc2/product.yml",
@@ -1892,6 +1892,7 @@
           "ros-noetic-sensor-msgs",
           "ros-noetic-tf",
           "ros-noetic-xacro",
+          "ros-noetic-xgc2-gazebo-sim-worlds (>= 1.1.0-11)",
           "ros-noetic-xgc2-gazebo-sim-vrpn-bridge (>= 1.1.0-13)"
         ],
         "distribution": "focal",
@@ -1926,6 +1927,7 @@
         "ref": "main",
         "repository": "lxk36/xgc2-gazebo-sim-camera",
         "requires": [
+          "xgc2-gazebo-sim-worlds",
           "xgc2-gazebo-sim-vrpn-bridge"
         ],
         "workflow": "release.yml"
