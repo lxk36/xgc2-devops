@@ -42,6 +42,7 @@ submodules=(
   products/ros1/driver/camera
   products/ros1/driver/livox_ros_driver
   products/ros1/driver/livox_ros_driver2
+  products/ros1/perception/camera-calibration
   products/ros1/perception/detection
   products/ros1/perception/hover-thrust
   products/ros1/perception/rigid-state
