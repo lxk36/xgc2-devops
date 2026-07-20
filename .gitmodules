@@ -82,6 +82,10 @@
 	path = products/ros1/perception/detection
 	url = git@github.com:lxk36/xgc2-detection.git
 	branch = noetic
+[submodule "products/ros1/perception/camera-calibration"]
+	path = products/ros1/perception/camera-calibration
+	url = git@github.com:lxk36/xgc2-camera-calibration-ros1.git
+	branch = main
 [submodule "products/common/math"]
 	path = products/common/math
 	url = git@github.com:lxk36/xgc2-math.git

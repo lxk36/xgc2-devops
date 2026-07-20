@@ -1052,61 +1052,43 @@
           "libopencv-imgproc4.2",
           "libswscale5",
           "libxgc2-camera-dev (>= 0.1.0-1~focal)",
-          "python3-numpy",
-          "python3-opencv",
-          "python3-rospkg",
-          "python3-yaml",
-          "ros-noetic-camera-calibration",
           "ros-noetic-camera-info-manager",
           "ros-noetic-cv-bridge",
           "ros-noetic-diagnostic-msgs",
           "ros-noetic-diagnostic-updater",
-          "ros-noetic-geometry-msgs",
           "ros-noetic-image-transport",
-          "ros-noetic-rosbash",
           "ros-noetic-roscpp",
           "ros-noetic-roslaunch",
-          "ros-noetic-rospy",
           "ros-noetic-rostopic",
-          "ros-noetic-sensor-msgs",
-          "ros-noetic-tf2-ros"
+          "ros-noetic-sensor-msgs"
         ],
         "distribution": "focal",
         "install": [
-          "ros-noetic-xgc-camera-driver",
-          "ros-noetic-xgc2-camera-calibration"
+          "ros-noetic-xgc-camera-driver"
         ],
         "package_architectures": {
           "ros-noetic-xgc-camera-driver": [
             "amd64",
             "arm64"
-          ],
-          "ros-noetic-xgc2-camera-calibration": [
-            "amd64",
-            "arm64"
           ]
         },
         "packages": [
-          "ros-noetic-xgc-camera-driver",
-          "ros-noetic-xgc2-camera-calibration"
+          "ros-noetic-xgc-camera-driver"
         ]
       },
       "id": "xgc2-camera-ros1",
       "kind": "ros1-apt",
-      "name": "XGC2 ROS1 Camera",
+      "name": "XGC2 ROS1 Camera Driver",
       "ownership": {
         "paths": [
           "/opt/ros/noetic/share/xgc_camera_driver",
           "/opt/ros/noetic/lib/xgc_camera_driver",
-          "/opt/ros/noetic/share/xgc_camera_calibration",
-          "/opt/ros/noetic/lib/xgc_camera_calibration",
-          "/opt/ros/noetic/lib/python3/dist-packages/xgc_camera_calibration",
-          "/usr/share/xgc2/process-definitions/xgc2-camera-ros1.json"
+          "/usr/share/xgc2/process-definitions/xgc2-camera-driver-ros1.json"
         ]
       },
       "release": {
         "apt_versions": {
-          "focal": "0.2.0-2"
+          "focal": "0.3.0-1"
         },
         "ci_workflow": "ci.yml",
         "ref": "main",
@@ -1119,19 +1101,18 @@
       "ros": {
         "distro": "noetic",
         "packages": [
-          "xgc_camera_driver",
-          "xgc_camera_calibration"
+          "xgc_camera_driver"
         ],
         "workspace": "catkin"
       },
       "schema": "xgc2.product.v1",
-      "summary": "Productized ROS Noetic camera adapter and optional assisted calibration tools.",
+      "summary": "ROS Noetic adapter for the independently released XGC2 Linux camera core.",
       "usage": {
-        "install": "sudo apt update\nsudo apt install ros-noetic-xgc-camera-driver\nsudo apt install ros-noetic-xgc2-camera-calibration  # optional WebUI/tools\n",
-        "notes": "One process owns one camera. The compatibility launch publishes\n/usb_cam/image_raw and /usb_cam/camera_info with a shared stamp and optical\nframe. The driver is a ROS adapter over the separately released,\nROS-independent libxgc2-camera-dev product.\nThe extrinsic calibrator is a loopback-bound Python HTTP service with a\ndependency-free browser frontend; it does not require a desktop toolkit.\n",
+        "install": "sudo apt update\nsudo apt install ros-noetic-xgc-camera-driver\n",
+        "notes": "One process owns one camera and publishes synchronized Image and CameraInfo\nmessages plus diagnostics. Calibration tools are released independently by\nthe xgc2-camera-calibration-ros1 product.\n",
         "smoke_test": "roslaunch xgc_camera_driver camera.launch backend:=synthetic pixel_format:=bgr24\nrostopic echo -n 1 /usb_cam/camera_info\n"
       },
-      "version": "0.2.0-2"
+      "version": "0.3.0-1"
     },
     {
       "_source": "products/ros1/driver/livox_ros_driver/.xgc2/product.yml",
@@ -1202,6 +1183,71 @@
         "smoke_test": "rospack find livox_ros_driver2\n"
       },
       "version": "1.2.6-7"
+    },
+    {
+      "_source": "products/ros1/perception/camera-calibration/.xgc2/product.yml",
+      "apt": {
+        "depends": [
+          "python3-numpy",
+          "python3-opencv",
+          "python3-rospkg",
+          "python3-yaml",
+          "ros-noetic-geometry-msgs",
+          "ros-noetic-rosbash",
+          "ros-noetic-roslaunch",
+          "ros-noetic-rospy",
+          "ros-noetic-sensor-msgs",
+          "ros-noetic-tf2-ros"
+        ],
+        "distribution": "focal",
+        "install": [
+          "ros-noetic-xgc2-camera-calibration"
+        ],
+        "package_architectures": {
+          "ros-noetic-xgc2-camera-calibration": [
+            "amd64",
+            "arm64"
+          ]
+        },
+        "packages": [
+          "ros-noetic-xgc2-camera-calibration"
+        ]
+      },
+      "id": "xgc2-camera-calibration-ros1",
+      "kind": "ros1-apt",
+      "name": "XGC2 ROS1 Camera Calibration",
+      "ownership": {
+        "paths": [
+          "/opt/ros/noetic/share/xgc_camera_calibration",
+          "/opt/ros/noetic/lib/xgc_camera_calibration",
+          "/opt/ros/noetic/lib/python3/dist-packages/xgc_camera_calibration",
+          "/usr/share/xgc2/process-definitions/xgc2-camera-calibration-ros1.json"
+        ]
+      },
+      "release": {
+        "apt_versions": {
+          "focal": "0.3.0-1"
+        },
+        "ci_workflow": "ci.yml",
+        "ref": "main",
+        "repository": "lxk36/xgc2-camera-calibration-ros1",
+        "workflow": "release.yml"
+      },
+      "ros": {
+        "distro": "noetic",
+        "packages": [
+          "xgc_camera_calibration"
+        ],
+        "workspace": "catkin"
+      },
+      "schema": "xgc2.product.v1",
+      "summary": "Independent intrinsic and fixed-world-camera extrinsic calibration tools for ROS Noetic.",
+      "usage": {
+        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-camera-calibration\n",
+        "notes": "Intrinsic calibration is camera-agnostic and can be used for fixed, onboard,\nor vehicle-mounted cameras. Fixed-camera extrinsic calibration consumes an\nexisting CameraInfo or intrinsic YAML as data; it has no package or release\ndependency on the intrinsic workflow that may have produced those values.\n",
+        "smoke_test": "roslaunch --files xgc_camera_calibration intrinsic_calibrator.launch\nroslaunch --files xgc_camera_calibration extrinsic_calibrator.launch\nroslaunch --files xgc_camera_calibration extrinsic_tf.launch\n"
+      },
+      "version": "0.3.0-1"
     },
     {
       "_source": "products/ros1/perception/detection/.xgc2/product.yml",

@@ -36,7 +36,6 @@ python3-yaml
 # Stable ROS/Gazebo runtime dependencies used by SITL, RViz, VRPN and local
 # catkin builds.
 gazebo11
-ros-noetic-camera-calibration
 ros-noetic-camera-info-manager
 ros-noetic-cv-bridge
 ros-noetic-diagnostic-updater
