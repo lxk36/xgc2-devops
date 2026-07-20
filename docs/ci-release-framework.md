@@ -61,6 +61,12 @@ credential, production Environment, publish job/input, release-manifest writer,
 SSH publisher, `reprepro`, or `aptly publish` use. This enforcement applies to
 all products with APT metadata, regardless of their descriptive `kind`.
 
+Catalog CI also resolves every internal `apt.depends` and `apt.recommends`
+package to its owning product and requires an explicit
+`release.dependency_policy` for every direct internal edge. Missing policies
+fail before a release plan is generated, so a new runtime dependency cannot
+accidentally inherit rebuild propagation.
+
 Jenkins may later provide heavy builders only by emitting the same trusted build
 manifest contract. GitHub remains responsible for approval, dependency
 scheduling, attestation, staging, and production promotion.

@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -14,6 +15,14 @@ import yaml
 
 XGC2_PACKAGE = re.compile(r"\b(?:libxgc2-[a-z0-9.+-]+|ros-[a-z0-9${}_-]+-xgc2-[a-z0-9.+-]+)\b")
 HARDCODED_VERSION = re.compile(r"\^version:\s+([0-9][A-Za-z0-9.+:~_-]*)\$")
+DEBIAN_RELATION_OPERATORS = frozenset({"<<", "<=", "=", ">=", ">>"})
+DPKG_RELATION_OPERATORS = {
+    "lt": "<<",
+    "le": "<=",
+    "eq": "=",
+    "ge": ">=",
+    "gt": ">>",
+}
 
 
 def items(plan: dict[str, Any]) -> list[dict[str, Any]]:
@@ -43,6 +52,27 @@ def scoped_version_matches(product_version: str, apt_version: str) -> bool:
     return apt_version == product_version or apt_version.startswith(
         (f"{product_version}~", f"{product_version}+")
     )
+
+
+def debian_relation_satisfied(
+    actual_version: str,
+    operator: str,
+    required_version: str,
+) -> bool:
+    """Use dpkg's canonical ordering to evaluate a Debian version relation."""
+    if operator not in DEBIAN_RELATION_OPERATORS:
+        raise ValueError(f"unsupported Debian relationship operator: {operator}")
+    result = subprocess.run(
+        ["dpkg", "--compare-versions", actual_version, operator, required_version],
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    if result.returncode not in {0, 1}:
+        detail = result.stderr.strip() or "dpkg --compare-versions failed"
+        raise ValueError(detail)
+    return result.returncode == 0
 
 
 def catalog_products(catalog: dict[str, Any] | None) -> list[dict[str, Any]]:
@@ -160,7 +190,10 @@ def validate(
         release = metadata.get("release", {}) if isinstance(metadata.get("release"), dict) else {}
         declared_packages = {
             package
-            for dependency in apt.get("depends", [])
+            for dependency in [
+                *apt.get("depends", []),
+                *apt.get("recommends", []),
+            ]
             for package in dependency_packages(str(dependency))
         }
         declared_products = {str(dep) for dep in release.get("requires", [])}
@@ -223,7 +256,12 @@ def validate(
                         in_control_heredoc
                         or control_continuation
                         or "write_control" in line
-                        or re.search(r"\bDepends\s*[:=]", line) is not None
+                        or bool(
+                            re.search(
+                                r"\b(?:Pre-Depends|Depends|Recommends)\s*[:=]",
+                                line,
+                            )
+                        )
                     )
                     control_continuation = semantic_control and line.rstrip().endswith("\\")
                     if in_control_heredoc and line.strip() in {"EOF", "CONTROL"}:
@@ -277,7 +315,9 @@ def validate(
                     continue
                 if normalized not in declared_packages and owner[0] not in declared_products:
                     errors.append(
-                        f"{product_id}: scripts use {normalized}, but apt.depends/release.requires does not declare {owner[0]}"
+                        f"{product_id}: scripts use {normalized}, but "
+                        "apt.depends/apt.recommends/release.requires does not "
+                        f"declare {owner[0]}"
                     )
                 relation_tokens: list[tuple[str, str | None]] = []
                 for variant, inferred_distribution in relevant_variants:
@@ -293,9 +333,9 @@ def validate(
                 for variant, inferred_distribution in relation_tokens:
                     relation = re.compile(
                         re.escape(variant)
-                        + r"\s*\(\s*(?:<<|<=|=|>=|>>)\s*([^)$\s][^)]*)\)"
+                        + r"\s*\(\s*(<<|<=|=|>=|>>)\s*([^)$\s][^)]*)\)"
                     )
-                    for declared_version in relation.findall(dependency_text):
+                    for operator, declared_version in relation.findall(dependency_text):
                         candidate_distributions = (
                             [inferred_distribution]
                             if inferred_distribution
@@ -303,10 +343,16 @@ def validate(
                         )
                         for distribution in candidate_distributions:
                             expected = owner[1].get(distribution)
-                            if expected and declared_version.strip() != expected:
+                            required = declared_version.strip()
+                            if expected and not debian_relation_satisfied(
+                                expected,
+                                operator,
+                                required,
+                            ):
                                 errors.append(
-                                    f"{product_id}: {variant} relation uses {declared_version.strip()} "
-                                    f"for {distribution}, but {owner[0]} current APT version is {expected}"
+                                    f"{product_id}: {variant} relation requires {operator} {required} "
+                                    f"for {distribution}, but {owner[0]} current APT version "
+                                    f"{expected} does not satisfy it"
                                 )
                     for line in dependency_text.splitlines():
                         if re.search(
@@ -315,26 +361,39 @@ def validate(
                             line,
                         ) is None:
                             continue
-                        hardcoded_versions: list[str] = []
+                        compare_relations: list[tuple[str, str]] = []
                         if "dpkg --compare-versions" in line:
-                            hardcoded_versions.extend(
-                                re.findall(
-                                    r"\b(?:ge|gt|eq)\s+['\"]([^'\"]+)['\"]",
+                            compare_relations.extend(
+                                (DPKG_RELATION_OPERATORS[operator], version)
+                                for operator, version in re.findall(
+                                    r"\b(lt|le|eq|ge|gt)\s+['\"]([^'\"]+)['\"]",
                                     line,
                                 )
                             )
-                        hardcoded_versions.extend(
-                            re.findall(
-                                rf"{re.escape(variant)}=([0-9][A-Za-z0-9.+:~_-]*)",
-                                line,
-                            )
+                        hard_pins = re.findall(
+                            rf"{re.escape(variant)}=([0-9][A-Za-z0-9.+:~_-]*)",
+                            line,
                         )
                         candidate_distributions = (
                             [inferred_distribution]
                             if inferred_distribution
                             else list(item_distributions)
                         )
-                        for declared_version in hardcoded_versions:
+                        for operator, required in compare_relations:
+                            for distribution in candidate_distributions:
+                                expected = owner[1].get(distribution)
+                                if expected and not debian_relation_satisfied(
+                                    expected,
+                                    operator,
+                                    required,
+                                ):
+                                    errors.append(
+                                        f"{product_id}: {variant} comparison requires "
+                                        f"{operator} {required} for {distribution}, but "
+                                        f"{owner[0]} current APT version {expected} does not "
+                                        "satisfy it"
+                                    )
+                        for declared_version in hard_pins:
                             for distribution in candidate_distributions:
                                 expected = owner[1].get(distribution)
                                 if expected and declared_version != expected:
@@ -364,9 +423,25 @@ def validate(
                         continue
                     apt_package = str(entry.get("apt", ""))
                     owner = package_owners.get(apt_package)
-                    if owner and str(entry.get("version", "")) != owner_default_version(owner) and not allow_planned_updates:
+                    if not owner or allow_planned_updates:
+                        continue
+                    actual = owner_default_version(owner)
+                    required = str(entry.get("version", ""))
+                    if entry.get("local"):
+                        satisfied = actual == required
+                        relation_description = f"exact version {required}"
+                    else:
+                        satisfied = bool(required) and debian_relation_satisfied(
+                            actual,
+                            ">=",
+                            required,
+                        )
+                        relation_description = f"compatible minimum {required}"
+                    if not satisfied:
                         errors.append(
-                            f"{product_id}: release-set {entry_name}={entry.get('version')} but plan requires {owner_default_version(owner)}"
+                            f"{product_id}: release-set {entry_name} requires "
+                            f"{relation_description}, but {owner[0]} current APT version "
+                            f"is {actual}"
                         )
     return errors
 

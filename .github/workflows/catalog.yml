@@ -36,9 +36,11 @@ jobs:
             scripts/apply-release-version-bumps.py \
             scripts/audit-product-workflows.py \
             scripts/cleanup-product-apt-secrets.py \
+            scripts/collect-products.py \
             scripts/orchestrate-apt-release.py \
             scripts/release-train-publisher.py \
             scripts/release-plan-github-outputs.py \
+            scripts/resolve-product-metadata-submodules.py \
             scripts/run-release-plan-product.py \
             scripts/schedule-release-plan.py \
             scripts/stage-product-release.py \

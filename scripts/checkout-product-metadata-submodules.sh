@@ -4,6 +4,23 @@ set -euo pipefail
 repo_root="$(git rev-parse --show-toplevel)"
 cd "${repo_root}"
 
+# Resolve before changing credentials or contacting a remote. The tracked
+# catalog is the release control-plane contract; an incomplete or invalid
+# mapping must stop the job instead of silently producing a partial catalog.
+resolution_file="$(mktemp "${TMPDIR:-/tmp}/xgc2-metadata-submodules.XXXXXX")"
+cleanup() {
+  rm -f -- "${resolution_file}"
+}
+trap cleanup EXIT
+
+python3 scripts/resolve-product-metadata-submodules.py \
+  --root "${repo_root}" > "${resolution_file}"
+mapfile -t submodules < "${resolution_file}"
+if (( ${#submodules[@]} == 0 )); then
+  echo "::error title=Product metadata resolution failed::tracked catalog resolved to no submodules"
+  exit 1
+fi
+
 if [[ -n "${SUBMODULE_SSH_KEY:-}" ]]; then
   install -m 0700 -d "${HOME}/.ssh"
   key_file="${HOME}/.ssh/xgc2-submodule-key"
@@ -19,53 +36,14 @@ else
   git config --global url."https://github.com/".insteadOf git@github.com:
 fi
 
-submodules=(
-  products/common/acados
-  products/common/adapter-runtime-client-cpp
-  products/common/camera-core
-  products/common/math
-  products/common/mavlink-router
-  products/common/protobuf
-  products/common/state-machine
-  products/common/tbb
-  products/common/vrpn-router
-  products/robotics/agilex
-  products/robotics/fs150
-  products/webui/lichtblick-packaging
-  products/ros1/common/ros1-msgs
-  products/ros1/common/ros1-utils
-  products/ros1/communication/ros1-adapter
-  products/ros1/communication/ros1-tools-adapter
-  products/ros1/communication/runtime-sync
-  products/ros1/communication/swarm-ros-bridge
-  products/ros1/controller
-  products/ros1/driver/camera
-  products/ros1/driver/livox_ros_driver
-  products/ros1/driver/livox_ros_driver2
-  products/ros1/perception/camera-calibration
-  products/ros1/perception/detection
-  products/ros1/perception/hover-thrust
-  products/ros1/perception/rigid-state
-  products/ros1/perception/slam
-  products/ros1/planner/planner
-  products/ros1/robot/fs150_description
-  products/ros1/robot/scout_description
-  products/ros1/robot/scout_msgs
-  products/ros1/robot/xgc2_robot_visualization
-  products/ros1/simulator/convex_geometry
-  products/ros1/simulator/gazebo-sim
-  products/ros1/simulator/gazebo-sim-tools
-  products/ros1/simulator/swarm-sync-sim
-  products/ros2/simulator/px4-sitl-116
-  products/utils/linux
-)
-
 for submodule_path in "${submodules[@]}"; do
-  if ! git ls-files -s "${submodule_path}" | grep -q '^160000 '; then
-    echo "::warning title=Submodule not indexed::${submodule_path} is not a gitlink in this revision"
-    continue
-  fi
+  echo "checking out product metadata root: ${submodule_path}"
   if ! git submodule update --init --recursive --depth=1 "${submodule_path}"; then
-    echo "::warning title=Submodule checkout failed::${submodule_path} could not be checked out; catalog will continue with available products"
+    echo "::error title=Submodule checkout failed::${submodule_path} could not be checked out"
+    exit 1
   fi
 done
+
+python3 scripts/resolve-product-metadata-submodules.py \
+  --root "${repo_root}" \
+  --verify-checkout > /dev/null

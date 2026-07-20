@@ -9,6 +9,7 @@ import json
 import os
 import re
 import subprocess
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -160,6 +161,7 @@ class Product:
     apt_depends: tuple[str, ...]
     groups: tuple[str, ...]
     release: dict[str, Any]
+    apt_recommends: tuple[str, ...] = ()
     apt_package_architectures: dict[str, tuple[str, ...]] = field(default_factory=dict)
     apt_package_distributions: dict[str, tuple[str, ...]] = field(default_factory=dict)
 
@@ -297,19 +299,27 @@ class ReleaseTarget:
     expected_apt_versions: dict[str, str]
 
 
-def load_catalog(root: Path, catalog_path: Path | None) -> list[Product]:
+def load_catalog(
+    root: Path,
+    catalog_path: Path | None,
+    *,
+    allow_implicit_dependency_policy: bool = False,
+) -> list[Product]:
     if catalog_path is None:
         catalog_path = root / ".work" / "release-products.json"
         catalog_path.parent.mkdir(parents=True, exist_ok=True)
+        collect_args = [
+            "python3",
+            "scripts/collect-products.py",
+            "--root",
+            ".",
+            "--output",
+            str(catalog_path.relative_to(root)),
+        ]
+        if allow_implicit_dependency_policy:
+            collect_args.append("--allow-implicit-dependency-policy")
         run(
-            [
-                "python3",
-                "scripts/collect-products.py",
-                "--root",
-                ".",
-                "--output",
-                str(catalog_path.relative_to(root)),
-            ],
+            collect_args,
             cwd=root,
             capture=False,
         )
@@ -347,6 +357,7 @@ def load_catalog(root: Path, catalog_path: Path | None) -> list[Product]:
                 apt_depends=tuple(list_field(item, "apt", "depends")),
                 groups=tuple(list_field(item, "groups")),
                 release=release,
+                apt_recommends=tuple(list_field(item, "apt", "recommends")),
                 apt_package_architectures={
                     str(package): tuple(str(arch) for arch in arches)
                     for package, arches in raw_package_architectures.items()
@@ -364,7 +375,14 @@ def load_catalog(root: Path, catalog_path: Path | None) -> list[Product]:
 
 def build_graph(
     products: list[Product],
-) -> tuple[dict[str, set[str]], dict[str, set[str]], dict[tuple[str, str], str]]:
+    *,
+    allow_implicit_dependency_policy: bool = False,
+) -> tuple[
+    dict[str, set[str]],
+    dict[str, set[str]],
+    dict[tuple[str, str], str],
+    dict[tuple[str, str], tuple[str, ...]],
+]:
     active = [product for product in products if product.is_apt]
     owners: dict[str, str] = {}
     for product in active:
@@ -380,16 +398,28 @@ def build_graph(
     downstream: dict[str, set[str]] = {product.product_id: set() for product in active}
     upstream: dict[str, set[str]] = {product.product_id: set() for product in active}
     edge_policy: dict[tuple[str, str], str] = {}
+    edge_source: dict[tuple[str, str], tuple[str, ...]] = {}
     active_ids = set(upstream)
+    implicit_edges: list[str] = []
     for product in active:
         direct_upstream: set[str] = set()
+        edge_sources: dict[str, set[str]] = {}
         for dependency in product.apt_depends:
             provider = owners.get(parse_dep_package(dependency))
             if provider and provider != product.product_id:
                 downstream[provider].add(product.product_id)
                 upstream[product.product_id].add(provider)
                 direct_upstream.add(provider)
+                edge_sources.setdefault(provider, set()).add("apt.depends")
                 edge_policy[(provider, product.product_id)] = "rebuild"
+        for dependency in product.apt_recommends:
+            provider = owners.get(parse_dep_package(dependency))
+            if provider and provider != product.product_id:
+                downstream[provider].add(product.product_id)
+                upstream[product.product_id].add(provider)
+                direct_upstream.add(provider)
+                edge_sources.setdefault(provider, set()).add("apt.recommends")
+                edge_policy.setdefault((provider, product.product_id), "verify")
         for provider in product.release_requires:
             if provider not in active_ids:
                 raise ValueError(
@@ -400,6 +430,7 @@ def build_graph(
             downstream[provider].add(product.product_id)
             upstream[product.product_id].add(provider)
             direct_upstream.add(provider)
+            edge_sources.setdefault(provider, set()).add("release.requires")
             edge_policy.setdefault((provider, product.product_id), "order")
         unknown_overrides = sorted(set(product.dependency_policy) - direct_upstream)
         if unknown_overrides:
@@ -407,9 +438,28 @@ def build_graph(
                 f"{product.product_id}: release.dependency_policy references non-direct "
                 f"upstream product(s): {', '.join(unknown_overrides)}"
             )
+        missing_overrides = sorted(direct_upstream - set(product.dependency_policy))
+        for provider in missing_overrides:
+            legacy_default = edge_policy[(provider, product.product_id)]
+            sources = "+".join(sorted(edge_sources[provider]))
+            implicit_edges.append(
+                f"{product.product_id} <- {provider} "
+                f"({sources}; legacy default={legacy_default})"
+            )
         for provider, policy in product.dependency_policy.items():
             edge_policy[(provider, product.product_id)] = policy
-    return downstream, upstream, edge_policy
+        for provider, sources in edge_sources.items():
+            edge_source[(provider, product.product_id)] = tuple(sorted(sources))
+    if implicit_edges and not allow_implicit_dependency_policy:
+        details = "\n".join(f"  - {edge}" for edge in implicit_edges)
+        raise ValueError(
+            "implicit internal dependency policies are forbidden; add every direct "
+            "upstream product id to release.dependency_policy:\n"
+            f"{details}\n"
+            "Use --allow-implicit-dependency-policy only as a temporary migration "
+            "escape hatch."
+        )
+    return downstream, upstream, edge_policy, edge_source
 
 
 def merge_action(current: str | None, candidate: str) -> str:
@@ -927,6 +977,7 @@ def product_plan_json(
     targets: dict[str, ReleaseTarget],
     downstream: dict[str, set[str]],
     edge_policy: dict[tuple[str, str], str],
+    edge_source: dict[tuple[str, str], tuple[str, ...]],
 ) -> dict[str, Any]:
     selected = set(targets)
     dependencies: dict[str, list[str]] = {product_id: [] for product_id in selected}
@@ -944,6 +995,10 @@ def product_plan_json(
                 provider: edge_policy[(provider, product_id)]
                 for provider in dependencies_for_product
             }
+            sources = {
+                provider: list(edge_source[(provider, product_id)])
+                for provider in dependencies_for_product
+            }
             dependency_set = [
                 {
                     "id": provider,
@@ -958,6 +1013,7 @@ def product_plan_json(
                 **target_plan_item(product_id, layer_index, targets[product_id], root=root),
                 "dependencies": dependencies_for_product,
                 "dependency_policy": policies,
+                "dependency_sources": sources,
                 "dependency_set_digest": canonical_digest(dependency_set),
                 "release_scoped_build": any(
                     targets[provider].action == RELEASE_ACTION
@@ -1044,8 +1100,16 @@ def write_plan_outputs(
     targets: dict[str, ReleaseTarget],
     downstream: dict[str, set[str]],
     edge_policy: dict[tuple[str, str], str],
+    edge_source: dict[tuple[str, str], tuple[str, ...]],
 ) -> None:
-    plan = product_plan_json(root, layers, targets, downstream, edge_policy)
+    plan = product_plan_json(
+        root,
+        layers,
+        targets,
+        downstream,
+        edge_policy,
+        edge_source,
+    )
     plan_path = root / plan_output
     plan_path.parent.mkdir(parents=True, exist_ok=True)
     with plan_path.open("w", encoding="utf-8") as handle:
@@ -1136,13 +1200,38 @@ def main() -> int:
     parser.add_argument("--plan-output", default=".work/release-plan.json")
     parser.add_argument("--lock-output", default=".work/release-lock.json")
     parser.add_argument("--summary-output", help="write a Markdown DAG summary")
+    parser.add_argument(
+        "--allow-implicit-dependency-policy",
+        action="store_true",
+        help=(
+            "temporary migration escape hatch: preserve legacy apt.depends=rebuild, "
+            "apt.recommends=verify, and release.requires=order defaults"
+        ),
+    )
     args = parser.parse_args()
 
     root = Path(args.root).resolve()
     catalog_path = Path(args.catalog).resolve() if args.catalog else None
-    products = [product for product in load_catalog(root, catalog_path) if product.is_apt]
+    products = [
+        product
+        for product in load_catalog(
+            root,
+            catalog_path,
+            allow_implicit_dependency_policy=args.allow_implicit_dependency_policy,
+        )
+        if product.is_apt
+    ]
     products_by_id = {product.product_id: product for product in products}
-    downstream, upstream, edge_policy = build_graph(products)
+    if args.allow_implicit_dependency_policy and catalog_path is not None:
+        print(
+            "warning: implicit internal dependency policies are enabled; "
+            "this mode is for migration only",
+            file=sys.stderr,
+        )
+    downstream, upstream, edge_policy, edge_source = build_graph(
+        products,
+        allow_implicit_dependency_policy=args.allow_implicit_dependency_policy,
+    )
 
     explicit_seed = {
         product_id
@@ -1203,6 +1292,7 @@ def main() -> int:
         targets=targets,
         downstream=downstream,
         edge_policy=edge_policy,
+        edge_source=edge_source,
     )
 
     if args.execute:

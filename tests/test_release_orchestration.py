@@ -12,6 +12,7 @@ import tempfile
 import threading
 import unittest
 from collections import deque
+from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
@@ -31,6 +32,7 @@ def load_script(name: str):
 
 
 planner = load_script("orchestrate-apt-release.py")
+catalog_collector = load_script("collect-products.py")
 scheduler = load_script("schedule-release-plan.py")
 runner = load_script("run-release-plan-product.py")
 manifest_tool = load_script("create-release-manifest.py")
@@ -115,6 +117,13 @@ class WorkflowAuditTests(unittest.TestCase):
                         f"{workflow_path.name}:{job_name}:{label}: {result.stderr}",
                     )
         self.assertGreater(checked, 0)
+
+    def test_central_ci_never_enables_implicit_dependency_policies(self):
+        for workflow_name in ("catalog.yml", "release-orchestrator.yml"):
+            workflow = (ROOT / ".github" / "workflows" / workflow_name).read_text(
+                encoding="utf-8"
+            )
+            self.assertNotIn("--allow-implicit-dependency-policy", workflow)
 
     def test_run_block_syntax_check_understands_python_heredocs_and_bad_delimiters(self):
         valid_python_heredoc = """\
@@ -253,7 +262,129 @@ on:
             )
 
 
+class CatalogDependencyPolicyTests(unittest.TestCase):
+    @staticmethod
+    def product(
+        product_id: str,
+        package: str,
+        *,
+        depends: list[str] | None = None,
+        recommends: list[str] | None = None,
+        release: dict[str, object] | None = None,
+    ) -> dict[str, object]:
+        value: dict[str, object] = {
+            "id": product_id,
+            "apt": {
+                "install": [package],
+                "packages": [package],
+                "depends": depends or [],
+                "recommends": recommends or [],
+            },
+        }
+        if release is not None:
+            value["release"] = release
+        return value
+
+    def test_catalog_rejects_missing_internal_policy(self):
+        products = [
+            self.product("provider", "provider-deb"),
+            self.product("consumer", "consumer-deb", depends=["provider-deb"]),
+        ]
+
+        self.assertEqual(
+            catalog_collector.validate_internal_dependency_policies(products),
+            [
+                "consumer: missing release.dependency_policy[provider] "
+                "for internal apt.depends edge"
+            ],
+        )
+
+    def test_catalog_accepts_explicit_policy_and_external_dependency(self):
+        products = [
+            self.product("provider", "provider-deb"),
+            self.product(
+                "consumer",
+                "consumer-deb",
+                depends=["provider-deb", "curl"],
+                release={"dependency_policy": {"provider": "verify"}},
+            ),
+        ]
+
+        self.assertEqual(
+            catalog_collector.validate_internal_dependency_policies(products),
+            [],
+        )
+
+    def test_catalog_recommends_is_a_direct_internal_edge(self):
+        products = [
+            self.product("provider", "provider-deb"),
+            self.product(
+                "consumer",
+                "consumer-deb",
+                recommends=["provider-deb"],
+            ),
+        ]
+
+        self.assertEqual(
+            catalog_collector.validate_internal_dependency_policies(products),
+            [
+                "consumer: missing release.dependency_policy[provider] "
+                "for internal apt.recommends edge"
+            ],
+        )
+
+    def test_catalog_legacy_escape_hatch_only_suppresses_missing_policy(self):
+        products = [
+            self.product("provider", "provider-deb"),
+            self.product(
+                "consumer",
+                "consumer-deb",
+                depends=["provider-deb"],
+                release={"dependency_policy": {"not-direct": "order"}},
+            ),
+        ]
+
+        errors = catalog_collector.validate_internal_dependency_policies(
+            products,
+            allow_implicit=True,
+        )
+
+        self.assertEqual(
+            errors,
+            [
+                "consumer: release.dependency_policy references non-direct "
+                "upstream product(s): not-direct"
+            ],
+        )
+
+
 class DagTests(unittest.TestCase):
+    @staticmethod
+    def product(
+        product_id: str,
+        *,
+        apt_package: str | None = None,
+        apt_depends: tuple[str, ...] = (),
+        apt_recommends: tuple[str, ...] = (),
+        release: dict[str, object] | None = None,
+    ) -> object:
+        package = apt_package or product_id
+        return planner.Product(
+            product_id=product_id,
+            name=product_id,
+            kind="ros1-apt",
+            version="1.0.0-1",
+            source_file=Path(f"products/{product_id}/.xgc2/product.yml"),
+            source_dir=Path(f"products/{product_id}"),
+            apt_distributions=("focal",),
+            apt_install=(package,),
+            apt_packages=(package,),
+            apt_depends=apt_depends,
+            groups=(),
+            release=release or {},
+            apt_recommends=apt_recommends,
+        )
+
     def test_mixed_product_with_deb_metadata_is_an_apt_product(self):
         product = planner.Product(
             product_id="xgc2-fs150",
@@ -319,6 +450,160 @@ class DagTests(unittest.TestCase):
                 "c": "compatibility-verify",
                 "e": "release",
             },
+        )
+
+    def test_internal_apt_edge_requires_explicit_policy(self):
+        provider = self.product("provider", apt_package="provider-deb")
+        consumer = self.product(
+            "consumer",
+            apt_depends=("provider-deb (>= 1.0.0-1)",),
+        )
+
+        with self.assertRaisesRegex(
+            ValueError,
+            r"consumer <- provider \(apt\.depends; legacy default=rebuild\)",
+        ):
+            planner.build_graph([provider, consumer])
+
+    def test_release_requires_edge_requires_explicit_policy(self):
+        provider = self.product("provider")
+        consumer = self.product(
+            "consumer",
+            release={"requires": ["provider"]},
+        )
+
+        with self.assertRaisesRegex(
+            ValueError,
+            r"consumer <- provider \(release\.requires; legacy default=order\)",
+        ):
+            planner.build_graph([provider, consumer])
+
+    def test_internal_recommends_edge_requires_explicit_policy(self):
+        provider = self.product("provider", apt_package="provider-deb")
+        consumer = self.product(
+            "consumer",
+            apt_recommends=("provider-deb (>= 1.0.0-1)",),
+        )
+
+        with self.assertRaisesRegex(
+            ValueError,
+            r"consumer <- provider \(apt\.recommends; legacy default=verify\)",
+        ):
+            planner.build_graph([provider, consumer])
+
+    def test_explicit_policy_is_used_for_direct_internal_edge(self):
+        provider = self.product("provider", apt_package="provider-deb")
+        consumer = self.product(
+            "consumer",
+            apt_depends=("provider-deb",),
+            release={"dependency_policy": {"provider": "verify"}},
+        )
+
+        downstream, upstream, policies, sources = planner.build_graph([provider, consumer])
+
+        self.assertEqual(downstream["provider"], {"consumer"})
+        self.assertEqual(upstream["consumer"], {"provider"})
+        self.assertEqual(policies[("provider", "consumer")], "verify")
+        self.assertEqual(sources[("provider", "consumer")], ("apt.depends",))
+
+    def test_legacy_escape_hatch_preserves_implicit_defaults(self):
+        apt_provider = self.product("apt-provider", apt_package="provider-deb")
+        order_provider = self.product("order-provider")
+        consumer = self.product(
+            "consumer",
+            apt_depends=("provider-deb",),
+            release={"requires": ["order-provider"]},
+        )
+
+        _downstream, _upstream, policies, sources = planner.build_graph(
+            [apt_provider, order_provider, consumer],
+            allow_implicit_dependency_policy=True,
+        )
+
+        self.assertEqual(policies[("apt-provider", "consumer")], "rebuild")
+        self.assertEqual(policies[("order-provider", "consumer")], "order")
+        self.assertEqual(sources[("apt-provider", "consumer")], ("apt.depends",))
+        self.assertEqual(sources[("order-provider", "consumer")], ("release.requires",))
+
+    def test_load_catalog_forwards_legacy_policy_flag_to_automatic_collection(self):
+        captured: list[str] = []
+
+        def fake_run(args, **kwargs):
+            del kwargs
+            captured.extend(args)
+            catalog_path = root / ".work" / "release-products.json"
+            catalog_path.parent.mkdir(parents=True, exist_ok=True)
+            catalog_path.write_text('{"products": []}\n', encoding="utf-8")
+            return subprocess.CompletedProcess(args, 0, "", "")
+
+        with tempfile.TemporaryDirectory() as directory, mock.patch.object(
+            planner,
+            "run",
+            side_effect=fake_run,
+        ):
+            root = Path(directory)
+            self.assertEqual(
+                planner.load_catalog(
+                    root,
+                    None,
+                    allow_implicit_dependency_policy=True,
+                ),
+                [],
+            )
+
+        self.assertIn("--allow-implicit-dependency-policy", captured)
+
+    def test_plan_preserves_dependency_edge_sources(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            provider = replace(
+                self.product("provider", apt_package="provider-deb"),
+                source_dir=root / "provider",
+                source_file=root / "provider" / ".xgc2" / "product.yml",
+            )
+            consumer = replace(
+                self.product(
+                    "consumer",
+                    apt_recommends=("provider-deb",),
+                    release={"dependency_policy": {"provider": "verify"}},
+                ),
+                source_dir=root / "consumer",
+                source_file=root / "consumer" / ".xgc2" / "product.yml",
+            )
+            for product in (provider, consumer):
+                product.source_dir.mkdir()
+
+            downstream, _upstream, policies, sources = planner.build_graph(
+                [provider, consumer]
+            )
+
+            def target(product):
+                return planner.ReleaseTarget(
+                    product=product,
+                    repository=f"example/{product.product_id}",
+                    ref="main",
+                    workflow="release.yml",
+                    workflow_path=None,
+                    dispatch_inputs={},
+                    action="release",
+                    source_sha="a" * 40,
+                    expected_version=product.version,
+                    expected_apt_versions={"focal": product.version},
+                )
+
+            plan = planner.product_plan_json(
+                root,
+                [["provider"], ["consumer"]],
+                {"provider": target(provider), "consumer": target(consumer)},
+                downstream,
+                policies,
+                sources,
+            )
+
+        consumer_item = plan["layers"][1][0]
+        self.assertEqual(
+            consumer_item["dependency_sources"],
+            {"provider": ["apt.recommends"]},
         )
 
     def test_diamond_layers(self):
@@ -2472,11 +2757,21 @@ class ReleasePlanValidationTests(unittest.TestCase):
         }
 
     @staticmethod
-    def write_consumer(root: Path, *, requires: bool) -> Path:
+    def write_consumer(
+        root: Path,
+        *,
+        requires: bool,
+        recommends: bool = False,
+    ) -> Path:
         source = root / "consumer"
         scripts = source / ".xgc2" / "scripts"
         scripts.mkdir(parents=True)
         requirement = "\n  requires:\n  - xgc2-provider" if requires else ""
+        recommendation = (
+            "  recommends:\n  - ros-noetic-xgc2-provider (>= 2.0.0-1)"
+            if recommends
+            else "  recommends: []"
+        )
         (source / ".xgc2" / "product.yml").write_text(
             "\n".join(
                 (
@@ -2490,6 +2785,7 @@ class ReleasePlanValidationTests(unittest.TestCase):
                     "  packages:",
                     "  - ros-noetic-xgc2-consumer",
                     "  depends: []",
+                    recommendation,
                     f"release:{requirement}",
                     "",
                 )
@@ -2524,13 +2820,30 @@ class ReleasePlanValidationTests(unittest.TestCase):
             errors = plan_validator.validate(root, plan, catalog=self.catalog())
 
         self.assertTrue(
-            any("apt.depends/release.requires" in error for error in errors), errors
+            any(
+                "apt.depends/apt.recommends/release.requires" in error
+                for error in errors
+            ),
+            errors,
         )
 
     def test_release_requires_satisfies_installation_order_constraint(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             source = self.write_consumer(root, requires=True)
+            plan = {"layers": [[self.plan_item(source.relative_to(root).as_posix())]]}
+            errors = plan_validator.validate(root, plan, catalog=self.catalog())
+
+        self.assertEqual(errors, [])
+
+    def test_apt_recommends_satisfies_declared_package_constraint(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = self.write_consumer(root, requires=False, recommends=True)
+            (source / ".xgc2" / "scripts" / "build_deb.sh").write_text(
+                "Recommends: ros-noetic-xgc2-provider (>= 2.0.0-1)\n",
+                encoding="utf-8",
+            )
             plan = {"layers": [[self.plan_item(source.relative_to(root).as_posix())]]}
             errors = plan_validator.validate(root, plan, catalog=self.catalog())
 
@@ -2560,19 +2873,73 @@ class ReleasePlanValidationTests(unittest.TestCase):
             errors = plan_validator.validate(
                 root, {"layers": [[item]]}, catalog=self.catalog()
             )
-        self.assertTrue(any("apt.depends/release.requires" in error for error in errors))
+        self.assertTrue(
+            any(
+                "apt.depends/apt.recommends/release.requires" in error
+                for error in errors
+            )
+        )
 
-    def test_owned_package_hardcoded_minimum_must_match_current_catalog_version(self):
+    def test_owned_package_compatible_minimum_may_precede_current_catalog_version(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             source = self.write_consumer(root, requires=True)
-            (source / ".xgc2" / "scripts" / "install_deps.sh").write_text(
-                "apt-get install -y 'ros-noetic-xgc2-provider (>= 1.0.0-1)'\n",
+            (source / ".xgc2" / "scripts" / "build_deb.sh").write_text(
+                "Depends: ros-noetic-xgc2-provider (>= 1.0.0-1)\n",
                 encoding="utf-8",
             )
             plan = {"layers": [[self.plan_item(source.relative_to(root).as_posix())]]}
             errors = plan_validator.validate(root, plan, catalog=self.catalog())
-        self.assertTrue(any("current APT version is 2.0.0-1" in error for error in errors))
+
+        self.assertEqual(errors, [])
+
+    def test_owned_package_minimum_above_provider_version_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = self.write_consumer(root, requires=True)
+            (source / ".xgc2" / "scripts" / "build_deb.sh").write_text(
+                "Depends: ros-noetic-xgc2-provider (>= 3.0.0-1)\n",
+                encoding="utf-8",
+            )
+            plan = {"layers": [[self.plan_item(source.relative_to(root).as_posix())]]}
+            errors = plan_validator.validate(root, plan, catalog=self.catalog())
+
+        self.assertTrue(
+            any(">= 3.0.0-1" in error and "does not satisfy" in error for error in errors),
+            errors,
+        )
+
+    def test_owned_package_exact_relation_remains_exact(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = self.write_consumer(root, requires=True)
+            (source / ".xgc2" / "scripts" / "build_deb.sh").write_text(
+                "Depends: ros-noetic-xgc2-provider (= 1.0.0-1)\n",
+                encoding="utf-8",
+            )
+            plan = {"layers": [[self.plan_item(source.relative_to(root).as_posix())]]}
+            errors = plan_validator.validate(root, plan, catalog=self.catalog())
+
+        self.assertTrue(
+            any("= 1.0.0-1" in error and "does not satisfy" in error for error in errors),
+            errors,
+        )
+
+    def test_owned_package_hard_install_pin_remains_exact(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = self.write_consumer(root, requires=True)
+            (source / ".xgc2" / "scripts" / "install_deps.sh").write_text(
+                "apt-get install -y ros-noetic-xgc2-provider=1.0.0-1\n",
+                encoding="utf-8",
+            )
+            plan = {"layers": [[self.plan_item(source.relative_to(root).as_posix())]]}
+            errors = plan_validator.validate(root, plan, catalog=self.catalog())
+
+        self.assertTrue(
+            any("hard-coded install/compliance version" in error for error in errors),
+            errors,
+        )
 
     def test_owned_package_version_through_shell_variable_is_audited(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -2585,7 +2952,8 @@ class ReleasePlanValidationTests(unittest.TestCase):
             )
             plan = {"layers": [[self.plan_item(source.relative_to(root).as_posix())]]}
             errors = plan_validator.validate(root, plan, catalog=self.catalog())
-        self.assertTrue(any("current APT version is 2.0.0-1" in error for error in errors))
+
+        self.assertEqual(errors, [])
 
     def test_dpkg_compare_threshold_for_release_requires_is_audited(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -2598,10 +2966,158 @@ class ReleasePlanValidationTests(unittest.TestCase):
             )
             plan = {"layers": [[self.plan_item(source.relative_to(root).as_posix())]]}
             errors = plan_validator.validate(root, plan, catalog=self.catalog())
-        self.assertTrue(any("hard-coded install/compliance version" in error for error in errors))
+
+        self.assertEqual(errors, [])
+
+    def test_release_set_external_version_is_a_compatible_minimum(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = self.write_consumer(root, requires=True)
+            (source / ".xgc2" / "release-set.yml").write_text(
+                "packages:\n"
+                "  provider:\n"
+                "    apt: ros-noetic-xgc2-provider\n"
+                "    version: 1.0.0-1\n",
+                encoding="utf-8",
+            )
+            plan = {"layers": [[self.plan_item(source.relative_to(root).as_posix())]]}
+            errors = plan_validator.validate(root, plan, catalog=self.catalog())
+
+        self.assertEqual(errors, [])
+
+    def test_release_set_minimum_above_provider_version_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = self.write_consumer(root, requires=True)
+            (source / ".xgc2" / "release-set.yml").write_text(
+                "packages:\n"
+                "  provider:\n"
+                "    apt: ros-noetic-xgc2-provider\n"
+                "    version: 3.0.0-1\n",
+                encoding="utf-8",
+            )
+            plan = {"layers": [[self.plan_item(source.relative_to(root).as_posix())]]}
+            errors = plan_validator.validate(root, plan, catalog=self.catalog())
+
+        self.assertTrue(
+            any("compatible minimum 3.0.0-1" in error for error in errors),
+            errors,
+        )
 
 
 class VersionBumpSafetyTests(unittest.TestCase):
+    def test_dependency_minimum_updates_are_cli_opt_in(self):
+        defaults = version_bumper.parse_args(["--plan", "plan.json"])
+        legacy_skip = version_bumper.parse_args(
+            ["--plan", "plan.json", "--skip-dependency-updates"]
+        )
+        explicit_update = version_bumper.parse_args(
+            ["--plan", "plan.json", "--update-dependency-minimums"]
+        )
+
+        self.assertFalse(defaults.update_dependency_minimums)
+        self.assertFalse(legacy_skip.update_dependency_minimums)
+        self.assertTrue(explicit_update.update_dependency_minimums)
+
+    def test_default_behavior_preserves_compatible_dependency_minimums(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "consumer"
+            (source / ".xgc2").mkdir(parents=True)
+            product = source / ".xgc2" / "product.yml"
+            release_set = source / ".xgc2" / "release-set.yml"
+            product.write_text(
+                "schema: xgc2.product.v1\n"
+                "id: consumer\n"
+                "name: Consumer\n"
+                "kind: ros1-apt\n"
+                "version: 1.0.0-1\n"
+                "apt:\n"
+                "  packages: [consumer-deb]\n"
+                "  depends: [provider-deb (>= 1.0.0-1)]\n"
+                "  recommends: [provider-deb (>= 1.0.0-1)]\n",
+                encoding="utf-8",
+            )
+            release_set.write_text(
+                "packages:\n"
+                "  provider:\n"
+                "    apt: provider-deb\n"
+                "    version: 1.0.0-1\n",
+                encoding="utf-8",
+            )
+            original_product = product.read_bytes()
+            original_release_set = release_set.read_bytes()
+
+            changed = version_bumper.update_product_metadata(
+                root,
+                {
+                    "id": "consumer",
+                    "action": "release",
+                    "source": "consumer",
+                    "version": "1.0.0-1",
+                    "expected_version": "1.0.0-1",
+                },
+                owner_versions={"provider-deb": "1.0.0-2"},
+                update_dependencies=False,
+                apply=True,
+            )
+            rewritten_product = product.read_bytes()
+            rewritten_release_set = release_set.read_bytes()
+
+        self.assertEqual(changed, set())
+        self.assertEqual(rewritten_product, original_product)
+        self.assertEqual(rewritten_release_set, original_release_set)
+
+    def test_explicit_opt_in_updates_all_compatible_dependency_minimums(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "consumer"
+            (source / ".xgc2").mkdir(parents=True)
+            (source / ".xgc2" / "product.yml").write_text(
+                "schema: xgc2.product.v1\n"
+                "id: consumer\n"
+                "name: Consumer\n"
+                "kind: ros1-apt\n"
+                "version: 1.0.0-1\n"
+                "apt:\n"
+                "  packages: [consumer-deb]\n"
+                "  depends: [provider-deb (>= 1.0.0-1)]\n"
+                "  recommends: [provider-deb (>= 1.0.0-1)]\n",
+                encoding="utf-8",
+            )
+            (source / ".xgc2" / "release-set.yml").write_text(
+                "packages:\n"
+                "  provider:\n"
+                "    apt: provider-deb\n"
+                "    version: 1.0.0-1\n",
+                encoding="utf-8",
+            )
+
+            changed = version_bumper.update_product_metadata(
+                root,
+                {
+                    "id": "consumer",
+                    "action": "release",
+                    "source": "consumer",
+                    "version": "1.0.0-1",
+                    "expected_version": "1.0.0-1",
+                },
+                owner_versions={"provider-deb": "1.0.0-2"},
+                update_dependencies=True,
+                apply=True,
+            )
+            metadata = version_bumper.load_yaml(source / ".xgc2" / "product.yml")
+            release_set = version_bumper.load_yaml(source / ".xgc2" / "release-set.yml")
+
+        self.assertIn(".xgc2/product.yml", changed)
+        self.assertIn(".xgc2/release-set.yml", changed)
+        self.assertEqual(metadata["apt"]["depends"], ["provider-deb (>= 1.0.0-2)"])
+        self.assertEqual(
+            metadata["apt"]["recommends"],
+            ["provider-deb (>= 1.0.0-2)"],
+        )
+        self.assertEqual(release_set["packages"]["provider"]["version"], "1.0.0-2")
+
     def test_push_transaction_is_lease_guarded_and_idempotent(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

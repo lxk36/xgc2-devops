@@ -50,12 +50,23 @@ APT service atomically switches the complete production generation.
 
 ## Dependency impact
 
-`apt.depends` discovers internal package dependencies and defaults to
-`rebuild`. `release.requires` expresses ordering and defaults to `order`.
-Products may override a direct upstream edge:
+`apt.depends` declares hard Debian installation/runtime dependencies, while
+`apt.recommends` declares optional runtime integrations that Debian installs by
+default but may omit. `release.requires` adds a build, install-check, or
+scheduling prerequisite without creating a Debian relationship. None of these
+fields is allowed to imply release impact: every direct internal edge must be
+classified explicitly under `release.dependency_policy`, keyed by the upstream
+**product id**:
 
 ```yaml
+apt:
+  depends:
+    - ros-noetic-xgc2-runtime-sync
+  recommends:
+    - ros-noetic-xgc2-gazebo-sim-examples
 release:
+  requires:
+    - libxgc2-math-dev
   dependency_policy:
     libxgc2-math-dev: rebuild
     xgc2-runtime-sync: verify
@@ -66,6 +77,27 @@ release:
 - `verify`: run compatibility/install/smoke checks against staging without
   publishing a new package.
 - `order`: add a scheduling edge only when both products are already selected.
+
+Choose policy from the actual coupling, independently of whether Debian uses a
+hard `Depends`:
+
+- compiled headers, linked ABI, or generated source/interface: `rebuild`;
+- runtime resources, configuration, launch composition, CLI/topic/service
+  contracts: `verify`;
+- aggregate/meta package version floors and sequencing-only edges: `order`.
+
+Catalog collection and release planning both reject missing, invalid, or
+non-direct policy keys. This is deliberate: adding an internal Debian package
+dependency or recommendation must not silently expand the release train. During
+a bounded migration only, `collect-products.py` and
+`orchestrate-apt-release.py` accept
+`--allow-implicit-dependency-policy`; it restores the legacy
+`apt.depends=rebuild` and `release.requires=order` behavior, treats a new
+`apt.recommends` edge as `verify`, and emits a warning.
+CI and production preflight must never use that escape hatch. The generated
+release-plan format remains `xgc2.release-plan.v2`; each item records the
+resolved edge origins in the additive `dependency_sources` map so reviews can
+distinguish `apt.depends`, `apt.recommends`, and `release.requires`.
 
 A node with staged upstream packages must run the release-scoped builder. Its
 old push CI result describes a different dependency context and is not reused.

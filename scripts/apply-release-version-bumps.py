@@ -278,7 +278,12 @@ def update_script_dependency_versions(
                     in_control_heredoc
                     or control_continuation
                     or "write_control" in logical_line
-                    or re.search(r"\bDepends\s*[:=]", logical_line) is not None
+                    or bool(
+                        re.search(
+                            r"\b(?:Pre-Depends|Depends|Recommends)\s*[:=]",
+                            logical_line,
+                        )
+                    )
                 )
                 control_continuation = semantic_control and logical_line.rstrip().endswith("\\")
                 if in_control_heredoc and logical_line.strip() in {"EOF", "CONTROL"}:
@@ -419,28 +424,27 @@ def update_product_metadata(
             changed = True
 
     apt = metadata.get("apt")
-    if (
-        should_consider
-        and update_dependencies
-        and isinstance(apt, dict)
-        and isinstance(apt.get("depends"), list)
-    ):
-        old_depends = [str(dependency) for dependency in apt["depends"]]
-        new_depends = [
-            update_dependency_version(str(dependency), owner_versions)
-            for dependency in apt["depends"]
-        ]
-        changed_paths.update(
-            update_script_dependency_versions(
-                source_dir,
-                old_depends,
-                new_depends,
-                apply=apply,
+    if should_consider and update_dependencies and isinstance(apt, dict):
+        for relationship in ("depends", "recommends"):
+            raw_dependencies = apt.get(relationship)
+            if not isinstance(raw_dependencies, list):
+                continue
+            old_dependencies = [str(dependency) for dependency in raw_dependencies]
+            new_dependencies = [
+                update_dependency_version(str(dependency), owner_versions)
+                for dependency in raw_dependencies
+            ]
+            changed_paths.update(
+                update_script_dependency_versions(
+                    source_dir,
+                    old_dependencies,
+                    new_dependencies,
+                    apply=apply,
+                )
             )
-        )
-        if new_depends != apt["depends"]:
-            apt["depends"] = new_depends
-            changed = True
+            if new_dependencies != raw_dependencies:
+                apt[relationship] = new_dependencies
+                changed = True
 
     if changed:
         changed_paths.add(".xgc2/product.yml")
@@ -632,7 +636,7 @@ def commit_top_level(
     return git(["rev-parse", "HEAD"], root, check=True)
 
 
-def main() -> int:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", default=".")
     parser.add_argument("--plan", required=True)
@@ -645,12 +649,27 @@ def main() -> int:
     parser.add_argument("--apply", action="store_true")
     parser.add_argument("--commit", action="store_true")
     parser.add_argument("--push", action="store_true")
-    parser.add_argument(
+    dependency_updates = parser.add_mutually_exclusive_group()
+    dependency_updates.add_argument(
+        "--update-dependency-minimums",
+        action="store_true",
+        help=(
+            "explicitly advance internal apt.depends, apt.recommends, and external "
+            "release-set compatible minimums to planned provider versions"
+        ),
+    )
+    dependency_updates.add_argument(
         "--skip-dependency-updates",
         action="store_true",
-        help="bump local product/release-set versions without changing internal dependency minimums",
+        help=(
+            "deprecated compatibility flag; dependency minimums are not updated by default"
+        ),
     )
-    args = parser.parse_args()
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(argv)
 
     root = Path(args.root).resolve()
     plan_path = (root / args.plan).resolve()
@@ -685,7 +704,7 @@ def main() -> int:
             root,
             item,
             owner_versions=owner_versions,
-            update_dependencies=not args.skip_dependency_updates,
+            update_dependencies=args.update_dependency_minimums,
             apply=args.apply,
         )
         if changed_paths:

@@ -83,9 +83,11 @@ Generated catalogs can render these snippets without copying them into
 
 ## Release ordering and CI artifacts
 
-`apt.depends` is the source of Debian runtime edges. Use `release.requires`
-only when a build or installation check needs another XGC2 product first but
-the relationship must not become a Debian `Depends` entry:
+Use `apt.depends` for mandatory Debian runtime edges and `apt.recommends` for
+optional integrations that should normally be installed but must remain
+removable. Use `release.requires` only when a build or installation check needs
+another XGC2 product first but the relationship must not become a Debian package
+relationship:
 
 ```yaml
 release:
@@ -95,9 +97,18 @@ release:
   ci_workflow: ci.yml
   requires:
     - xgc2-scout-description
+  dependency_policy:
+    xgc2-scout-description: verify
 ```
 
-The release planner merges both edge sets, rejects cycles and hidden XGC2
+The release planner merges all three edge sets, rejects cycles and hidden XGC2
 installation dependencies, and waits for both architecture indexes and trusted
 manifests before releasing downstream nodes. `ci_workflow` identifies the push
 workflow whose exact-source artifacts may be reused; it defaults to `ci.yml`.
+
+Every direct internal edge from any of these fields must have a
+`release.dependency_policy` entry keyed by the provider's product id. Use
+`rebuild` only for compiled/generated/ABI coupling, `verify` for runtime
+resources or common runtime interfaces, and `order` for sequencing or meta
+package aggregation. The policy changes release propagation only; it does not
+weaken or add a Debian `Depends` relationship.
