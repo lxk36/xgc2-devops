@@ -386,6 +386,7 @@ def update_product_metadata(
     current_version = str(item.get("version", ""))
     source_dir = root / str(item["source"])
     product_path = source_dir / ".xgc2" / "product.yml"
+    compliance_path = source_dir / ".xgc2" / "scripts" / "check_package_compliance.sh"
     metadata = load_yaml(product_path)
     changed = False
     changed_paths: set[str] = set()
@@ -393,7 +394,6 @@ def update_product_metadata(
     if should_consider and expected_version and expected_version != current_version:
         metadata["version"] = expected_version
         changed = True
-        compliance_path = source_dir / ".xgc2" / "scripts" / "check_package_compliance.sh"
         if compliance_path.exists():
             old_text = compliance_path.read_text(encoding="utf-8")
             new_text = old_text.replace(
@@ -414,11 +414,26 @@ def update_product_metadata(
                 dump_yaml(runtime_manifest_path, runtime_manifest)
 
     apt_versions = item.get("apt_versions")
-    if should_consider and isinstance(apt_versions, dict) and len(set(map(str, apt_versions.values()))) > 1:
+    if should_consider and isinstance(apt_versions, dict) and apt_versions:
         release = metadata.setdefault("release", {})
         if not isinstance(release, dict):
             raise ValueError(f"{product_path}: release must be a mapping")
         new_versions = {str(key): str(value) for key, value in apt_versions.items()}
+        old_versions = release.get("apt_versions")
+        if compliance_path.exists() and isinstance(old_versions, dict):
+            old_text = compliance_path.read_text(encoding="utf-8")
+            new_text = old_text
+            for distribution, new_version in new_versions.items():
+                old_version = str(old_versions.get(distribution, ""))
+                if old_version:
+                    new_text = new_text.replace(
+                        f"^    {distribution}: {old_version}$",
+                        f"^    {distribution}: {new_version}$",
+                    )
+            if new_text != old_text:
+                changed_paths.add(".xgc2/scripts/check_package_compliance.sh")
+                if apply:
+                    compliance_path.write_text(new_text, encoding="utf-8")
         if release.get("apt_versions") != new_versions:
             release["apt_versions"] = new_versions
             changed = True

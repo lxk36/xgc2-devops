@@ -3342,6 +3342,46 @@ class VersionBumpSafetyTests(unittest.TestCase):
         self.assertIn("manifest/px4_runtime.yaml", changed)
         self.assertEqual(runtime["debian_version"], "1.16.2-8")
 
+    def test_single_distribution_apt_version_tracks_planned_product_version(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "camera-calibration"
+            (source / ".xgc2").mkdir(parents=True)
+            (source / ".xgc2" / "scripts").mkdir()
+            (source / ".xgc2" / "product.yml").write_text(
+                "schema: xgc2.product.v1\nid: camera-calibration\nname: Camera Calibration\n"
+                "kind: ros1-apt\nversion: 0.3.0-2\napt:\n  distribution: focal\n"
+                "  packages: [ros-noetic-camera-calibration]\nrelease:\n"
+                "  apt_versions:\n    focal: 0.3.0-2\n",
+                encoding="utf-8",
+            )
+            compliance = source / ".xgc2" / "scripts" / "check_package_compliance.sh"
+            compliance.write_text(
+                "grep -q '^version: 0.3.0-2$' .xgc2/product.yml\n"
+                "grep -q '^    focal: 0.3.0-2$' .xgc2/product.yml\n",
+                encoding="utf-8",
+            )
+            changed = version_bumper.update_product_metadata(
+                root,
+                {
+                    "id": "camera-calibration",
+                    "action": "release",
+                    "source": "camera-calibration",
+                    "version": "0.3.0-2",
+                    "expected_version": "0.3.0-3",
+                    "apt_versions": {"focal": "0.3.0-3"},
+                },
+                owner_versions={}, update_dependencies=False, apply=True,
+            )
+            metadata = version_bumper.load_yaml(source / ".xgc2" / "product.yml")
+            compliance_text = compliance.read_text(encoding="utf-8")
+        self.assertIn(".xgc2/product.yml", changed)
+        self.assertIn(".xgc2/scripts/check_package_compliance.sh", changed)
+        self.assertEqual(metadata["version"], "0.3.0-3")
+        self.assertEqual(metadata["release"]["apt_versions"], {"focal": "0.3.0-3"})
+        self.assertIn("^version: 0.3.0-3$", compliance_text)
+        self.assertIn("^    focal: 0.3.0-3$", compliance_text)
+
     def test_deterministic_commit_time_is_bound_to_plan_digest(self):
         digest = "1" * 64
         self.assertEqual(
