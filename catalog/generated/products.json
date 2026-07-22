@@ -1943,70 +1943,22 @@
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/.xgc2/product.yml",
-      "apt": {
-        "depends": [
-          "ros-noetic-xgc2-gazebo-scene (>= 1.2.0-1)",
-          "ros-noetic-xgc2-gazebo-sim-camera (>= 0.1.0-7)",
-          "ros-noetic-xgc2-gazebo-sim-mecanum (>= 0.1.0-1)",
-          "ros-noetic-xgc2-robot-visualization (>= 0.1.0-5)",
-          "ros-noetic-xgc2-gazebo-sim-visualization (>= 1.1.0-12)",
-          "ros-noetic-xgc2-gazebo-sim-vrpn-bridge (>= 1.1.0-16)",
-          "ros-noetic-xgc2-gazebo-sim-worlds (>= 1.2.0-1)",
-          "ros-noetic-xgc2-gazebo-sim-scout (>= 0.4.9-26)",
-          "ros-noetic-xgc2-gazebo-sim-px4-1-12 (>= 1.12.3-16)",
-          "ros-noetic-xgc2-gazebo-sim-px4-1-14 (>= 1.14.4-13)",
-          "ros-noetic-xgc2-gazebo-sim-fs150-sitl (>= 1.1.0-13)",
-          "ros-noetic-vrpn-client-ros"
-        ],
-        "distribution": "focal",
-        "install": [
-          "ros-noetic-xgc2-gazebo-sim"
-        ],
-        "packages": [
-          "ros-noetic-xgc2-gazebo-sim",
-          "ros-noetic-xgc2-gazebo-sim-all"
-        ]
-      },
+      "groups": [
+        "gazebo-sim"
+      ],
       "id": "xgc2-gazebo-sim",
-      "kind": "ros1-apt",
-      "name": "XGC2 Gazebo Sim",
-      "ownership": {
-        "paths": [
-          "fs150-sitl",
-          "cerlab-uav-sim"
-        ]
-      },
-      "release": {
-        "dependency_policy": {
-          "xgc2-gazebo-sim-camera": "order",
-          "xgc2-gazebo-sim-fs150-sitl": "order",
-          "xgc2-gazebo-sim-mecanum": "order",
-          "xgc2-gazebo-sim-scenes": "order",
-          "xgc2-gazebo-sim-scout": "order",
-          "xgc2-gazebo-sim-visualization": "order",
-          "xgc2-gazebo-sim-vrpn-bridge": "order",
-          "xgc2-px4-sitl-112": "order",
-          "xgc2-px4-sitl-114": "order",
-          "xgc2-robot-visualization": "order"
-        },
-        "requires": [
-          "xgc2-gazebo-sim-scenes",
-          "xgc2-gazebo-sim-scout",
-          "xgc2-px4-sitl-112"
-        ]
-      },
+      "kind": "catalog",
+      "name": "XGC2 Gazebo Sim Catalog",
       "ros": {
         "distro": "noetic",
         "packages": []
       },
       "schema": "xgc2.product.v1",
-      "summary": "Gazebo Classic simulation meta package for ROS Noetic.",
+      "summary": "Non-publishing catalog for the XGC2 Gazebo Classic simulation products.",
       "usage": {
-        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-gazebo-sim\n",
-        "notes": "This repository is the verified Gazebo simulation suite entrypoint. Source packages live in child product repositories.\nThe aggregate package uses minimum child package versions so apt upgrades stale installed children when a quickstart requires newer launch assets.\nChild repositories may publish compatible packaging revisions independently; bump this product version only when the aggregate dependency set or compatibility contract changes.\n",
-        "smoke_test": "dpkg -s ros-noetic-xgc2-gazebo-sim\ntest -f /opt/ros/noetic/lib/libxgc2_gazebo_scene_system.so\nroslaunch --files gazebo_sim_visualization fs150_vrpn_tracking_rviz.launch rviz:=false\nroslaunch --files gazebo_sim_scout simple.launch rviz:=false\nroslaunch --files gazebo_sim_mecanum simple.launch gui:=false\nroslaunch --files gazebo_sim_px4_1_12 iris.launch gui:=false\nroslaunch --files gazebo_sim_px4_1_14 iris.launch gui:=false\nroslaunch --files gazebo_sim_fs150_sitl fs150.launch gui:=false\n"
+        "notes": "This repository records the Gazebo simulation product set and compatible\nversions. It does not build, install, or publish an aggregate Debian\npackage. Consumers install only the independent products they use.\n"
       },
-      "version": "1.1.0-66"
+      "version": "1.1.0-67"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/agilex/.xgc2/product.yml",

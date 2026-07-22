@@ -31,7 +31,8 @@
         "webui-docker",
         "app-store",
         "docker-image",
-        "mixed"
+        "mixed",
+        "catalog"
       ]
     },
     "summary": {

@@ -92,6 +92,18 @@ def is_deprecated(product: dict[str, Any]) -> bool:
     return isinstance(lifecycle, dict) and lifecycle.get("deprecated") is True
 
 
+def validate_non_publishing_catalogs(products: list[dict[str, Any]]) -> list[str]:
+    errors: list[str] = []
+    for product in products:
+        if product.get("kind") != "catalog":
+            continue
+        if list_field(product, "apt", "install") or list_field(product, "apt", "packages"):
+            errors.append(
+                f"{product['id']}: kind=catalog must not declare apt.install or apt.packages"
+            )
+    return errors
+
+
 def find_duplicates(products: list[dict[str, Any]], key_name: str, values_by_product) -> list[str]:
     owners: dict[str, list[str]] = defaultdict(list)
     for product in products:
@@ -269,7 +281,8 @@ def main() -> int:
         product["_source"] = str(metadata_path.relative_to(root))
         products.append(product)
 
-    errors = validate_ownership(products)
+    errors = validate_non_publishing_catalogs(products)
+    errors.extend(validate_ownership(products))
     errors.extend(
         validate_internal_dependency_policies(
             products,
