@@ -263,6 +263,41 @@ on:
 
 
 class CatalogDependencyPolicyTests(unittest.TestCase):
+    def test_catalog_exclusions_require_ids_reasons_and_unique_entries(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "exclusions.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "schema": "xgc2.catalog-exclusions.v1",
+                        "products": [
+                            {"id": "inactive-product", "reason": "Not on runtime path."}
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            self.assertEqual(
+                catalog_collector.load_excluded_product_ids(path),
+                {"inactive-product"},
+            )
+
+            path.write_text(
+                json.dumps(
+                    {
+                        "schema": "xgc2.catalog-exclusions.v1",
+                        "products": [
+                            {"id": "duplicate", "reason": "First."},
+                            {"id": "duplicate", "reason": "Second."},
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "duplicate excluded product id"):
+                catalog_collector.load_excluded_product_ids(path)
+
     @staticmethod
     def product(
         product_id: str,
