@@ -13,7 +13,7 @@ from pathlib import Path
 
 
 DEVOPS_ROOT = Path(__file__).resolve().parents[1]
-PACKAGE_ROOT = DEVOPS_ROOT / "products/ros1/simulator/gazebo-sim/worlds"
+PACKAGE_ROOT = DEVOPS_ROOT / "products/ros1/simulator/gazebo-sim/scenes/gazebo_sim_worlds"
 DEFAULT_CONTAINER = "xgc2-world-previews"
 DEFAULT_ROS_MASTER_URI = "http://127.0.0.1:11411"
 DEFAULT_GAZEBO_MASTER_URI = "http://127.0.0.1:11445"
@@ -125,8 +125,8 @@ def launch_world(container: str, world: Path) -> None:
 set -e
 source /opt/ros/noetic/setup.bash
 if [ -f /ros1_ws/devel/setup.bash ]; then source /ros1_ws/devel/setup.bash; fi
-export GAZEBO_MODEL_PATH=/xgc2-devops/products/ros1/simulator/gazebo-sim/worlds/models:${{GAZEBO_MODEL_PATH:-}}
-export GAZEBO_RESOURCE_PATH=/xgc2-devops/products/ros1/simulator/gazebo-sim/worlds:${{GAZEBO_RESOURCE_PATH:-}}
+export GAZEBO_MODEL_PATH=/xgc2-devops/products/ros1/simulator/gazebo-sim/scenes/gazebo_sim_worlds/models:${{GAZEBO_MODEL_PATH:-}}
+export GAZEBO_RESOURCE_PATH=/xgc2-devops/products/ros1/simulator/gazebo-sim/scenes/gazebo_sim_worlds:${{GAZEBO_RESOURCE_PATH:-}}
 export GAZEBO_MODEL_DATABASE_URI=
 exec roslaunch gazebo_ros empty_world.launch \\
   world_name:={world_in_container} \\

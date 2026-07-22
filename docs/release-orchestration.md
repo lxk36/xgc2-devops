@@ -70,7 +70,7 @@ release:
   dependency_policy:
     libxgc2-math-dev: rebuild
     xgc2-runtime-sync: verify
-    xgc2-gazebo-sim-tools: order
+    xgc2-gazebo-sim-scenes: order
 ```
 
 - `rebuild`: bump, rebuild, test, stage, and continue propagating downstream.

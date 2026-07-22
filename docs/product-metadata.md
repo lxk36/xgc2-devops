@@ -91,7 +91,7 @@ relationship:
 
 ```yaml
 release:
-  repository: lxk36/xgc2-gazebo-sim-tools
+  repository: lxk36/xgc2-gazebo-sim-scenes
   ref: noetic
   workflow: release.yml
   ci_workflow: ci.yml

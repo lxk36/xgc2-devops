@@ -546,13 +546,12 @@ def group_products(root: Path, products: list[Product], group: str) -> set[str]:
                 "xgc2-estimator-hover-thrust",
                 "xgc2-estimator-rigid-state",
                 "xgc2-multirotor-controller",
-                "xgc2-gazebo-sim-worlds",
+                "xgc2-gazebo-sim-scenes",
                 "xgc2-gazebo-sim-vrpn-bridge",
                 "xgc2-px4-sitl-112",
                 "xgc2-px4-sitl-114",
                 "xgc2-gazebo-sim-fs150-sitl",
                 "xgc2-gazebo-sim-visualization",
-                "xgc2-gazebo-sim-tools",
                 "xgc2-gazebo-sim",
             }:
                 selected.add(product.product_id)
@@ -566,11 +565,10 @@ def group_products(root: Path, products: list[Product], group: str) -> set[str]:
                 "xgc2-ros1-utils",
                 "xgc2-estimator-rigid-state",
                 "xgc2-ugv-controller",
-                "xgc2-gazebo-sim-worlds",
+                "xgc2-gazebo-sim-scenes",
                 "xgc2-gazebo-sim-vrpn-bridge",
                 "xgc2-gazebo-sim-scout",
                 "xgc2-gazebo-sim-visualization",
-                "xgc2-gazebo-sim-tools",
                 "xgc2-gazebo-sim",
             }:
                 selected.add(product.product_id)
@@ -578,14 +576,12 @@ def group_products(root: Path, products: list[Product], group: str) -> set[str]:
             if (
                 source.startswith("products/ros1/simulator/gazebo-sim/")
                 or source == "products/ros1/simulator/gazebo-sim/.xgc2/product.yml"
-                or product.product_id == "xgc2-gazebo-sim-tools"
             ):
                 selected.add(product.product_id)
         elif normalized == "simulator":
             if (
                 source.startswith("products/ros1/simulator/")
                 or source.startswith("products/ros2/simulator/")
-                or product.product_id == "xgc2-gazebo-sim-tools"
             ):
                 selected.add(product.product_id)
         elif normalized == "sitl":

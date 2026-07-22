@@ -40,5 +40,5 @@ catkin products/ros1/simulator/gazebo-sim/px4-sitl-114
 catkin products/ros1/simulator/gazebo-sim/visualization
 catkin products/ros1/simulator/gazebo-sim/vrpn_bridge
 catkin products/ros1/simulator/gazebo-sim/camera
-catkin products/ros1/simulator/gazebo-sim-tools/gazebo_session_manager
-catkin products/ros1/simulator/gazebo-sim-tools/gazebo_sim_examples
+catkin products/ros1/simulator/gazebo-sim/scenes/gazebo_sim_worlds
+catkin products/ros1/simulator/gazebo-sim/scenes/xgc2_gazebo_scene

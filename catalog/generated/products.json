@@ -1945,17 +1945,17 @@
       "_source": "products/ros1/simulator/gazebo-sim/.xgc2/product.yml",
       "apt": {
         "depends": [
-      "ros-noetic-xgc2-gazebo-scene (>= 1.1.0-33)",
+          "ros-noetic-xgc2-gazebo-scene (>= 1.2.0-1)",
           "ros-noetic-xgc2-gazebo-sim-camera (>= 0.1.0-7)",
           "ros-noetic-xgc2-gazebo-sim-mecanum (>= 0.1.0-1)",
           "ros-noetic-xgc2-robot-visualization (>= 0.1.0-5)",
           "ros-noetic-xgc2-gazebo-sim-visualization (>= 1.1.0-12)",
-      "ros-noetic-xgc2-gazebo-sim-vrpn-bridge (>= 1.1.0-16)",
-          "ros-noetic-xgc2-gazebo-sim-worlds (>= 1.1.0-14)",
+          "ros-noetic-xgc2-gazebo-sim-vrpn-bridge (>= 1.1.0-16)",
+          "ros-noetic-xgc2-gazebo-sim-worlds (>= 1.2.0-1)",
           "ros-noetic-xgc2-gazebo-sim-scout (>= 0.4.9-26)",
           "ros-noetic-xgc2-gazebo-sim-px4-1-12 (>= 1.12.3-16)",
           "ros-noetic-xgc2-gazebo-sim-px4-1-14 (>= 1.14.4-13)",
-      "ros-noetic-xgc2-gazebo-sim-fs150-sitl (>= 1.1.0-13)",
+          "ros-noetic-xgc2-gazebo-sim-fs150-sitl (>= 1.1.0-13)",
           "ros-noetic-vrpn-client-ros"
         ],
         "distribution": "focal",
@@ -1981,17 +1981,16 @@
           "xgc2-gazebo-sim-camera": "order",
           "xgc2-gazebo-sim-fs150-sitl": "order",
           "xgc2-gazebo-sim-mecanum": "order",
+          "xgc2-gazebo-sim-scenes": "order",
           "xgc2-gazebo-sim-scout": "order",
-          "xgc2-gazebo-sim-tools": "order",
           "xgc2-gazebo-sim-visualization": "order",
           "xgc2-gazebo-sim-vrpn-bridge": "order",
-          "xgc2-gazebo-sim-worlds": "order",
           "xgc2-px4-sitl-112": "order",
           "xgc2-px4-sitl-114": "order",
           "xgc2-robot-visualization": "order"
         },
         "requires": [
-          "xgc2-gazebo-sim-tools",
+          "xgc2-gazebo-sim-scenes",
           "xgc2-gazebo-sim-scout",
           "xgc2-px4-sitl-112"
         ]
@@ -2005,9 +2004,9 @@
       "usage": {
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-gazebo-sim\n",
         "notes": "This repository is the verified Gazebo simulation suite entrypoint. Source packages live in child product repositories.\nThe aggregate package uses minimum child package versions so apt upgrades stale installed children when a quickstart requires newer launch assets.\nChild repositories may publish compatible packaging revisions independently; bump this product version only when the aggregate dependency set or compatibility contract changes.\n",
-    "smoke_test": "dpkg -s ros-noetic-xgc2-gazebo-sim\ntest -f /opt/ros/noetic/lib/libxgc2_gazebo_scene_system.so\nroslaunch --files gazebo_sim_visualization fs150_vrpn_tracking_rviz.launch rviz:=false\nroslaunch --files gazebo_sim_scout simple.launch rviz:=false\nroslaunch --files gazebo_sim_mecanum simple.launch gui:=false\nroslaunch --files gazebo_sim_px4_1_12 iris.launch gui:=false\nroslaunch --files gazebo_sim_px4_1_14 iris.launch gui:=false\nroslaunch --files gazebo_sim_fs150_sitl fs150.launch gui:=false\n"
+        "smoke_test": "dpkg -s ros-noetic-xgc2-gazebo-sim\ntest -f /opt/ros/noetic/lib/libxgc2_gazebo_scene_system.so\nroslaunch --files gazebo_sim_visualization fs150_vrpn_tracking_rviz.launch rviz:=false\nroslaunch --files gazebo_sim_scout simple.launch rviz:=false\nroslaunch --files gazebo_sim_mecanum simple.launch gui:=false\nroslaunch --files gazebo_sim_px4_1_12 iris.launch gui:=false\nroslaunch --files gazebo_sim_px4_1_14 iris.launch gui:=false\nroslaunch --files gazebo_sim_fs150_sitl fs150.launch gui:=false\n"
       },
-  "version": "1.1.0-65"
+      "version": "1.1.0-66"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/agilex/.xgc2/product.yml",
@@ -2038,8 +2037,8 @@
       },
       "release": {
         "dependency_policy": {
+          "xgc2-gazebo-sim-scenes": "verify",
           "xgc2-gazebo-sim-vrpn-bridge": "verify",
-          "xgc2-gazebo-sim-worlds": "verify",
           "xgc2-scout-description": "verify",
           "xgc2-scout-msgs": "rebuild"
         },
@@ -2112,13 +2111,13 @@
         },
         "ci_workflow": "ci.yml",
         "dependency_policy": {
-          "xgc2-gazebo-sim-vrpn-bridge": "verify",
-          "xgc2-gazebo-sim-worlds": "verify"
+          "xgc2-gazebo-sim-scenes": "verify",
+          "xgc2-gazebo-sim-vrpn-bridge": "verify"
         },
         "ref": "main",
         "repository": "lxk36/xgc2-gazebo-sim-camera",
         "requires": [
-          "xgc2-gazebo-sim-worlds",
+          "xgc2-gazebo-sim-scenes",
           "xgc2-gazebo-sim-vrpn-bridge"
         ],
         "workflow": "release.yml"
@@ -2171,7 +2170,7 @@
       },
       "release": {
         "dependency_policy": {
-          "xgc2-gazebo-sim-worlds": "verify"
+          "xgc2-gazebo-sim-scenes": "verify"
         }
       },
       "ros": {
@@ -2289,13 +2288,13 @@
         },
         "ci_workflow": "ci.yml",
         "dependency_policy": {
-          "xgc2-gazebo-sim-vrpn-bridge": "verify",
-          "xgc2-gazebo-sim-worlds": "verify"
+          "xgc2-gazebo-sim-scenes": "verify",
+          "xgc2-gazebo-sim-vrpn-bridge": "verify"
         },
         "ref": "noetic",
         "repository": "lxk36/xgc2-gazebo-sim-mecanum",
         "requires": [
-          "xgc2-gazebo-sim-worlds"
+          "xgc2-gazebo-sim-scenes"
         ],
         "workflow": "release.yml"
       },
@@ -2415,6 +2414,67 @@
       "version": "1.14.4-13"
     },
     {
+      "_source": "products/ros1/simulator/gazebo-sim/scenes/.xgc2/product.yml",
+      "apt": {
+        "depends": [
+          "libgazebo11",
+          "ros-noetic-gazebo-ros",
+          "ros-noetic-geometry-msgs",
+          "ros-noetic-message-runtime",
+          "ros-noetic-rosconsole",
+          "ros-noetic-roscpp",
+          "ros-noetic-roscpp-serialization",
+          "ros-noetic-rostime",
+          "ros-noetic-std-msgs"
+        ],
+        "distribution": "focal",
+        "install": [
+          "ros-noetic-xgc2-gazebo-sim-worlds",
+          "ros-noetic-xgc2-gazebo-scene"
+        ],
+        "packages": [
+          "ros-noetic-xgc2-gazebo-sim-worlds",
+          "ros-noetic-xgc2-gazebo-scene"
+        ]
+      },
+      "id": "xgc2-gazebo-sim-scenes",
+      "kind": "ros1-apt",
+      "name": "XGC2 Gazebo Sim Scenes",
+      "ownership": {
+        "paths": [
+          "/opt/ros/noetic/share/gazebo_sim_worlds",
+          "/opt/ros/noetic/share/xgc2_gazebo_scene",
+          "/opt/ros/noetic/include/xgc2_gazebo_scene",
+          "/opt/ros/noetic/lib/libobstaclePathPlugin.so",
+          "/opt/ros/noetic/lib/libxgc2_gazebo_scene_motion.so",
+          "/opt/ros/noetic/lib/libxgc2_gazebo_scene_system.so",
+          "/opt/ros/noetic/lib/pkgconfig/xgc2_gazebo_scene.pc",
+          "/opt/ros/noetic/lib/python3/dist-packages/xgc2_gazebo_scene",
+          "/opt/ros/noetic/share/common-lisp/ros/xgc2_gazebo_scene",
+          "/opt/ros/noetic/share/gennodejs/ros/xgc2_gazebo_scene",
+          "/opt/ros/noetic/share/roseus/ros/xgc2_gazebo_scene"
+        ]
+      },
+      "release": {
+        "dependency_policy": {}
+      },
+      "ros": {
+        "distro": "noetic",
+        "packages": [
+          "gazebo_sim_worlds",
+          "xgc2_gazebo_scene"
+        ]
+      },
+      "schema": "xgc2.product.v1",
+      "summary": "Reusable Gazebo Classic worlds and the XGC2 scene director.",
+      "usage": {
+        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-gazebo-sim-worlds ros-noetic-xgc2-gazebo-scene\n",
+        "notes": "This scene product has two explicit responsibilities. gazebo_sim_worlds\nowns reusable world and model assets only. xgc2_gazebo_scene is the scene\ndirector and temporarily retains both the legacy per-model path animator\nand the XGC2-managed global SystemPlugin without changing their behavior.\n",
+        "smoke_test": "rospack find gazebo_sim_worlds\nrospack find xgc2_gazebo_scene\ntest -f /opt/ros/noetic/share/gazebo_sim_worlds/worlds/empty/empty.world\ntest -f /opt/ros/noetic/share/gazebo_sim_worlds/models/corridor/model.sdf\ntest -f /opt/ros/noetic/lib/libobstaclePathPlugin.so\ntest -f /opt/ros/noetic/lib/libxgc2_gazebo_scene_system.so\n"
+      },
+      "version": "1.2.0-1"
+    },
+    {
       "_source": "products/ros1/simulator/gazebo-sim/visualization/.xgc2/product.yml",
       "apt": {
         "depends": [
@@ -2476,7 +2536,7 @@
           "ros-noetic-roscpp",
           "ros-noetic-tf2",
           "ros-noetic-tf2-ros",
-      "ros-noetic-vrpn"
+          "ros-noetic-vrpn"
         ],
         "distribution": "focal",
         "install": [
@@ -2511,110 +2571,9 @@
       "summary": "Gazebo Classic model pose to VRPN tracker server bridge.",
       "usage": {
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-gazebo-sim-vrpn-bridge\n",
-    "smoke_test": "roslaunch --files gazebo_sim_vrpn_bridge vrpn_server.launch auto_track_known_models:=true\n"
+        "smoke_test": "roslaunch --files gazebo_sim_vrpn_bridge vrpn_server.launch auto_track_known_models:=true\n"
       },
-  "version": "1.1.0-16"
-    },
-    {
-      "_source": "products/ros1/simulator/gazebo-sim/worlds/.xgc2/product.yml",
-      "apt": {
-        "depends": [
-          "ros-noetic-gazebo-ros",
-          "libgazebo11"
-        ],
-        "distribution": "focal",
-        "install": [
-          "ros-noetic-xgc2-gazebo-sim-worlds"
-        ],
-        "packages": [
-          "ros-noetic-xgc2-gazebo-sim-worlds"
-        ]
-      },
-      "id": "xgc2-gazebo-sim-worlds",
-      "kind": "ros1-apt",
-      "name": "XGC2 Gazebo Sim Worlds",
-      "ownership": {
-        "paths": [
-          "/opt/ros/noetic/share/gazebo_sim_worlds",
-          "/opt/ros/noetic/lib/libobstaclePathPlugin.so"
-        ]
-      },
-      "ros": {
-        "distro": "noetic",
-        "packages": [
-          "gazebo_sim_worlds"
-        ]
-      },
-      "schema": "xgc2.product.v1",
-      "summary": "Shared Gazebo Classic world assets for ROS Noetic simulation products.",
-      "usage": {
-        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-gazebo-sim-worlds\n",
-        "notes": "This product owns reusable world and model assets only. Scenario launch files remain in gazebo_sim_examples.\n",
-        "smoke_test": "rospack find gazebo_sim_worlds\ntest -f /opt/ros/noetic/share/gazebo_sim_worlds/worlds/empty/empty.world\ntest -f /opt/ros/noetic/share/gazebo_sim_worlds/worlds/catalog/empty.world\ntest -f /opt/ros/noetic/lib/libobstaclePathPlugin.so\ntest -f /opt/ros/noetic/share/gazebo_sim_worlds/models/corridor/model.sdf\ntest -f /opt/ros/noetic/share/gazebo_sim_worlds/models/xgc2_geom_arch/model.sdf\n"
-      },
-      "version": "1.1.0-14"
-    },
-    {
-      "_source": "products/ros1/simulator/gazebo-sim-tools/.xgc2/product.yml",
-      "apt": {
-        "depends": [
-          "ros-noetic-gazebo-ros",
-          "ros-noetic-geometry-msgs",
-          "ros-noetic-message-runtime",
-          "ros-noetic-rosconsole",
-          "ros-noetic-roscpp",
-          "ros-noetic-roscpp-serialization",
-          "ros-noetic-rostime",
-          "ros-noetic-vrpn-client-ros",
-          "ros-noetic-rviz",
-          "ros-noetic-robot-state-publisher",
-          "ros-noetic-std-msgs"
-        ],
-        "distribution": "focal",
-        "install": [
-          "ros-noetic-xgc2-gazebo-sim-examples"
-        ],
-        "packages": [
-          "ros-noetic-xgc2-gazebo-sim-examples",
-          "ros-noetic-xgc2-gazebo-scene"
-    ]
-      },
-      "id": "xgc2-gazebo-sim-tools",
-      "kind": "ros1-apt",
-      "name": "XGC2 Gazebo Sim Tools",
-      "ownership": {
-        "paths": [
-          "/opt/ros/noetic/share/gazebo_sim_examples",
-          "/opt/ros/noetic/lib/gazebo_sim_examples",
-          "/opt/ros/noetic/share/xgc2_gazebo_scene",
-          "/opt/ros/noetic/include/xgc2_gazebo_scene",
-          "/opt/ros/noetic/lib/libxgc2_gazebo_scene_motion.so",
-          "/opt/ros/noetic/lib/libxgc2_gazebo_scene_system.so",
-          "/opt/ros/noetic/lib/pkgconfig/xgc2_gazebo_scene.pc",
-          "/opt/ros/noetic/lib/python3/dist-packages/xgc2_gazebo_scene",
-          "/opt/ros/noetic/share/common-lisp/ros/xgc2_gazebo_scene",
-          "/opt/ros/noetic/share/gennodejs/ros/xgc2_gazebo_scene",
-          "/opt/ros/noetic/share/roseus/ros/xgc2_gazebo_scene"
-        ]
-      },
-  "release": {
-    "dependency_policy": {}
-  },
-      "ros": {
-        "distro": "noetic",
-        "packages": [
-          "gazebo_sim_examples",
-          "xgc2_gazebo_scene"
-        ]
-      },
-      "schema": "xgc2.product.v1",
-      "summary": "Gazebo Classic scene SystemPlugin and legacy example launch orchestration retained during the XGC2 ground-station migration.",
-      "usage": {
-        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-gazebo-sim-examples\n",
-    "notes": "gazebo_sim_examples is a retired, asset-only compatibility package. XGC2 Automations replace its launch aggregation. It does not publish process definitions and its historical launch files and scripts are deliberately not executed during release. The scene package remains a separately verified compiled runtime.\n",
-    "smoke_test": "test -f /opt/ros/noetic/share/gazebo_sim_examples/launch/fs150_ugv_vrpn_stack.launch\ntest -f /opt/ros/noetic/lib/libxgc2_gazebo_scene_system.so\n"
-      },
-  "version": "1.1.0-33"
+      "version": "1.1.0-16"
     },
     {
       "_source": "products/ros1/simulator/swarm-sync-sim/.xgc2/product.yml",
