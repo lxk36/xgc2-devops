@@ -1156,7 +1156,7 @@
       },
       "release": {
         "apt_versions": {
-          "focal": "0.3.0-1"
+          "focal": "0.3.0-2"
         },
         "ci_workflow": "ci.yml",
         "dependency_policy": {
@@ -1183,7 +1183,7 @@
         "notes": "One process owns one camera and publishes synchronized Image and CameraInfo\nmessages plus diagnostics. Calibration tools are released independently by\nthe xgc2-camera-calibration-ros1 product.\n",
         "smoke_test": "roslaunch xgc_camera_driver camera.launch backend:=synthetic pixel_format:=bgr24\nrostopic echo -n 1 /usb_cam/camera_info\n"
       },
-      "version": "0.3.0-1"
+      "version": "0.3.0-2"
     },
     {
       "_source": "products/ros1/perception/camera-calibration/.xgc2/product.yml",
