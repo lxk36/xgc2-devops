@@ -1622,7 +1622,7 @@
       "usage": {
         "notes": "This repository records the Gazebo simulation product set and compatible\nversions. It does not build, install, or publish an aggregate Debian\npackage. Consumers install only the independent products they use.\n"
       },
-      "version": "1.1.0-72"
+      "version": "1.1.0-73"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/agilex/.xgc2/product.yml",
@@ -2091,7 +2091,7 @@
         "notes": "This scene product has two explicit responsibilities. gazebo_sim_worlds\nowns reusable world and model assets only. xgc2_gazebo_scene is the scene\ndirector and temporarily retains both the legacy per-model path animator\nand the XGC2-managed global SystemPlugin without changing their behavior.\n",
         "smoke_test": "rospack find gazebo_sim_worlds\nrospack find xgc2_gazebo_scene\ntest -f /opt/ros/noetic/share/gazebo_sim_worlds/worlds/empty/empty.world\ntest -f /opt/ros/noetic/share/gazebo_sim_worlds/models/corridor/model.sdf\ntest -f /opt/ros/noetic/lib/libobstaclePathPlugin.so\ntest -f /opt/ros/noetic/lib/libxgc2_gazebo_scene_system.so\n"
       },
-      "version": "1.2.0-4"
+      "version": "1.2.0-5"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/visualization/.xgc2/product.yml",
