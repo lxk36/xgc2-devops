@@ -88,9 +88,9 @@
       },
       "release": {
         "apt_versions": {
-          "focal": "0.5.0-2~focal",
-          "jammy": "0.5.0-2~jammy",
-          "noble": "0.5.0-2~noble"
+          "focal": "0.5.0-3~focal",
+          "jammy": "0.5.0-3~jammy",
+          "noble": "0.5.0-3~noble"
         },
         "ci_workflow": "ci.yml",
         "dependency_policy": {
@@ -107,7 +107,7 @@
         "notes": "CMake consumers use find_package(xgc2_adapter_runtime_client REQUIRED CONFIG)\nand link xgc2::adapter_runtime_client. The package exports generated Runtime\nLink protobuf C++ headers and xgc2::adapter_runtime_protocol. The -dev\npackage preserves the existing build interface and pulls the separate\nlibxgc2-adapter-runtime-client1 SONAME package. Runtime applications depend\nonly on that ABI package and its generated shlibs dependencies.\n",
         "smoke_test": "pkg-config --modversion xgc2-adapter-runtime-client\n"
       },
-      "version": "0.5.0-2"
+      "version": "0.5.0-3"
     },
     {
       "_source": "products/common/camera-core/.xgc2/product.yml",
@@ -276,9 +276,9 @@
       },
       "release": {
         "apt_versions": {
-          "focal": "0.5.0-1~focal",
-          "jammy": "0.5.0-1~jammy",
-          "noble": "0.5.0-1~noble"
+          "focal": "0.5.0-2~focal",
+          "jammy": "0.5.0-2~jammy",
+          "noble": "0.5.0-2~noble"
         },
         "ci_workflow": "ci.yml",
         "ref": "master",
@@ -292,7 +292,7 @@
         "notes": "This package installs schema sources and language-neutral discovery metadata only.\nConsumers generate or own their language runtime bindings explicitly.\n",
         "smoke_test": "cmake --find-package -DNAME=xgc2_protobuf -DCOMPILER_ID=GNU -DLANGUAGE=CXX -DMODE=EXIST\npkg-config --variable=proto_root xgc2-protobuf\n"
       },
-      "version": "0.5.0-1"
+      "version": "0.5.0-2"
     },
     {
       "_source": "products/common/state-machine/.xgc2/product.yml",
@@ -713,7 +713,6 @@
           "libxgc2-adapter-runtime-client1",
           "ros-noetic-geometry-msgs",
           "ros-noetic-mavros-msgs",
-          "ros-noetic-nav-msgs",
           "python3-jsonschema",
           "python3-yaml",
           "ros-noetic-roscpp",
@@ -723,11 +722,13 @@
         "distribution": "focal",
         "install": [
           "ros-noetic-xgc2-px4-multirotor-adapter",
-          "ros-noetic-xgc2-scout-mini-adapter"
+          "ros-noetic-xgc2-scout-mini-adapter",
+          "ros-noetic-xgc2-mecanum-ugv-adapter"
         ],
         "packages": [
           "ros-noetic-xgc2-px4-multirotor-adapter",
-          "ros-noetic-xgc2-scout-mini-adapter"
+          "ros-noetic-xgc2-scout-mini-adapter",
+          "ros-noetic-xgc2-mecanum-ugv-adapter"
         ]
       },
       "groups": [
@@ -746,12 +747,17 @@
           "/opt/ros/noetic/lib/xgc_px4_multirotor_ros1_adapter/xgc_px4_multirotor_ros1_adapter_service_helper",
           "/opt/ros/noetic/share/xgc_scout_mini_ros1_adapter",
           "/opt/ros/noetic/lib/xgc_scout_mini_ros1_adapter/xgc_scout_mini_ros1_adapter_node",
+          "/opt/ros/noetic/share/xgc_mecanum_ugv_ros1_adapter",
+          "/opt/ros/noetic/lib/xgc_mecanum_ugv_ros1_adapter/xgc_mecanum_ugv_ros1_adapter_node",
           "/usr/share/xgc2/adapter-definitions/xgc2-px4-multirotor-ros1-adapter.json",
           "/usr/share/xgc2/adapter-definitions/xgc2-scout-mini-ros1-adapter.json",
+          "/usr/share/xgc2/adapter-definitions/xgc2-mecanum-ugv-ros1-adapter.json",
           "/usr/share/xgc2/process-definitions/xgc2-px4-multirotor-ros1-adapter.json",
           "/usr/share/xgc2/process-definitions/xgc2-scout-mini-ros1-adapter.json",
+          "/usr/share/xgc2/process-definitions/xgc2-mecanum-ugv-ros1-adapter.json",
           "/usr/share/xgc2/robot-adapter-profiles/xgc2-px4-multirotor-ros1-adapter.json",
-          "/usr/share/xgc2/robot-adapter-profiles/xgc2-scout-mini-ros1-adapter.json"
+          "/usr/share/xgc2/robot-adapter-profiles/xgc2-scout-mini-ros1-adapter.json",
+          "/usr/share/xgc2/robot-adapter-profiles/xgc2-mecanum-ugv-ros1-adapter.json"
         ]
       },
       "release": {
@@ -773,18 +779,19 @@
         "distro": "noetic",
         "packages": [
           "xgc_px4_multirotor_ros1_adapter",
-          "xgc_scout_mini_ros1_adapter"
+          "xgc_scout_mini_ros1_adapter",
+          "xgc_mecanum_ugv_ros1_adapter"
         ],
         "workspace": "catkin"
       },
       "schema": "xgc2.product.v1",
-      "summary": "Robot-owned PX4 multirotor and Scout Mini ROS1 semantic adapters.",
+      "summary": "Robot-owned PX4 multirotor, Scout Mini, and Mecanum UGV ROS1 semantic adapters.",
       "usage": {
-        "install": "sudo apt update\nsudo apt install \\\n  ros-noetic-xgc2-px4-multirotor-adapter \\\n  ros-noetic-xgc2-scout-mini-adapter\n",
+        "install": "sudo apt update\nsudo apt install \\\n  ros-noetic-xgc2-px4-multirotor-adapter \\\n  ros-noetic-xgc2-scout-mini-adapter \\\n  ros-noetic-xgc2-mecanum-ugv-adapter\n",
         "notes": "Each robot Adapter is a domain-specific Adapter Runtime application. Core\nresolves its provider definition from the installed robot profile catalog;\nno robot identity is built into the Adapter base class. This product owns\nROS1-native profile mappings and native safety behavior, while protobuf owns\nthe cross-language robot and semantic messages.\n",
-        "smoke_test": "rospack find xgc_px4_multirotor_ros1_adapter\nrospack find xgc_scout_mini_ros1_adapter\ntest -x /opt/ros/noetic/lib/xgc_px4_multirotor_ros1_adapter/xgc_px4_multirotor_ros1_adapter_node\ntest -x /opt/ros/noetic/lib/xgc_px4_multirotor_ros1_adapter/xgc_px4_multirotor_ros1_adapter_service_helper\ntest -x /opt/ros/noetic/lib/xgc_scout_mini_ros1_adapter/xgc_scout_mini_ros1_adapter_node\ntest -f /opt/ros/noetic/share/xgc_px4_multirotor_ros1_adapter/profiles/ros1/px4-multirotor-ros1-v5.yaml\ntest -f /opt/ros/noetic/share/xgc_scout_mini_ros1_adapter/profiles/ros1/scout-mini-ros1-v3.yaml\ntest -f /usr/share/xgc2/adapter-definitions/xgc2-px4-multirotor-ros1-adapter.json\ntest -f /usr/share/xgc2/adapter-definitions/xgc2-scout-mini-ros1-adapter.json\ntest -f /usr/share/xgc2/process-definitions/xgc2-px4-multirotor-ros1-adapter.json\ntest -f /usr/share/xgc2/process-definitions/xgc2-scout-mini-ros1-adapter.json\ntest -f /usr/share/xgc2/robot-adapter-profiles/xgc2-px4-multirotor-ros1-adapter.json\ntest -f /usr/share/xgc2/robot-adapter-profiles/xgc2-scout-mini-ros1-adapter.json\n"
+        "smoke_test": "rospack find xgc_px4_multirotor_ros1_adapter\nrospack find xgc_scout_mini_ros1_adapter\nrospack find xgc_mecanum_ugv_ros1_adapter\ntest -x /opt/ros/noetic/lib/xgc_px4_multirotor_ros1_adapter/xgc_px4_multirotor_ros1_adapter_node\ntest -x /opt/ros/noetic/lib/xgc_px4_multirotor_ros1_adapter/xgc_px4_multirotor_ros1_adapter_service_helper\ntest -x /opt/ros/noetic/lib/xgc_scout_mini_ros1_adapter/xgc_scout_mini_ros1_adapter_node\ntest -x /opt/ros/noetic/lib/xgc_mecanum_ugv_ros1_adapter/xgc_mecanum_ugv_ros1_adapter_node\ntest -f /opt/ros/noetic/share/xgc_px4_multirotor_ros1_adapter/profiles/ros1/px4-multirotor-ros1-v6.yaml\ntest -f /opt/ros/noetic/share/xgc_scout_mini_ros1_adapter/profiles/ros1/scout-mini-ros1-v4.yaml\ntest -f /opt/ros/noetic/share/xgc_mecanum_ugv_ros1_adapter/profiles/ros1/mecanum-ugv-ros1-v1.yaml\ntest -f /usr/share/xgc2/adapter-definitions/xgc2-px4-multirotor-ros1-adapter.json\ntest -f /usr/share/xgc2/adapter-definitions/xgc2-scout-mini-ros1-adapter.json\ntest -f /usr/share/xgc2/adapter-definitions/xgc2-mecanum-ugv-ros1-adapter.json\ntest -f /usr/share/xgc2/process-definitions/xgc2-px4-multirotor-ros1-adapter.json\ntest -f /usr/share/xgc2/process-definitions/xgc2-scout-mini-ros1-adapter.json\ntest -f /usr/share/xgc2/process-definitions/xgc2-mecanum-ugv-ros1-adapter.json\ntest -f /usr/share/xgc2/robot-adapter-profiles/xgc2-px4-multirotor-ros1-adapter.json\ntest -f /usr/share/xgc2/robot-adapter-profiles/xgc2-scout-mini-ros1-adapter.json\ntest -f /usr/share/xgc2/robot-adapter-profiles/xgc2-mecanum-ugv-ros1-adapter.json\n"
       },
-      "version": "0.5.0-2"
+      "version": "0.5.0-4"
     },
     {
       "_source": "products/ros1/communication/ros1-tools-adapter/.xgc2/product.yml",
