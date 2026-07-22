@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import hashlib
+import io
 import inspect
 import json
 import os
@@ -870,11 +871,12 @@ class SchedulerResilienceTests(unittest.TestCase):
     def test_worker_classifies_only_exit_75_as_transient(self):
         expected = {0: "success", 1: "failed", 2: "failed", 75: "transient"}
         for returncode, status in expected.items():
+            process = mock.Mock(stdout=io.StringIO("runner output\n"))
+            process.wait.return_value = returncode
+            forwarded = io.StringIO()
             with self.subTest(returncode=returncode), mock.patch.object(
-                scheduler.subprocess,
-                "run",
-                return_value=mock.Mock(returncode=returncode, stdout="runner output"),
-            ):
+                scheduler.subprocess, "Popen", return_value=process
+            ) as invoked, mock.patch.object(scheduler.sys, "stdout", forwarded):
                 result = scheduler.run_product(
                     Path("runner.py"),
                     Path("plan.json"),
@@ -885,13 +887,17 @@ class SchedulerResilienceTests(unittest.TestCase):
                 )
             self.assertEqual(result["status"], status)
             self.assertEqual(result["returncode"], returncode)
+            self.assertTrue(result["output_streamed"])
+            self.assertEqual(result["output"], "runner output\n")
+            self.assertEqual(invoked.call_args.args[0][:2], [sys.executable, "-u"])
+            self.assertEqual(forwarded.getvalue(), "runner output\n")
 
     def test_scheduler_passes_bounded_apt_visibility_timeout_to_worker(self):
+        process = mock.Mock(stdout=io.StringIO("ok\n"))
+        process.wait.return_value = 0
         with mock.patch.object(
-            scheduler.subprocess,
-            "run",
-            return_value=mock.Mock(returncode=0, stdout="ok"),
-        ) as invoked:
+            scheduler.subprocess, "Popen", return_value=process
+        ) as invoked, mock.patch.object(scheduler.sys, "stdout", io.StringIO()):
             scheduler.run_product(
                 Path("runner.py"),
                 Path("plan.json"),
@@ -1311,13 +1317,16 @@ class TrustedCiSelectionTests(unittest.TestCase):
         }]
         downloads = 0
 
-        def fake_run(command, check=True):
+        def fake_run(command, check=True, timeout=None):
             nonlocal downloads
             if command[:3] == ["gh", "run", "list"]:
+                self.assertIsNone(timeout)
                 return mock.Mock(returncode=0, stdout=json.dumps(runs), stderr="")
             if command[:2] == ["gh", "api"]:
+                self.assertIsNone(timeout)
                 return mock.Mock(returncode=0, stdout="1\n", stderr="")
             if command[:3] == ["gh", "run", "download"]:
+                self.assertEqual(timeout, runner.ARTIFACT_DOWNLOAD_TIMEOUT_SECONDS)
                 downloads += 1
                 output = Path(command[command.index("--dir") + 1])
                 for arch in ("amd64", "arm64"):
@@ -1349,6 +1358,39 @@ class TrustedCiSelectionTests(unittest.TestCase):
             )
             self.assertTrue((cache / "12345").is_dir())
         self.assertEqual(downloads, 1)
+
+    def test_artifact_download_timeout_is_transient_and_bounded(self):
+        product = self.product()
+        timeout = subprocess.TimeoutExpired(
+            ["gh", "run", "download"], runner.ARTIFACT_DOWNLOAD_TIMEOUT_SECONDS
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "artifacts"
+            with mock.patch.object(runner, "run", side_effect=timeout) as gh_run:
+                with self.assertRaisesRegex(
+                    runner.TransientReleaseError,
+                    rf"timed out after {runner.ARTIFACT_DOWNLOAD_TIMEOUT_SECONDS}s",
+                ):
+                    runner.download_run_artifacts(product, 12345, output)
+        self.assertEqual(
+            gh_run.call_args.kwargs["timeout"], runner.ARTIFACT_DOWNLOAD_TIMEOUT_SECONDS
+        )
+
+    def test_trusted_ci_artifact_download_timeout_is_transient_and_bounded(self):
+        product = self.product()
+        timeout = subprocess.TimeoutExpired(
+            ["gh", "run", "download"], runner.ARTIFACT_DOWNLOAD_TIMEOUT_SECONDS
+        )
+        with mock.patch.object(runner, "run", side_effect=timeout) as gh_run:
+            with self.assertRaisesRegex(
+                runner.TransientReleaseError,
+                rf"trusted CI artifact download from run 12345 timed out after "
+                rf"{runner.ARTIFACT_DOWNLOAD_TIMEOUT_SECONDS}s",
+            ):
+                runner.trusted_ci_artifacts_match(product, 12345)
+        self.assertEqual(
+            gh_run.call_args.kwargs["timeout"], runner.ARTIFACT_DOWNLOAD_TIMEOUT_SECONDS
+        )
 
     def test_wrong_sha_and_manual_runs_are_ignored(self):
         product = self.product()

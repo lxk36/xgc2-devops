@@ -30,6 +30,7 @@ VERIFY_ACTION = "verify"
 COMPATIBILITY_VERIFY_ACTION = "compatibility-verify"
 TRANSIENT_EXIT_CODE = 75
 RESULT_MARKER = "XGC2_RESULT="
+ARTIFACT_DOWNLOAD_TIMEOUT_SECONDS = 600
 STANDARD_WORKFLOW_INPUTS = {
     "expected_version",
     "expected_source_sha",
@@ -284,13 +285,16 @@ def clear_publish_checkpoint(plan_path: Path, product: dict[str, Any]) -> None:
     node_checkpoint_path(plan_path, str(product["id"])).unlink(missing_ok=True)
 
 
-def run(args: list[str], *, check: bool = True) -> subprocess.CompletedProcess[str]:
+def run(
+    args: list[str], *, check: bool = True, timeout: float | None = None
+) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         args,
         check=check,
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
+        timeout=timeout,
     )
 
 
@@ -432,19 +436,30 @@ def trusted_ci_artifacts_match(
             shutil.rmtree(root)
         root.mkdir(parents=True)
     try:
-        result = run(
-            [
-                "gh",
-                "run",
-                "download",
-                str(run_id),
-                "--repo",
-                str(product["repository"]),
-                "--dir",
-                os.fspath(root),
-            ],
-            check=False,
+        print(
+            f"{product['id']}: validating artifacts from trusted CI run {run_id}",
+            flush=True,
         )
+        try:
+            result = run(
+                [
+                    "gh",
+                    "run",
+                    "download",
+                    str(run_id),
+                    "--repo",
+                    str(product["repository"]),
+                    "--dir",
+                    os.fspath(root),
+                ],
+                check=False,
+                timeout=ARTIFACT_DOWNLOAD_TIMEOUT_SECONDS,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise TransientReleaseError(
+                f"{product['id']}: trusted CI artifact download from run {run_id} "
+                f"timed out after {ARTIFACT_DOWNLOAD_TIMEOUT_SECONDS}s"
+            ) from exc
         if result.returncode != 0:
             details = command_details(result)
             if "no valid artifacts" in details.lower() or "not found" in details.lower():
@@ -757,23 +772,32 @@ def download_run_artifacts(product: dict[str, Any], run_id: int, output: Path) -
     if output.exists():
         shutil.rmtree(output)
     output.mkdir(parents=True)
-    result = run(
-        [
-            "gh",
-            "run",
-            "download",
-            str(run_id),
-            "--repo",
-            str(product["repository"]),
-            "--dir",
-            os.fspath(output),
-        ],
-        check=False,
-    )
+    print(f"{product['id']}: downloading artifacts from run {run_id}", flush=True)
+    try:
+        result = run(
+            [
+                "gh",
+                "run",
+                "download",
+                str(run_id),
+                "--repo",
+                str(product["repository"]),
+                "--dir",
+                os.fspath(output),
+            ],
+            check=False,
+            timeout=ARTIFACT_DOWNLOAD_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise TransientReleaseError(
+            f"{product['id']}: artifact download from run {run_id} timed out after "
+            f"{ARTIFACT_DOWNLOAD_TIMEOUT_SECONDS}s"
+        ) from exc
     if result.returncode != 0:
         details = command_details(result)
         error = TransientReleaseError if is_transient_message(details) else ReleaseError
         raise error(f"{product['id']}: cannot download run {run_id} artifacts: {details}")
+    print(f"{product['id']}: artifact download complete for run {run_id}", flush=True)
 
 
 def subprocess_checked(command: list[str], *, product_id: str) -> subprocess.CompletedProcess[str]:
@@ -1978,6 +2002,7 @@ def execute_central(args: argparse.Namespace) -> int:
     receipt_dir.mkdir(parents=True, exist_ok=True)
     receipt = receipt_dir / f"{product['id']}.json"
     stage_tool = Path(__file__).with_name("stage-product-release.py")
+    print(f"{product['id']}: assembling release bundle from run {run_id}", flush=True)
     stage_started = time.monotonic()
     subprocess_checked(
         [
@@ -2015,6 +2040,10 @@ def execute_central(args: argparse.Namespace) -> int:
             flush=True,
         )
         for staged_product in receipt_value.get("products", []):
+            print(
+                f"{product['id']}: staging {staged_product['distribution']} bundle",
+                flush=True,
+            )
             subprocess_checked(
                 [
                     sys.executable,

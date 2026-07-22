@@ -192,7 +192,15 @@ def run_product(
     timeout_seconds: int | None = None,
     apt_timeout_seconds: int | None = None,
 ) -> dict[str, Any]:
-    command = [sys.executable, str(runner), "--plan", str(plan_path), "--product", product_id]
+    command = [
+        sys.executable,
+        "-u",
+        str(runner),
+        "--plan",
+        str(plan_path),
+        "--product",
+        product_id,
+    ]
     if quality_required:
         command.append("--quality-required")
     if source_tests:
@@ -220,17 +228,33 @@ def run_product(
     if manifest_base_url:
         command.extend(["--manifest-base-url", manifest_base_url])
     started = time.monotonic()
-    result = subprocess.run(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    process = subprocess.Popen(
+        command,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        bufsize=1,
+    )
+    if process.stdout is None:
+        raise RuntimeError(f"{product_id}: release worker did not expose stdout")
+    output_chunks: list[str] = []
+    for line in process.stdout:
+        sys.stdout.write(line)
+        sys.stdout.flush()
+        output_chunks.append(line)
+    returncode = process.wait()
+    output = "".join(output_chunks)
     return {
         "status": (
             "success"
-            if result.returncode == 0
+            if returncode == 0
             else "transient"
-            if result.returncode == TRANSIENT_EXIT_CODE
+            if returncode == TRANSIENT_EXIT_CODE
             else "failed"
         ),
-        "returncode": result.returncode,
-        "output": result.stdout,
+        "returncode": returncode,
+        "output": output,
+        "output_streamed": True,
         "duration_seconds": round(time.monotonic() - started, 3),
     }
 
@@ -482,7 +506,8 @@ def schedule(
                 product_id = running.pop(future)
                 result = normalize_result(future.result())
                 output = result["output"]
-                print(output, end="" if output.endswith("\n") else "\n", flush=True)
+                if output and not result.get("output_streamed", False):
+                    print(output, end="" if output.endswith("\n") else "\n", flush=True)
                 product_state = state["products"][product_id]
                 completed_at = now_fn()
                 attempt = {
