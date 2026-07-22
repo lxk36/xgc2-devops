@@ -65,6 +65,12 @@ lifecycle:
 
 Deprecated products are excluded from active duplicate ownership checks.
 
+## Non-publishing catalogs
+
+Use `kind: catalog` for an active repository that records a compatible product
+set but does not own or publish an installable artifact. A catalog must not
+declare `apt.install` or `apt.packages`; this keeps it out of APT release plans.
+
 ## Usage
 
 Keep install and smoke-test commands in the product repository:

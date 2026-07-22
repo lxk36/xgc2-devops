@@ -552,7 +552,6 @@ def group_products(root: Path, products: list[Product], group: str) -> set[str]:
                 "xgc2-px4-sitl-114",
                 "xgc2-gazebo-sim-fs150-sitl",
                 "xgc2-gazebo-sim-visualization",
-                "xgc2-gazebo-sim",
             }:
                 selected.add(product.product_id)
         elif normalized in ("ugv-tracking", "unicycle-tracking"):
@@ -569,7 +568,6 @@ def group_products(root: Path, products: list[Product], group: str) -> set[str]:
                 "xgc2-gazebo-sim-vrpn-bridge",
                 "xgc2-gazebo-sim-scout",
                 "xgc2-gazebo-sim-visualization",
-                "xgc2-gazebo-sim",
             }:
                 selected.add(product.product_id)
         elif normalized in ("gazebo", "gazebo-sim"):
@@ -1215,7 +1213,7 @@ def main() -> int:
             catalog_path,
             allow_implicit_dependency_policy=args.allow_implicit_dependency_policy,
         )
-        if product.is_apt
+        if product.is_apt and product.kind != "catalog"
     ]
     products_by_id = {product.product_id: product for product in products}
     if args.allow_implicit_dependency_policy and catalog_path is not None:
