@@ -1737,6 +1737,61 @@
       "version": "0.1.0-3"
     },
     {
+      "_source": "products/ros1/robot/mecanum_description/.xgc2/product.yml",
+      "apt": {
+        "depends": [
+          "ros-noetic-urdf"
+        ],
+        "distribution": "focal",
+        "install": [
+          "ros-noetic-xgc2-mecanum-description"
+        ],
+        "package_architectures": {
+          "ros-noetic-xgc2-mecanum-description": [
+            "amd64",
+            "arm64"
+          ]
+        },
+        "packages": [
+          "ros-noetic-xgc2-mecanum-description"
+        ]
+      },
+      "groups": [
+        "gazebo-sim",
+        "ugv-tracking"
+      ],
+      "id": "xgc2-mecanum-description",
+      "kind": "ros1-apt",
+      "name": "XGC2 Mecanum Description",
+      "ownership": {
+        "paths": [
+          "/opt/ros/noetic/share/mecanum_description"
+        ]
+      },
+      "release": {
+        "apt_versions": {
+          "focal": "0.1.0-1"
+        },
+        "ci_workflow": "ci.yml",
+        "ref": "noetic",
+        "repository": "lxk36/xgc2-mecanum-description",
+        "workflow": "release.yml"
+      },
+      "ros": {
+        "distro": "noetic",
+        "packages": [
+          "mecanum_description"
+        ]
+      },
+      "schema": "xgc2.product.v1",
+      "summary": "ROS Noetic visual description assets for the XGC2 Mecanum UGV.",
+      "usage": {
+        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-mecanum-description\n",
+        "smoke_test": "rospack find mecanum_description\ntest -f /opt/ros/noetic/share/mecanum_description/urdf/mecanum_visual.urdf\n"
+      },
+      "version": "0.1.0-1"
+    },
+    {
       "_source": "products/ros1/robot/scout_description/.xgc2/product.yml",
       "apt": {
         "depends": [
@@ -1837,7 +1892,7 @@
           "ros-noetic-roscpp",
           "ros-noetic-std-msgs",
           "ros-noetic-visualization-msgs",
-          "ros-noetic-xgc2-gazebo-sim-mecanum (>= 0.1.0-1)"
+          "ros-noetic-xgc2-mecanum-description (>= 0.1.0-1)"
         ],
         "distribution": "focal",
         "install": [
@@ -1866,12 +1921,12 @@
       "release": {
         "dependency_policy": {
           "xgc2-fs150-description": "verify",
-          "xgc2-gazebo-sim-mecanum": "verify",
+          "xgc2-mecanum-description": "rebuild",
           "xgc2-scout-description": "verify"
         },
         "requires": [
           "xgc2-fs150-description",
-          "xgc2-gazebo-sim-mecanum",
+          "xgc2-mecanum-description",
           "xgc2-scout-description"
         ]
       },
@@ -1887,7 +1942,7 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-robot-visualization\n",
         "smoke_test": "rospack find xgc2_robot_visualization\n"
       },
-      "version": "0.1.0-7"
+      "version": "0.1.0-8"
     },
     {
       "_source": "products/ros1/simulator/convex_geometry/.xgc2/product.yml",
@@ -1962,7 +2017,7 @@
       "usage": {
         "notes": "This repository records the Gazebo simulation product set and compatible\nversions. It does not build, install, or publish an aggregate Debian\npackage. Consumers install only the independent products they use.\n"
       },
-      "version": "1.1.0-68"
+      "version": "1.1.0-69"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/agilex/.xgc2/product.yml",
@@ -2204,6 +2259,7 @@
           "ros-noetic-tf2",
           "ros-noetic-tf2-ros",
           "ros-noetic-xacro",
+          "ros-noetic-xgc2-mecanum-description (>= 0.1.0-1)",
           "ros-noetic-xgc2-gazebo-sim-worlds (>= 1.1.0-14)"
         ],
         "distribution": "focal",
@@ -2240,16 +2296,18 @@
       },
       "release": {
         "apt_versions": {
-          "focal": "0.1.0-1"
+          "focal": "0.1.0-2"
         },
         "ci_workflow": "ci.yml",
         "dependency_policy": {
           "xgc2-gazebo-sim-scenes": "verify",
-          "xgc2-gazebo-sim-vrpn-bridge": "verify"
+          "xgc2-gazebo-sim-vrpn-bridge": "verify",
+          "xgc2-mecanum-description": "rebuild"
         },
         "ref": "noetic",
         "repository": "lxk36/xgc2-gazebo-sim-mecanum",
         "requires": [
+          "xgc2-mecanum-description",
           "xgc2-gazebo-sim-scenes"
         ],
         "workflow": "release.yml"
@@ -2267,7 +2325,7 @@
         "notes": "The vehicle is visual-only and has no collision, tire, force, PID, or\nros_control dynamics. Gazebo owns all velocity-to-pose integration.\nThe product publishes no odometry; the optional VRPN bridge consumes Gazebo\nmodel poses directly.\n",
         "smoke_test": "roslaunch --files gazebo_sim_mecanum simple.launch gui:=false\nrostest gazebo_sim_mecanum ideal_drive.test\n"
       },
-      "version": "0.1.0-1"
+      "version": "0.1.0-2"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/px4-sitl-112/.xgc2/product.yml",
@@ -2444,7 +2502,7 @@
           "ros-noetic-std-msgs",
           "ros-noetic-tf2-ros",
           "ros-noetic-visualization-msgs",
-          "ros-noetic-xgc2-robot-visualization (>= 0.1.0-7)"
+          "ros-noetic-xgc2-robot-visualization (>= 0.1.0-8)"
         ],
         "distribution": "focal",
         "install": [
@@ -2480,7 +2538,7 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-gazebo-sim-visualization\n",
         "smoke_test": "roslaunch --files gazebo_sim_visualization gazebo_auto_visualization_rviz.launch rviz:=false\n"
       },
-      "version": "1.1.0-14"
+      "version": "1.1.0-15"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/vrpn_bridge/.xgc2/product.yml",

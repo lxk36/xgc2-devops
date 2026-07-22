@@ -166,3 +166,7 @@
 	path = products/ros1/driver/camera
 	url = git@github.com:lxk36/xgc2-camera-ros1.git
 	branch = main
+[submodule "products/ros1/robot/mecanum_description"]
+	path = products/ros1/robot/mecanum_description
+	url = git@github.com:lxk36/xgc2-mecanum-description.git
+	branch = noetic
