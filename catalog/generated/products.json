@@ -1836,7 +1836,8 @@
           "ros-noetic-geometry-msgs",
           "ros-noetic-roscpp",
           "ros-noetic-std-msgs",
-          "ros-noetic-visualization-msgs"
+          "ros-noetic-visualization-msgs",
+          "ros-noetic-xgc2-gazebo-sim-mecanum (>= 0.1.0-1)"
         ],
         "distribution": "focal",
         "install": [
@@ -1858,16 +1859,19 @@
           "/opt/ros/noetic/share/xgc2_robot_visualization",
           "/opt/ros/noetic/include/xgc2_robot_visualization",
           "/opt/ros/noetic/lib/libfs150_uav_visualizer.so",
-          "/opt/ros/noetic/lib/libscout_ugv_visualizer.so"
+          "/opt/ros/noetic/lib/libscout_ugv_visualizer.so",
+          "/opt/ros/noetic/lib/libmecanum_ugv_visualizer.so"
         ]
       },
       "release": {
         "dependency_policy": {
           "xgc2-fs150-description": "verify",
+          "xgc2-gazebo-sim-mecanum": "verify",
           "xgc2-scout-description": "verify"
         },
         "requires": [
           "xgc2-fs150-description",
+          "xgc2-gazebo-sim-mecanum",
           "xgc2-scout-description"
         ]
       },
@@ -1883,7 +1887,7 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-robot-visualization\n",
         "smoke_test": "rospack find xgc2_robot_visualization\n"
       },
-      "version": "0.1.0-6"
+      "version": "0.1.0-7"
     },
     {
       "_source": "products/ros1/simulator/convex_geometry/.xgc2/product.yml",
@@ -1958,7 +1962,7 @@
       "usage": {
         "notes": "This repository records the Gazebo simulation product set and compatible\nversions. It does not build, install, or publish an aggregate Debian\npackage. Consumers install only the independent products they use.\n"
       },
-      "version": "1.1.0-67"
+      "version": "1.1.0-68"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/agilex/.xgc2/product.yml",
@@ -2440,7 +2444,7 @@
           "ros-noetic-std-msgs",
           "ros-noetic-tf2-ros",
           "ros-noetic-visualization-msgs",
-          "ros-noetic-xgc2-robot-visualization (>= 0.1.0-5)"
+          "ros-noetic-xgc2-robot-visualization (>= 0.1.0-7)"
         ],
         "distribution": "focal",
         "install": [
@@ -2476,7 +2480,7 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-gazebo-sim-visualization\n",
         "smoke_test": "roslaunch --files gazebo_sim_visualization gazebo_auto_visualization_rviz.launch rviz:=false\n"
       },
-      "version": "1.1.0-13"
+      "version": "1.1.0-14"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/vrpn_bridge/.xgc2/product.yml",
