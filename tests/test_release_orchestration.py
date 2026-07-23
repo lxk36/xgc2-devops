@@ -642,6 +642,51 @@ class DagTests(unittest.TestCase):
             {"provider": ["apt.recommends"]},
         )
 
+    def test_plan_outputs_allow_absolute_paths_outside_repository(self):
+        with tempfile.TemporaryDirectory() as root_directory, tempfile.TemporaryDirectory() as output_directory:
+            root = Path(root_directory)
+            source_dir = root / "products" / "external-output"
+            source_dir.mkdir(parents=True)
+            product = replace(
+                self.product("external-output"),
+                source_dir=source_dir,
+                source_file=source_dir / ".xgc2" / "product.yml",
+            )
+            target = planner.ReleaseTarget(
+                product=product,
+                repository="example/external-output",
+                ref="main",
+                workflow="release.yml",
+                workflow_path=None,
+                dispatch_inputs={},
+                action="release",
+                source_sha="a" * 40,
+                expected_version=product.version,
+                expected_apt_versions={"focal": product.version},
+            )
+            output_root = Path(output_directory)
+            plan_path = output_root / "plan.json"
+            lock_path = output_root / "lock.json"
+            summary_path = output_root / "summary.md"
+
+            with mock.patch("sys.stdout", new_callable=io.StringIO) as stdout:
+                planner.write_plan_outputs(
+                    root=root,
+                    plan_output=str(plan_path),
+                    lock_output=str(lock_path),
+                    summary_output=str(summary_path),
+                    layers=[[product.product_id]],
+                    targets={product.product_id: target},
+                    downstream={product.product_id: set()},
+                    edge_policy={},
+                    edge_source={},
+                )
+
+            self.assertTrue(plan_path.is_file())
+            self.assertTrue(lock_path.is_file())
+            self.assertTrue(summary_path.is_file())
+            self.assertIn(f"wrote {plan_path}", stdout.getvalue())
+
     def test_diamond_layers(self):
         downstream = {"a": {"b", "c"}, "b": {"d"}, "c": {"d"}, "d": set()}
         self.assertEqual(planner.topo_layers(set(downstream), downstream), [["a"], ["b", "c"], ["d"]])
@@ -2940,6 +2985,55 @@ class ReleasePlanValidationTests(unittest.TestCase):
             )
 
         self.assertTrue(any("does not match product version" in error for error in errors))
+
+    def test_planned_update_accepts_current_px4_runtime_manifest_version(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = self.write_consumer(root, requires=True)
+            manifest = source / "manifest"
+            manifest.mkdir()
+            (manifest / "px4_runtime.yaml").write_text(
+                "debian_version: 1.0.0-1\n",
+                encoding="utf-8",
+            )
+            item = self.plan_item(source.relative_to(root).as_posix())
+            item["expected_version"] = "1.0.0-2"
+            item["apt_versions"] = {"focal": "1.0.0-2"}
+
+            errors = plan_validator.validate(
+                root,
+                {"layers": [[item]]},
+                catalog=self.catalog(),
+                allow_planned_updates=True,
+            )
+
+        self.assertEqual(errors, [])
+
+    def test_planned_update_rejects_unrelated_px4_runtime_manifest_version(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = self.write_consumer(root, requires=True)
+            manifest = source / "manifest"
+            manifest.mkdir()
+            (manifest / "px4_runtime.yaml").write_text(
+                "debian_version: 9.9.9-9\n",
+                encoding="utf-8",
+            )
+            item = self.plan_item(source.relative_to(root).as_posix())
+            item["expected_version"] = "1.0.0-2"
+            item["apt_versions"] = {"focal": "1.0.0-2"}
+
+            errors = plan_validator.validate(
+                root,
+                {"layers": [[item]]},
+                catalog=self.catalog(),
+                allow_planned_updates=True,
+            )
+
+        self.assertTrue(
+            any("manifest/px4_runtime.yaml debian_version=9.9.9-9" in error for error in errors),
+            errors,
+        )
 
     def test_hidden_dependency_is_checked_for_compatibility_build_action(self):
         with tempfile.TemporaryDirectory() as directory:

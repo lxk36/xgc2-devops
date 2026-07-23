@@ -1084,6 +1084,14 @@ def plan_summary_markdown(
     return "\n".join(lines)
 
 
+def output_path_label(path: Path, root: Path) -> str:
+    """Render a generated output path without imposing a repository boundary."""
+    try:
+        return str(path.relative_to(root))
+    except ValueError:
+        return str(path)
+
+
 def write_plan_outputs(
     *,
     root: Path,
@@ -1109,7 +1117,7 @@ def write_plan_outputs(
     with plan_path.open("w", encoding="utf-8") as handle:
         json.dump(plan, handle, indent=2, sort_keys=True)
         handle.write("\n")
-    print(f"wrote {plan_path.relative_to(root)}")
+    print(f"wrote {output_path_label(plan_path, root)}")
 
     if lock_output:
         lock_path = root / lock_output
@@ -1130,7 +1138,7 @@ def write_plan_outputs(
                 sort_keys=True,
             )
             handle.write("\n")
-        print(f"wrote {lock_path.relative_to(root)}")
+        print(f"wrote {output_path_label(lock_path, root)}")
 
     if summary_output:
         summary_path = root / summary_output
@@ -1139,7 +1147,7 @@ def write_plan_outputs(
             plan_summary_markdown(layers, targets, downstream),
             encoding="utf-8",
         )
-        print(f"wrote {summary_path.relative_to(root)}")
+        print(f"wrote {output_path_label(summary_path, root)}")
 
 
 def print_plan(layers: list[list[str]], targets: dict[str, ReleaseTarget]) -> None:

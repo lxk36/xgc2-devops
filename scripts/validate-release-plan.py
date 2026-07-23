@@ -224,14 +224,16 @@ def validate(
         runtime_manifest_path = source / "manifest" / "px4_runtime.yaml"
         if runtime_manifest_path.exists():
             runtime_manifest = load_yaml(runtime_manifest_path)
-            expected_runtime_version = (
-                expected_product_version if allow_planned_updates else metadata_version
-            )
-            if str(runtime_manifest.get("debian_version", "")) != expected_runtime_version:
+            accepted_runtime_versions = {metadata_version}
+            if allow_planned_updates and expected_product_version:
+                accepted_runtime_versions.add(expected_product_version)
+            actual_runtime_version = str(runtime_manifest.get("debian_version", ""))
+            if actual_runtime_version not in accepted_runtime_versions:
+                expected_runtime_versions = " or ".join(sorted(accepted_runtime_versions))
                 errors.append(
                     f"{product_id}: manifest/px4_runtime.yaml debian_version="
-                    f"{runtime_manifest.get('debian_version')} but product version is "
-                    f"{expected_runtime_version}"
+                    f"{runtime_manifest.get('debian_version')} but product version must be "
+                    f"{expected_runtime_versions}"
                 )
 
         scripts_dir = source / ".xgc2" / "scripts"
