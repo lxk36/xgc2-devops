@@ -594,7 +594,46 @@ def nearest_parent_git_repo(root: Path, repo: Path) -> Path | None:
     return root if repo != root else None
 
 
+def configured_submodule_branch(root: Path, repo: Path) -> str:
+    """Return the tracked branch declared by the repository that owns ``repo``.
+
+    Recursive submodule checkout deliberately leaves repositories detached at
+    their gitlink SHA.  The owning repository's committed ``.gitmodules`` file
+    is the only authoritative branch declaration available in that state.
+    """
+    parent = nearest_parent_git_repo(root, repo)
+    if parent is None:
+        return ""
+    modules = parent / ".gitmodules"
+    if not modules.is_file():
+        return ""
+    relative = repo.relative_to(parent).as_posix()
+    paths = git(
+        ["config", "-f", str(modules), "--get-regexp", r"^submodule\..*\.path$"],
+        parent,
+    )
+    for line in paths.splitlines():
+        key, separator, value = line.partition(" ")
+        if not separator or value != relative:
+            continue
+        match = re.fullmatch(r"submodule\.(.+)\.path", key)
+        if match is None:
+            continue
+        return git(
+            [
+                "config",
+                "-f",
+                str(modules),
+                "--get",
+                f"submodule.{match.group(1)}.branch",
+            ],
+            parent,
+        )
+    return ""
+
+
 def transaction_repository_identity(
+    root: Path,
     repo: Path,
     *,
     items: list[dict[str, Any]],
@@ -617,6 +656,8 @@ def transaction_repository_identity(
         identity_kind = "planned product"
     else:
         ref = git(["branch", "--show-current"], repo, check=True)
+        if not ref:
+            ref = configured_submodule_branch(root, repo)
         base = git(["rev-parse", "HEAD"], repo, check=True)
         repository = git(["config", "--get", "remote.origin.url"], repo, check=True)
         identity_kind = "nested gitlink container"
@@ -784,6 +825,7 @@ def main(argv: list[str] | None = None) -> int:
         for repo in sorted(stage_paths_by_repo, key=lambda item: len(item.parts), reverse=True):
             items = touched_repos.get(repo, plan_items_by_source.get(repo, []))
             identity = transaction_repository_identity(
+                root,
                 repo,
                 items=items,
                 original_source_shas=original_source_shas,

@@ -3341,8 +3341,16 @@ class VersionBumpSafetyTests(unittest.TestCase):
             base = version_bumper.git(["rev-parse", "HEAD"], container, check=True)
             version_bumper.run(["git", "remote", "add", "origin", str(remote)], cwd=container)
             version_bumper.run(["git", "push", "-u", "origin", "noetic"], cwd=container)
+            (root / ".gitmodules").write_text(
+                '[submodule "container"]\n'
+                "\tpath = container\n"
+                "\tbranch = noetic\n",
+                encoding="utf-8",
+            )
+            version_bumper.run(["git", "checkout", "--detach", base], cwd=container)
 
             identity = version_bumper.transaction_repository_identity(
+                root,
                 container,
                 items=[],
                 original_source_shas={},
