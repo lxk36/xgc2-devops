@@ -12,9 +12,6 @@
 	path = products/ros2/vrx
 	url = git@github.com:lxk36/xgc2-vrx.git
 	branch = xgc2-jazzy
-[submodule "products/webui/xgc2-lichtblick"]
-	path = products/webui/xgc2-lichtblick
-	url = git@github.com:lxk36/xgc2-lichtblick.git
 [submodule "products/ros2/xgc2-ros2-ws"]
 	path = products/ros2/xgc2-ros2-ws
 	url = git@github.com:lxk36/xgc2-ros2-ws.git
