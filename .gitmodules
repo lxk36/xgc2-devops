@@ -170,3 +170,7 @@
 	path = products/ros1/robot/mecanum_description
 	url = git@github.com:lxk36/xgc2-mecanum-description.git
 	branch = noetic
+[submodule "products/robotics/wheeltec"]
+	path = products/robotics/wheeltec
+	url = https://github.com/lxk36/xgc2-robot-wheeltec.git
+	branch = main
