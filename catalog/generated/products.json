@@ -67,7 +67,7 @@
           "libxgc2-adapter-runtime-client-dev"
         ],
         "packages": [
-          "libxgc2-adapter-runtime-client1",
+          "libxgc2-adapter-runtime-client2",
           "libxgc2-adapter-runtime-client-dev"
         ]
       },
@@ -78,8 +78,8 @@
         "paths": [
           "/usr/include/xgc2/adapter_runtime",
           "/usr/include/xgc",
-          "/usr/lib/*/libxgc2_adapter_runtime_client.so.1",
-          "/usr/lib/*/libxgc2_adapter_runtime_protocol.so.1",
+          "/usr/lib/*/libxgc2_adapter_runtime_client.so.2",
+          "/usr/lib/*/libxgc2_adapter_runtime_protocol.so.2",
           "/usr/lib/*/libxgc2_adapter_runtime_client.so*",
           "/usr/lib/*/libxgc2_adapter_runtime_protocol.so*",
           "/usr/lib/*/cmake/xgc2_adapter_runtime_client",
@@ -88,9 +88,9 @@
       },
       "release": {
         "apt_versions": {
-          "focal": "0.5.0-3~focal",
-          "jammy": "0.5.0-3~jammy",
-          "noble": "0.5.0-3~noble"
+          "focal": "0.6.0-1~focal",
+          "jammy": "0.6.0-1~jammy",
+          "noble": "0.6.0-1~noble"
         },
         "ci_workflow": "ci.yml",
         "dependency_policy": {
@@ -104,10 +104,10 @@
       "summary": "Generic C++ SDK for capability-first XGC2 AdapterRuntimeLink sessions, generated protocol bindings, fencing, dispatch, and flow control.",
       "usage": {
         "install": "sudo apt update\nsudo apt install libxgc2-adapter-runtime-client-dev\n",
-        "notes": "CMake consumers use find_package(xgc2_adapter_runtime_client REQUIRED CONFIG)\nand link xgc2::adapter_runtime_client. The package exports generated Runtime\nLink protobuf C++ headers and xgc2::adapter_runtime_protocol. The -dev\npackage preserves the existing build interface and pulls the separate\nlibxgc2-adapter-runtime-client1 SONAME package. Runtime applications depend\nonly on that ABI package and its generated shlibs dependencies.\n",
+        "notes": "CMake consumers use find_package(xgc2_adapter_runtime_client REQUIRED CONFIG)\nand link xgc2::adapter_runtime_client. The package exports generated Runtime\nLink protobuf C++ headers and xgc2::adapter_runtime_protocol. The -dev\npackage preserves the existing build interface and pulls the separate\nlibxgc2-adapter-runtime-client2 SONAME package. Runtime applications depend\nonly on that ABI package and its generated shlibs dependencies.\n",
         "smoke_test": "pkg-config --modversion xgc2-adapter-runtime-client\n"
       },
-      "version": "0.5.0-3"
+      "version": "0.6.0-1"
     },
     {
       "_source": "products/common/camera-core/.xgc2/product.yml",
@@ -276,9 +276,9 @@
       },
       "release": {
         "apt_versions": {
-          "focal": "0.5.0-2~focal",
-          "jammy": "0.5.0-2~jammy",
-          "noble": "0.5.0-2~noble"
+          "focal": "0.5.0-3~focal",
+          "jammy": "0.5.0-3~jammy",
+          "noble": "0.5.0-3~noble"
         },
         "ci_workflow": "ci.yml",
         "ref": "master",
@@ -292,7 +292,7 @@
         "notes": "This package installs schema sources and language-neutral discovery metadata only.\nConsumers generate or own their language runtime bindings explicitly.\n",
         "smoke_test": "cmake --find-package -DNAME=xgc2_protobuf -DCOMPILER_ID=GNU -DLANGUAGE=CXX -DMODE=EXIST\npkg-config --variable=proto_root xgc2-protobuf\n"
       },
-      "version": "0.5.0-2"
+      "version": "0.5.0-3"
     },
     {
       "_source": "products/common/state-machine/.xgc2/product.yml",
@@ -615,7 +615,7 @@
         "notes": "The ROS Noetic and XGC2 APT sources must be configured before installing this package.",
         "smoke_test": "test -d /opt/xgc2/robots/fs150/docs\ntest -f /opt/xgc2/robots/fs150/docs/rk356x_performance_mode.md\ndpkg -s xgc2-fs150\ndpkg -s xgc2-fs150-mavlink-router\ntest -f /etc/xgc2/fs150-mavlink-router/router.conf\nsystemctl is-enabled xgc2-fs150-mavlink-router.service\n"
       },
-      "version": "0.1.0-5"
+      "version": "0.1.0-6"
     },
     {
       "_source": "products/ros1/common/ros1-msgs/.xgc2/product.yml",
@@ -710,7 +710,7 @@
       "_source": "products/ros1/communication/ros1-adapter/.xgc2/product.yml",
       "apt": {
         "depends": [
-          "libxgc2-adapter-runtime-client1",
+          "libxgc2-adapter-runtime-client2",
           "ros-noetic-geometry-msgs",
           "ros-noetic-mavros-msgs",
           "python3-jsonschema",
@@ -763,7 +763,7 @@
       "release": {
         "ci_workflow": "ci.yml",
         "dependency_policy": {
-          "libxgc2-adapter-runtime-client-dev": "verify",
+          "libxgc2-adapter-runtime-client-dev": "rebuild",
           "xgc2-protobuf": "rebuild",
           "xgc2-scout-msgs": "rebuild"
         },
@@ -798,7 +798,7 @@
       "apt": {
         "depends": [
           "libjsoncpp1",
-          "libxgc2-adapter-runtime-client1",
+          "libxgc2-adapter-runtime-client2",
           "ros-noetic-ros-babel-fish",
           "ros-noetic-roscpp",
           "ros-noetic-roslib",
@@ -833,8 +833,8 @@
       "release": {
         "ci_workflow": "ci.yml",
         "dependency_policy": {
-          "libxgc2-adapter-runtime-client-dev": "verify",
-          "xgc2-protobuf": "verify"
+          "libxgc2-adapter-runtime-client-dev": "rebuild",
+          "xgc2-protobuf": "rebuild"
         },
         "ref": "noetic",
         "repository": "lxk36/xgc2-ros1-tools-adapter",
@@ -855,7 +855,7 @@
       "summary": "Generic typed ROS1 topic-publish and service-call capabilities provided as an XGC2 Adapter Runtime application.",
       "usage": {
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-ros1-tools-adapter\n",
-        "notes": "Core or Agent supervises one process per ROS1 native context and supplies a\nmode-0600 binary AdapterProcessBootstrap. The process exposes no listener\nother than its outbound connection to the target-local Adapter Runtime.\nBuilds require the exact 0.5.0 SDK and schema inputs. Installed applications\nrequire only the ABI-1 Runtime shared-library package; SDK headers and schema\nsources do not participate in the deployment dependency graph.\n",
+        "notes": "Core or Agent supervises one process per ROS1 native context and supplies a\nmode-0600 binary AdapterProcessBootstrap. The process exposes no listener\nother than its outbound connection to the target-local Adapter Runtime.\nBuilds require the exact 0.6.0 SDK and 0.5.0-3 schema inputs. Installed applications\nrequire only the ABI-2 Runtime shared-library package; SDK headers and schema\nsources do not participate in the deployment dependency graph.\n",
         "smoke_test": "rospack find xgc_ros1_tools_adapter\ntest -x /opt/ros/noetic/lib/xgc_ros1_tools_adapter/xgc_ros1_tools_adapter_node\ntest -x /opt/ros/noetic/lib/xgc_ros1_tools_adapter/xgc_ros1_tools_adapter_service_helper\ntest -f /usr/share/xgc2/adapter-definitions/xgc2-ros1-tools-adapter.json\ntest -f /usr/share/xgc2/process-definitions/xgc2-ros1-tools-adapter.json\n"
       },
       "version": "0.1.2-2"
@@ -1156,7 +1156,7 @@
       },
       "release": {
         "apt_versions": {
-          "focal": "0.3.0-1"
+          "focal": "0.3.0-2"
         },
         "ci_workflow": "ci.yml",
         "dependency_policy": {
@@ -1183,77 +1183,7 @@
         "notes": "One process owns one camera and publishes synchronized Image and CameraInfo\nmessages plus diagnostics. Calibration tools are released independently by\nthe xgc2-camera-calibration-ros1 product.\n",
         "smoke_test": "roslaunch xgc_camera_driver camera.launch backend:=synthetic pixel_format:=bgr24\nrostopic echo -n 1 /usb_cam/camera_info\n"
       },
-      "version": "0.3.0-1"
-    },
-    {
-      "_source": "products/ros1/driver/livox_ros_driver/.xgc2/product.yml",
-      "apt": {
-        "distribution": "focal",
-        "install": [
-          "ros-noetic-livox-ros-driver"
-        ],
-        "packages": [
-          "ros-noetic-livox-ros-driver"
-        ]
-      },
-      "id": "livox-ros-driver",
-      "kind": "ros1-apt",
-      "name": "Livox ROS Driver",
-      "ownership": {
-        "paths": [
-          "/opt/ros/noetic/share/livox_ros_driver",
-          "/opt/ros/noetic/include/livox_ros_driver",
-          "/opt/ros/noetic/lib/livox_ros_driver"
-        ]
-      },
-      "ros": {
-        "distro": "noetic",
-        "packages": [
-          "livox_ros_driver"
-        ]
-      },
-      "schema": "xgc2.product.v1",
-      "summary": "ROS1 Noetic package for the first-generation Livox ROS driver.",
-      "usage": {
-        "install": "sudo apt update\nsudo apt install ros-noetic-livox-ros-driver\n",
-        "smoke_test": "rospack find livox_ros_driver\n"
-      },
-      "version": "2.6.0-7"
-    },
-    {
-      "_source": "products/ros1/driver/livox_ros_driver2/.xgc2/product.yml",
-      "apt": {
-        "distribution": "focal",
-        "install": [
-          "ros-noetic-livox-ros-driver2"
-        ],
-        "packages": [
-          "ros-noetic-livox-ros-driver2"
-        ]
-      },
-      "id": "livox-ros-driver2",
-      "kind": "ros1-apt",
-      "name": "Livox ROS Driver 2",
-      "ownership": {
-        "paths": [
-          "/opt/ros/noetic/share/livox_ros_driver2",
-          "/opt/ros/noetic/include/livox_ros_driver2",
-          "/opt/ros/noetic/lib/livox_ros_driver2"
-        ]
-      },
-      "ros": {
-        "distro": "noetic",
-        "packages": [
-          "livox_ros_driver2"
-        ]
-      },
-      "schema": "xgc2.product.v1",
-      "summary": "ROS1 Noetic package for Livox ROS Driver 2.",
-      "usage": {
-        "install": "sudo apt update\nsudo apt install ros-noetic-livox-ros-driver2\n",
-        "smoke_test": "rospack find livox_ros_driver2\n"
-      },
-      "version": "1.2.6-7"
+      "version": "0.3.0-2"
     },
     {
       "_source": "products/ros1/perception/camera-calibration/.xgc2/product.yml",
@@ -1263,11 +1193,13 @@
           "python3-opencv",
           "python3-rospkg",
           "python3-yaml",
+          "ros-noetic-gazebo-msgs",
           "ros-noetic-geometry-msgs",
           "ros-noetic-rosbash",
           "ros-noetic-roslaunch",
           "ros-noetic-rospy",
           "ros-noetic-sensor-msgs",
+          "ros-noetic-tf",
           "ros-noetic-tf2-ros"
         ],
         "distribution": "focal",
@@ -1297,7 +1229,7 @@
       },
       "release": {
         "apt_versions": {
-          "focal": "0.3.0-2"
+          "focal": "0.3.0-7"
         },
         "ci_workflow": "ci.yml",
         "ref": "main",
@@ -1318,50 +1250,7 @@
         "notes": "Intrinsic calibration is camera-agnostic and can be used for fixed, onboard,\nor vehicle-mounted cameras. Fixed-camera extrinsic calibration consumes an\nexisting CameraInfo or intrinsic YAML as data; it has no package or release\ndependency on the intrinsic workflow that may have produced those values.\n",
         "smoke_test": "roslaunch --files xgc_camera_calibration intrinsic_calibrator.launch\nroslaunch --files xgc_camera_calibration extrinsic_calibrator.launch\nroslaunch --files xgc_camera_calibration extrinsic_tf.launch\n"
       },
-      "version": "0.3.0-2"
-    },
-    {
-      "_source": "products/ros1/perception/detection/.xgc2/product.yml",
-      "apt": {
-        "depends": [
-          "ros-noetic-xgc2-onboard-detector-lv (>= 1.1.0-7)",
-          "ros-noetic-xgc2-fapp-obj-state-msgs (>= 1.1.0-7)",
-          "ros-noetic-xgc2-fapp-mot-mapping (>= 1.1.0-7)"
-        ],
-        "distribution": "focal",
-        "install": [
-          "ros-noetic-xgc2-detection"
-        ],
-        "packages": [
-          "ros-noetic-xgc2-detection",
-          "ros-noetic-xgc2-onboard-detector-lv",
-          "ros-noetic-xgc2-fapp-obj-state-msgs",
-          "ros-noetic-xgc2-fapp-mot-mapping"
-        ]
-      },
-      "id": "xgc2-detection",
-      "kind": "ros1-apt",
-      "name": "XGC2 Detection",
-      "ownership": {
-        "paths": [
-          "/opt/ros/noetic/share/onboard_detector_lv",
-          "/opt/ros/noetic/include/onboard_detector_lv",
-          "/opt/ros/noetic/lib/onboard_detector_lv"
-        ]
-      },
-      "ros": {
-        "distro": "noetic",
-        "packages": [
-          "onboard_detector_lv"
-        ]
-      },
-      "schema": "xgc2.product.v1",
-      "summary": "ROS1 perception detection packages including the LV-DOT onboard dynamic obstacle detector.",
-      "usage": {
-        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-detection\n",
-        "smoke_test": "rospack find onboard_detector_lv\nrosrun onboard_detector_lv detector_node_lv --help\n"
-      },
-      "version": "1.1.0-7"
+      "version": "0.3.0-7"
     },
     {
       "_source": "products/ros1/perception/hover-thrust/.xgc2/product.yml",
@@ -1473,232 +1362,6 @@
         "smoke_test": "roslaunch --files estimator_vrpn_px4_rotor_state vrpn_px4_rotor_state_estimator.launch\nroslaunch --files estimator_vrpn_ugv_state vrpn_ugv_state_estimator.launch\n"
       },
       "version": "1.1.6-6"
-    },
-    {
-      "_source": "products/ros1/perception/slam/.xgc2/product.yml",
-      "apt": {
-        "depends": [
-          "ros-noetic-livox-ros-driver (>= 2.6.0-7)",
-          "ros-noetic-xgc2-fast-lio2 (>= 1.1.0-10)",
-          "ros-noetic-xgc2-swarm-lio2 (>= 1.1.0-10)",
-          "ros-noetic-xgc2-point-lio (>= 1.1.0-10)",
-          "ros-noetic-xgc2-lio-sam (>= 1.1.0-10)",
-          "ros-noetic-xgc2-voxel-slam (>= 1.1.0-10)",
-          "ros-noetic-xgc2-voxelslam-pointcloud2 (>= 1.1.0-10)"
-        ],
-        "distribution": "focal",
-        "install": [
-          "ros-noetic-xgc2-slam"
-        ],
-        "packages": [
-          "ros-noetic-xgc2-slam",
-          "ros-noetic-xgc2-fast-lio2",
-          "ros-noetic-xgc2-swarm-lio2",
-          "ros-noetic-xgc2-swarm-msgs",
-          "ros-noetic-xgc2-udp-bridge",
-          "ros-noetic-xgc2-point-lio",
-          "ros-noetic-xgc2-lio-sam",
-          "ros-noetic-xgc2-voxel-slam",
-          "ros-noetic-xgc2-voxelslam-pointcloud2"
-        ]
-      },
-      "id": "xgc2-slam",
-      "kind": "ros1-apt",
-      "name": "XGC2 SLAM",
-      "ownership": {
-        "paths": [
-          "/opt/ros/noetic/share/fast_lio",
-          "/opt/ros/noetic/lib/fast_lio",
-          "/opt/ros/noetic/share/swarm_lio",
-          "/opt/ros/noetic/lib/swarm_lio",
-          "/opt/ros/noetic/share/swarm_msgs",
-          "/opt/ros/noetic/share/udp_bridge",
-          "/opt/ros/noetic/lib/udp_bridge",
-          "/opt/ros/noetic/share/point_lio",
-          "/opt/ros/noetic/lib/point_lio",
-          "/opt/ros/noetic/share/lio_sam",
-          "/opt/ros/noetic/lib/lio_sam",
-          "/opt/ros/noetic/share/voxel_slam",
-          "/opt/ros/noetic/lib/voxel_slam",
-          "/opt/ros/noetic/share/voxelslam_pointcloud2",
-          "/opt/ros/noetic/lib/voxelslam_pointcloud2"
-        ]
-      },
-      "release": {
-        "dependency_policy": {
-          "livox-ros-driver": "rebuild"
-        }
-      },
-      "ros": {
-        "distro": "noetic",
-        "packages": [
-          "fast_lio",
-          "swarm_msgs",
-          "udp_bridge",
-          "swarm_lio",
-          "point_lio",
-          "lio_sam",
-          "voxel_slam",
-          "voxelslam_pointcloud2"
-        ]
-      },
-      "schema": "xgc2.product.v1",
-      "summary": "ROS1 SLAM packages including FAST-LIO2, Swarm-LIO2, Point-LIO, LIO-SAM, and Voxel-SLAM.",
-      "usage": {
-        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-slam\n",
-        "smoke_test": "rospack find fast_lio\nrospack find swarm_lio\nrospack find point_lio\nrospack find lio_sam\nrospack find voxel_slam\nrospack find voxelslam_pointcloud2\n"
-      },
-      "version": "1.1.0-10"
-    },
-    {
-      "_source": "products/ros1/planner/planner/.xgc2/product.yml",
-      "apt": {
-        "depends": [
-          "ros-noetic-xgc2-planner-all (>= 1.1.0-11)",
-          "libboost-dev",
-          "libeigen3-dev",
-          "libompl15",
-          "libnlopt0",
-          "libyaml-cpp-dev",
-          "ros-noetic-pcl-ros",
-          "ros-noetic-vision-msgs"
-        ],
-        "distribution": "focal",
-        "install": [
-          "ros-noetic-xgc2-planner"
-        ],
-        "packages": [
-          "ros-noetic-xgc2-planner",
-          "ros-noetic-xgc2-planner-all",
-          "ros-noetic-xgc2-planner-common",
-          "ros-noetic-xgc2-gcopter",
-          "ros-noetic-xgc2-jps3d",
-          "ros-noetic-xgc2-cerlab-planner",
-          "ros-noetic-xgc2-intent-mpc",
-          "ros-noetic-xgc2-mader",
-          "ros-noetic-xgc2-robust-mader",
-          "ros-noetic-xgc2-ego-planner",
-          "ros-noetic-xgc2-fast-planner"
-        ],
-        "recommends": [
-          "ros-noetic-xgc2-mockamap (>= 1.1.4-10)"
-        ]
-      },
-      "id": "xgc2-planner",
-      "kind": "ros1-apt",
-      "name": "XGC2 Planner",
-      "ownership": {
-        "paths": [
-          "/opt/ros/noetic/share/gcopter",
-          "/opt/ros/noetic/include/gcopter",
-          "/opt/ros/noetic/lib/gcopter",
-          "/opt/ros/noetic/share/jps3d",
-          "/opt/ros/noetic/include/jps_basis",
-          "/opt/ros/noetic/include/jps_collision",
-          "/opt/ros/noetic/include/jps_planner",
-          "/opt/ros/noetic/lib/libjps_lib.so",
-          "/opt/ros/noetic/lib/libdmp_lib.so",
-          "/opt/ros/noetic/share/xgc2_cerlab_map_manager",
-          "/opt/ros/noetic/share/xgc2_cerlab_global_planner",
-          "/opt/ros/noetic/share/xgc2_cerlab_onboard_detector",
-          "/opt/ros/noetic/share/xgc2_cerlab_tracking_controller",
-          "/opt/ros/noetic/share/xgc2_cerlab_trajectory_planner",
-          "/opt/ros/noetic/share/xgc2_cerlab_time_optimizer",
-          "/opt/ros/noetic/share/xgc2_cerlab_remote_control",
-          "/opt/ros/noetic/share/xgc2_cerlab_autonomous_flight",
-          "/opt/ros/noetic/share/xgc2_intent_mpc_dynamic_predictor",
-          "/opt/ros/noetic/share/xgc2_intent_mpc_trajectory_planner",
-          "/opt/ros/noetic/share/xgc2_intent_mpc_autonomous_flight",
-          "/opt/ros/noetic/include/xgc2_cerlab_map_manager",
-          "/opt/ros/noetic/include/xgc2_cerlab_global_planner",
-          "/opt/ros/noetic/include/xgc2_cerlab_onboard_detector",
-          "/opt/ros/noetic/include/xgc2_cerlab_tracking_controller",
-          "/opt/ros/noetic/include/xgc2_cerlab_trajectory_planner",
-          "/opt/ros/noetic/include/xgc2_cerlab_time_optimizer",
-          "/opt/ros/noetic/include/xgc2_cerlab_autonomous_flight",
-          "/opt/ros/noetic/include/xgc2_intent_mpc_dynamic_predictor",
-          "/opt/ros/noetic/include/xgc2_intent_mpc_trajectory_planner",
-          "/opt/ros/noetic/include/xgc2_intent_mpc_autonomous_flight",
-          "/opt/ros/noetic/share/fast_plan_manage",
-          "/opt/ros/noetic/share/ego_planner",
-          "/opt/ros/noetic/share/mader",
-          "/opt/ros/noetic/lib/mader",
-          "/opt/ros/noetic/share/rmader",
-          "/opt/ros/noetic/lib/rmader",
-          "/opt/ros/noetic/share/mader_msgs",
-          "/opt/ros/noetic/share/rmader_msgs",
-          "/opt/ros/noetic/share/snapstack_msgs",
-          "/opt/ros/noetic/share/quadrotor_msgs",
-          "/opt/ros/noetic/share/decomp_util"
-        ]
-      },
-      "release": {
-        "dependency_policy": {
-          "xgc2-scene-generation": "verify"
-        },
-        "requires": [
-          "xgc2-scene-generation"
-        ]
-      },
-      "ros": {
-        "distro": "noetic",
-        "packages": [
-          "gcopter",
-          "jps3d",
-          "xgc2_cerlab_map_manager",
-          "xgc2_cerlab_global_planner",
-          "xgc2_cerlab_onboard_detector",
-          "xgc2_cerlab_tracking_controller",
-          "xgc2_cerlab_trajectory_planner",
-          "xgc2_cerlab_time_optimizer",
-          "xgc2_cerlab_remote_control",
-          "xgc2_cerlab_autonomous_flight",
-          "xgc2_intent_mpc_dynamic_predictor",
-          "xgc2_intent_mpc_trajectory_planner",
-          "xgc2_intent_mpc_autonomous_flight",
-          "bspline",
-          "fast_bspline_opt",
-          "fast_local_sensing",
-          "fast_map_generator",
-          "fast_path_searching",
-          "fast_plan_env",
-          "fast_plan_manage",
-          "fast_traj_utils",
-          "fast_waypoint_generator",
-          "poly_traj",
-          "ego_bspline_opt",
-          "ego_local_sensing",
-          "ego_map_generator",
-          "ego_path_searching",
-          "ego_plan_env",
-          "ego_planner",
-          "ego_traj_utils",
-          "ego_waypoint_generator",
-          "mader",
-          "mader_msgs",
-          "rmader",
-          "rmader_msgs",
-          "behavior_selector",
-          "cgal_wrapper",
-          "decomp_ros_msgs",
-          "decomp_ros_utils",
-          "decomp_util",
-          "eigen_stl_containers",
-          "graph_msgs",
-          "quadrotor_msgs",
-          "rviz_visual_tools",
-          "separator",
-          "snapstack_msgs",
-          "view_controller_msgs"
-        ]
-      },
-      "schema": "xgc2.product.v1",
-      "summary": "ROS1 planner packages including GCOPTER, JPS3D, CERLAB UAV Autonomy, Intent-MPC, MADER, Robust MADER, EGO-Planner, and Fast-Planner.",
-      "usage": {
-        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-planner\n",
-        "smoke_test": "rospack find gcopter\nrospack find mader\nrospack find rmader\nrospack find xgc2_cerlab_global_planner\nrospack find xgc2_cerlab_tracking_controller\nrospack find xgc2_cerlab_trajectory_planner\nrospack find xgc2_intent_mpc_trajectory_planner\nrospack find xgc2_intent_mpc_autonomous_flight\nrospack find ego_planner\nrospack find fast_plan_manage\n"
-      },
-      "version": "1.1.0-11"
     },
     {
       "_source": "products/ros1/robot/fs150_description/.xgc2/product.yml",
@@ -1942,63 +1605,7 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-robot-visualization\n",
         "smoke_test": "rospack find xgc2_robot_visualization\n"
       },
-      "version": "0.1.0-8"
-    },
-    {
-      "_source": "products/ros1/simulator/convex_geometry/.xgc2/product.yml",
-      "apt": {
-        "depends": [
-          "libxgc2-math-dev (>= 0.5.6-6~focal)",
-          "ros-noetic-xgc2-geometry-msgs (>= 1.1.4-10)",
-          "ros-noetic-xgc2-cluttered-environment (>= 1.1.4-10)",
-          "ros-noetic-xgc2-mockamap (>= 1.1.4-10)"
-        ],
-        "distribution": "focal",
-        "install": [
-          "ros-noetic-xgc2-scene-generation"
-        ],
-        "packages": [
-          "ros-noetic-xgc2-scene-generation",
-          "ros-noetic-xgc2-geometry-msgs",
-          "ros-noetic-xgc2-cluttered-environment",
-          "ros-noetic-xgc2-mockamap"
-        ]
-      },
-      "id": "xgc2-scene-generation",
-      "kind": "ros1-apt",
-      "name": "XGC2 Scene Generation",
-      "ownership": {
-        "paths": [
-          "/opt/ros/noetic/share/xgc2_geometry_msgs",
-          "/opt/ros/noetic/include/xgc2_geometry_msgs",
-          "/opt/ros/noetic/share/cluttered_environment",
-          "/opt/ros/noetic/include/cluttered_environment",
-          "/opt/ros/noetic/lib/cluttered_environment",
-          "/opt/ros/noetic/share/mockamap",
-          "/opt/ros/noetic/include/mockamap",
-          "/opt/ros/noetic/lib/mockamap"
-        ]
-      },
-      "release": {
-        "dependency_policy": {
-          "libxgc2-math-dev": "rebuild"
-        }
-      },
-      "ros": {
-        "distro": "noetic",
-        "packages": [
-          "xgc2_geometry_msgs",
-          "cluttered_environment",
-          "mockamap"
-        ]
-      },
-      "schema": "xgc2.product.v1",
-      "summary": "ROS1 scene-generation tools for convex obstacle scenarios and procedural point-cloud maps.",
-      "usage": {
-        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-scene-generation\n",
-        "smoke_test": "rospack find xgc2_geometry_msgs\nrospack find cluttered_environment\nrospack find mockamap\n"
-      },
-      "version": "1.1.4-10"
+      "version": "0.1.0-9"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/.xgc2/product.yml",
@@ -2017,7 +1624,7 @@
       "usage": {
         "notes": "This repository records the Gazebo simulation product set and compatible\nversions. It does not build, install, or publish an aggregate Debian\npackage. Consumers install only the independent products they use.\n"
       },
-      "version": "1.1.0-69"
+      "version": "1.1.0-73"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/agilex/.xgc2/product.yml",
@@ -2296,7 +1903,7 @@
       },
       "release": {
         "apt_versions": {
-          "focal": "0.1.0-2"
+          "focal": "0.1.0-3"
         },
         "ci_workflow": "ci.yml",
         "dependency_policy": {
@@ -2319,13 +1926,13 @@
         ]
       },
       "schema": "xgc2.product.v1",
-      "summary": "Collision-free ideal planar-velocity Mecanum UGV for Gazebo Classic 11.",
+      "summary": "Selectable high-fidelity and ideal Mecanum UGV dynamics for Gazebo Classic 11.",
       "usage": {
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-gazebo-sim-mecanum\n",
-        "notes": "The vehicle is visual-only and has no collision, tire, force, PID, or\nros_control dynamics. Gazebo owns all velocity-to-pose integration.\nThe product publishes no odometry; the optional VRPN bridge consumes Gazebo\nmodel poses directly.\n",
-        "smoke_test": "roslaunch --files gazebo_sim_mecanum simple.launch gui:=false\nrostest gazebo_sim_mecanum ideal_drive.test\n"
+        "notes": "High fidelity is the default and enables wheel-speed loops, Mecanum slip\nforces, gravity, and collision. drive_model:=ideal retains the lightweight\ncollision-free response. Gazebo owns all pose integration in both modes.\nThe product publishes no odometry; the optional VRPN bridge consumes Gazebo\nmodel poses directly.\n",
+        "smoke_test": "roslaunch --files gazebo_sim_mecanum simple.launch gui:=false\nrostest gazebo_sim_mecanum high_fidelity_drive.test\nrostest gazebo_sim_mecanum ideal_drive.test\n"
       },
-      "version": "0.1.0-2"
+      "version": "0.1.0-3"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/px4-sitl-112/.xgc2/product.yml",
@@ -2486,7 +2093,7 @@
         "notes": "This scene product has two explicit responsibilities. gazebo_sim_worlds\nowns reusable world and model assets only. xgc2_gazebo_scene is the scene\ndirector and temporarily retains both the legacy per-model path animator\nand the XGC2-managed global SystemPlugin without changing their behavior.\n",
         "smoke_test": "rospack find gazebo_sim_worlds\nrospack find xgc2_gazebo_scene\ntest -f /opt/ros/noetic/share/gazebo_sim_worlds/worlds/empty/empty.world\ntest -f /opt/ros/noetic/share/gazebo_sim_worlds/models/corridor/model.sdf\ntest -f /opt/ros/noetic/lib/libobstaclePathPlugin.so\ntest -f /opt/ros/noetic/lib/libxgc2_gazebo_scene_system.so\n"
       },
-      "version": "1.2.0-1"
+      "version": "1.2.0-5"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/visualization/.xgc2/product.yml",
@@ -2502,7 +2109,7 @@
           "ros-noetic-std-msgs",
           "ros-noetic-tf2-ros",
           "ros-noetic-visualization-msgs",
-          "ros-noetic-xgc2-robot-visualization (>= 0.1.0-8)"
+          "ros-noetic-xgc2-robot-visualization (>= 0.1.0-9)"
         ],
         "distribution": "focal",
         "install": [
@@ -2538,7 +2145,7 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-gazebo-sim-visualization\n",
         "smoke_test": "roslaunch --files gazebo_sim_visualization gazebo_auto_visualization_rviz.launch rviz:=false\n"
       },
-      "version": "1.1.0-15"
+      "version": "1.1.0-16"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/vrpn_bridge/.xgc2/product.yml",

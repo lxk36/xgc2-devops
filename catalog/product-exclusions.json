@@ -1,0 +1,29 @@
+{
+  "schema": "xgc2.catalog-exclusions.v1",
+  "products": [
+    {
+      "id": "xgc2-scene-generation",
+      "reason": "Temporarily outside the active runtime product line."
+    },
+    {
+      "id": "xgc2-planner",
+      "reason": "Temporarily outside the active runtime product line."
+    },
+    {
+      "id": "xgc2-detection",
+      "reason": "Temporarily outside the active runtime product line."
+    },
+    {
+      "id": "xgc2-slam",
+      "reason": "Temporarily outside the active runtime product line."
+    },
+    {
+      "id": "livox-ros-driver2",
+      "reason": "Temporarily outside the active runtime product line."
+    },
+    {
+      "id": "livox-ros-driver",
+      "reason": "Temporarily outside the active runtime product line."
+    }
+  ]
+}

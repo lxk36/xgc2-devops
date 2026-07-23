@@ -87,6 +87,14 @@ usage:
 Generated catalogs can render these snippets without copying them into
 `xgc2-devops`.
 
+## Temporarily excluding a product
+
+Keep product metadata in its owning repository and add its stable product id to
+`catalog/product-exclusions.json` when the repository is temporarily outside
+the active runtime product line. Excluded products are omitted from generated
+catalogs, install sets, dependency graphs, and aggregate release plans. Remove
+the entry to reactivate the product.
+
 ## Release ordering and CI artifacts
 
 Use `apt.depends` for mandatory Debian runtime edges and `apt.recommends` for

@@ -12,6 +12,7 @@ from typing import Any
 
 
 DEPENDENCY_POLICIES = {"rebuild", "verify", "order"}
+DEFAULT_EXCLUSIONS = "catalog/product-exclusions.json"
 
 
 def load_yaml(path: Path) -> dict[str, Any]:
@@ -32,6 +33,39 @@ def load_yaml(path: Path) -> dict[str, Any]:
 def load_schema(path: Path) -> dict[str, Any]:
     with path.open("r", encoding="utf-8") as handle:
         return json.load(handle)
+
+
+def load_excluded_product_ids(path: Path) -> set[str]:
+    if not path.exists():
+        return set()
+    with path.open("r", encoding="utf-8") as handle:
+        document = json.load(handle)
+    if not isinstance(document, dict):
+        raise ValueError(f"{path}: exclusion document root must be an object")
+    if document.get("schema") != "xgc2.catalog-exclusions.v1":
+        raise ValueError(
+            f"{path}: schema must be xgc2.catalog-exclusions.v1"
+        )
+    products = document.get("products")
+    if not isinstance(products, list):
+        raise ValueError(f"{path}: products must be an array")
+
+    excluded: set[str] = set()
+    for index, entry in enumerate(products):
+        if not isinstance(entry, dict):
+            raise ValueError(f"{path}: products[{index}] must be an object")
+        product_id = entry.get("id")
+        reason = entry.get("reason")
+        if not isinstance(product_id, str) or not product_id:
+            raise ValueError(f"{path}: products[{index}].id must be a non-empty string")
+        if not isinstance(reason, str) or not reason:
+            raise ValueError(
+                f"{path}: products[{index}].reason must be a non-empty string"
+            )
+        if product_id in excluded:
+            raise ValueError(f"{path}: duplicate excluded product id: {product_id}")
+        excluded.add(product_id)
+    return excluded
 
 
 def validate_schema(product: dict[str, Any], schema: dict[str, Any], path: Path) -> None:
@@ -260,6 +294,11 @@ def main() -> int:
         help="generated catalog path",
     )
     parser.add_argument(
+        "--exclusions",
+        default=DEFAULT_EXCLUSIONS,
+        help="central list of products excluded from the active catalog",
+    )
+    parser.add_argument(
         "--allow-implicit-dependency-policy",
         action="store_true",
         help=(
@@ -272,12 +311,16 @@ def main() -> int:
     root = Path(args.root).resolve()
     schema_path = (root / args.schema).resolve()
     output_path = (root / args.output).resolve()
+    exclusions_path = (root / args.exclusions).resolve()
     schema = load_schema(schema_path)
+    excluded_product_ids = load_excluded_product_ids(exclusions_path)
 
     products: list[dict[str, Any]] = []
     for metadata_path in iter_metadata_files(root):
         product = load_yaml(metadata_path)
         validate_schema(product, schema, metadata_path)
+        if str(product["id"]) in excluded_product_ids:
+            continue
         product["_source"] = str(metadata_path.relative_to(root))
         products.append(product)
 
