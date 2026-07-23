@@ -3325,6 +3325,34 @@ class VersionBumpSafetyTests(unittest.TestCase):
                 "already-pushed",
             )
 
+    def test_nested_gitlink_container_uses_its_pinned_checkout_identity(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            remote = root / "container.git"
+            container = root / "container"
+            version_bumper.run(["git", "init", "--bare", str(remote)])
+            version_bumper.run(["git", "init", str(container)])
+            version_bumper.run(["git", "checkout", "-b", "noetic"], cwd=container)
+            version_bumper.run(["git", "config", "user.name", "test"], cwd=container)
+            version_bumper.run(["git", "config", "user.email", "test@example.com"], cwd=container)
+            (container / "README.md").write_text("container\n", encoding="utf-8")
+            version_bumper.run(["git", "add", "README.md"], cwd=container)
+            version_bumper.run(["git", "commit", "-m", "base"], cwd=container)
+            base = version_bumper.git(["rev-parse", "HEAD"], container, check=True)
+            version_bumper.run(["git", "remote", "add", "origin", str(remote)], cwd=container)
+            version_bumper.run(["git", "push", "-u", "origin", "noetic"], cwd=container)
+
+            identity = version_bumper.transaction_repository_identity(
+                container,
+                items=[],
+                original_source_shas={},
+            )
+
+        self.assertEqual(
+            identity,
+            {"repository": str(remote), "ref": "noetic", "base": base},
+        )
+
     def test_script_dependency_relation_is_replaced_atomically(self):
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory)

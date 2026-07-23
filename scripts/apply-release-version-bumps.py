@@ -594,6 +594,39 @@ def nearest_parent_git_repo(root: Path, repo: Path) -> Path | None:
     return root if repo != root else None
 
 
+def transaction_repository_identity(
+    repo: Path,
+    *,
+    items: list[dict[str, Any]],
+    original_source_shas: dict[Path, str],
+) -> dict[str, str]:
+    """Return the immutable pre-mutation identity for one pushed repository.
+
+    A release-plan item owns a product repository directly.  A nested Git
+    container owns only the gitlinks of those product repositories, so it has
+    no APT item of its own.  Its checkout is nonetheless already pinned by its
+    parent's Git tree.  Capture that exact branch and HEAD before any child is
+    committed, then apply the same remote-base transaction guard used for
+    planned products.
+    """
+    if items:
+        source = repo.resolve()
+        ref = str(items[0].get("ref", ""))
+        base = original_source_shas.get(source, "")
+        repository = str(items[0].get("repository", ""))
+        identity_kind = "planned product"
+    else:
+        ref = git(["branch", "--show-current"], repo, check=True)
+        base = git(["rev-parse", "HEAD"], repo, check=True)
+        repository = git(["config", "--get", "remote.origin.url"], repo, check=True)
+        identity_kind = "nested gitlink container"
+    if not ref or not base or not repository:
+        raise RuntimeError(
+            f"{repo}: {identity_kind} is missing an exact repository/ref/base identity"
+        )
+    return {"repository": repository, "ref": ref, "base": base}
+
+
 def direct_top_level_gitlink(root: Path, repo: Path) -> Path:
     relative = repo.relative_to(root)
     parts = relative.parts
@@ -747,16 +780,23 @@ def main(argv: list[str] | None = None) -> int:
         # against base-or-target after all commits exist, enabling idempotent
         # recovery from a partial prior transaction.
         preflight_remote_heads: dict[Path, str] = {}
+        transaction_identities: dict[Path, dict[str, str]] = {}
         for repo in sorted(stage_paths_by_repo, key=lambda item: len(item.parts), reverse=True):
             items = touched_repos.get(repo, plan_items_by_source.get(repo, []))
-            ref = str(items[0].get("ref", "")) if items else ""
-            base = original_source_shas.get(repo.resolve(), "")
-            if not ref or not base:
-                raise RuntimeError(f"{repo}: missing planned ref/base for release transaction")
+            identity = transaction_repository_identity(
+                repo,
+                items=items,
+                original_source_shas=original_source_shas,
+            )
+            transaction_identities[repo] = identity
             local = git(["rev-parse", "HEAD"], repo, check=True)
-            if local != base:
-                raise RuntimeError(f"{repo}: local HEAD {local} differs from planned base {base}")
-            preflight_remote_heads[repo] = remote_ref_head(repo, ref) if args.push else ""
+            if local != identity["base"]:
+                raise RuntimeError(
+                    f"{repo}: local HEAD {local} differs from release transaction base {identity['base']}"
+                )
+            preflight_remote_heads[repo] = (
+                remote_ref_head(repo, identity["ref"]) if args.push else ""
+            )
         for repo in sorted(stage_paths_by_repo, key=lambda item: len(item.parts), reverse=True):
             items = touched_repos.get(repo, plan_items_by_source.get(repo, []))
             product_ids = ", ".join(str(item["id"]) for item in items)
@@ -790,17 +830,14 @@ def main(argv: list[str] | None = None) -> int:
         for repo in sorted(
             top_level_touched_repos, key=lambda item: len(item.parts), reverse=True
         ):
-            items = touched_repos.get(repo, plan_items_by_source.get(repo, []))
-            if not items:
-                raise RuntimeError(f"{repo}: no product identity for transaction")
-            ref = str(items[0].get("ref", ""))
+            identity = transaction_identities[repo]
             target = git(["rev-parse", "HEAD"], repo, check=True)
             transaction_entries.append(
                 {
-                    "repository": str(items[0].get("repository", "")),
-                    "ref": ref,
+                    "repository": identity["repository"],
+                    "ref": identity["ref"],
                     "path": repo.relative_to(root).as_posix(),
-                    "base": original_source_shas[repo.resolve()],
+                    "base": identity["base"],
                     "target": target,
                     "tree": git(["rev-parse", "HEAD^{tree}"], repo, check=True),
                     "status": "committed",
