@@ -274,9 +274,9 @@
       },
       "release": {
         "apt_versions": {
-          "focal": "0.1.0-1~focal",
-          "jammy": "0.1.0-1~jammy",
-          "noble": "0.1.0-1~noble"
+          "focal": "0.2.0-1~focal",
+          "jammy": "0.2.0-1~jammy",
+          "noble": "0.2.0-1~noble"
         },
         "ci_workflow": "ci.yml",
         "ref": "main",
@@ -290,7 +290,7 @@
         "notes": "The process is started and supervised by an XGC2 process definition.\nThis package deliberately installs no systemd unit and has no dependency on\nROS, XGC2 Core, or XGC2 Agent.\n",
         "smoke_test": "xgc-media-edge --version\n"
       },
-      "version": "0.1.0-1"
+      "version": "0.2.0-1"
     },
     {
       "_source": "products/common/protobuf/.xgc2/product.yml",
@@ -1373,7 +1373,7 @@
       },
       "release": {
         "apt_versions": {
-          "focal": "0.3.0-11"
+          "focal": "0.3.0-12"
         },
         "ci_workflow": "ci.yml",
         "ref": "main",
@@ -1394,7 +1394,7 @@
         "notes": "Intrinsic calibration is camera-agnostic and can be used for fixed, onboard,\nor vehicle-mounted cameras. Fixed-camera extrinsic calibration consumes an\nexisting CameraInfo or intrinsic YAML as data; it has no package or release\ndependency on the intrinsic workflow that may have produced those values.\n",
         "smoke_test": "roslaunch --files xgc_camera_calibration intrinsic_calibrator.launch\nroslaunch --files xgc_camera_calibration extrinsic_calibrator.launch\nroslaunch --files xgc_camera_calibration extrinsic_tf.launch\n"
       },
-      "version": "0.3.0-11"
+      "version": "0.3.0-12"
     },
     {
       "_source": "products/ros1/perception/hover-thrust/.xgc2/product.yml",
@@ -1852,9 +1852,13 @@
       "_source": "products/ros1/simulator/gazebo-sim/camera/.xgc2/product.yml",
       "apt": {
         "depends": [
+          "libgl1",
+          "libglew2.1",
+          "libjpeg8",
           "python3-numpy",
           "python3-opencv",
           "python3-yaml",
+          "ros-noetic-camera-calibration",
           "ros-noetic-gazebo-msgs",
           "ros-noetic-gazebo-plugins",
           "ros-noetic-gazebo-ros",
@@ -1890,12 +1894,13 @@
       "ownership": {
         "paths": [
           "/opt/ros/noetic/share/gazebo_sim_camera",
-          "/opt/ros/noetic/lib/gazebo_sim_camera"
+          "/opt/ros/noetic/lib/gazebo_sim_camera",
+          "/opt/ros/noetic/lib/libxgc_gazebo_media_camera.so"
         ]
       },
       "release": {
         "apt_versions": {
-          "focal": "0.1.0-12"
+          "focal": "0.1.0-13"
         },
         "ci_workflow": "ci.yml",
         "dependency_policy": {
@@ -1920,10 +1925,10 @@
       "summary": "Profile-driven GPU-rendered H264 world camera and calibration scenes for Gazebo Classic 11.",
       "usage": {
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-gazebo-sim-camera\n",
-        "notes": "This product owns only an independent fixed-site camera. It does not modify\nor depend on any FS150, Scout, UAV, or other vehicle camera model.\n",
+        "notes": "This product owns only an independent fixed-site camera. It does not modify\nor depend on any FS150, Scout, UAV, or other vehicle camera model.\nXGC2 owns the ProcessDefinition centrally; this package owns the Gazebo source\nplugin and ROS package only.\n",
         "smoke_test": "roslaunch --files gazebo_sim_camera static_camera.launch gui:=false\nroslaunch --files gazebo_sim_camera intrinsic_calibration_world.launch gui:=false\nroslaunch --files gazebo_sim_camera extrinsic_calibration_world.launch gui:=false start_vrpn:=false\n"
       },
-      "version": "0.1.0-12"
+      "version": "0.1.0-13"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/cerlab-uav-sim/.xgc2/product.yml",
