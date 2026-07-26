@@ -1373,7 +1373,7 @@
       },
       "release": {
         "apt_versions": {
-          "focal": "0.3.0-12"
+          "focal": "0.3.0-13"
         },
         "ci_workflow": "ci.yml",
         "ref": "main",
@@ -1394,7 +1394,7 @@
         "notes": "Intrinsic calibration is camera-agnostic and can be used for fixed, onboard,\nor vehicle-mounted cameras. Fixed-camera extrinsic calibration consumes an\nexisting CameraInfo or intrinsic YAML as data; it has no package or release\ndependency on the intrinsic workflow that may have produced those values.\n",
         "smoke_test": "roslaunch --files xgc_camera_calibration intrinsic_calibrator.launch\nroslaunch --files xgc_camera_calibration extrinsic_calibrator.launch\nroslaunch --files xgc_camera_calibration extrinsic_tf.launch\n"
       },
-      "version": "0.3.0-12"
+      "version": "0.3.0-13"
     },
     {
       "_source": "products/ros1/perception/hover-thrust/.xgc2/product.yml",
@@ -1900,7 +1900,7 @@
       },
       "release": {
         "apt_versions": {
-          "focal": "0.1.0-13"
+          "focal": "0.1.0-14"
         },
         "ci_workflow": "ci.yml",
         "dependency_policy": {
@@ -1928,7 +1928,7 @@
         "notes": "This product owns only an independent fixed-site camera. It does not modify\nor depend on any FS150, Scout, UAV, or other vehicle camera model.\nXGC2 owns the ProcessDefinition centrally; this package owns the Gazebo source\nplugin and ROS package only.\n",
         "smoke_test": "roslaunch --files gazebo_sim_camera static_camera.launch gui:=false\nroslaunch --files gazebo_sim_camera intrinsic_calibration_world.launch gui:=false\nroslaunch --files gazebo_sim_camera extrinsic_calibration_world.launch gui:=false start_vrpn:=false\n"
       },
-      "version": "0.1.0-13"
+      "version": "0.1.0-14"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/cerlab-uav-sim/.xgc2/product.yml",
