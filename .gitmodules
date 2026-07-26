@@ -171,3 +171,7 @@
 	path = products/robotics/wheeltec
 	url = https://github.com/lxk36/xgc2-robot-wheeltec.git
 	branch = main
+[submodule "products/common/media-edge"]
+	path = products/common/media-edge
+	url = git@github.com:lxk36/xgc2-media-edge.git
+	branch = main
