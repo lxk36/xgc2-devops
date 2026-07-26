@@ -1900,7 +1900,7 @@
       },
       "release": {
         "apt_versions": {
-          "focal": "0.1.0-14"
+          "focal": "0.1.0-15"
         },
         "ci_workflow": "ci.yml",
         "dependency_policy": {
@@ -1928,7 +1928,7 @@
         "notes": "This product owns only an independent fixed-site camera. It does not modify\nor depend on any FS150, Scout, UAV, or other vehicle camera model.\nXGC2 owns the ProcessDefinition centrally; this package owns the Gazebo source\nplugin and ROS package only.\n",
         "smoke_test": "roslaunch --files gazebo_sim_camera static_camera.launch gui:=false\nroslaunch --files gazebo_sim_camera intrinsic_calibration_world.launch gui:=false\nroslaunch --files gazebo_sim_camera extrinsic_calibration_world.launch gui:=false start_vrpn:=false\n"
       },
-      "version": "0.1.0-14"
+      "version": "0.1.0-15"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/cerlab-uav-sim/.xgc2/product.yml",
