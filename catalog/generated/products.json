@@ -2565,85 +2565,21 @@
       "version": "1.1.0-16"
     },
     {
-      "_source": "products/webui/lichtblick-packaging/.xgc2/product.yml",
-      "apt": {
-        "depends": [
-          "ca-certificates",
-          "libc6",
-          "libgcc-s1",
-          "libstdc++6",
-          "libasound2",
-          "libgtk-3-0",
-          "libnotify4",
-          "libnss3",
-          "libxtst6",
-          "xdg-utils",
-          "libatspi2.0-0",
-          "libdrm2",
-          "libgbm1",
-          "libxcb-dri3-0"
-        ],
-        "distribution": "focal,jammy,noble",
-        "install": [
-          "xgc2-lichtblick-web"
-        ],
-        "packages": [
-          "xgc2-lichtblick-web",
-          "xgc2-lichtblick"
-        ]
-      },
-      "conflicts": {
-        "apt_packages": [
-          "lichtblick"
-        ]
-      },
+      "_source": "products/webui/xgc2-lichtblick/.xgc2/product.yml",
       "groups": [
-        "webui",
-        "desktop"
+        "webui"
       ],
       "id": "xgc2-lichtblick",
       "kind": "mixed",
-      "name": "XGC2 Lichtblick Web and Desktop",
-      "ownership": {
-        "paths": [
-          "/usr/bin/xgc2-lichtblick-web",
-          "/usr/lib/xgc2/lichtblick-web",
-          "/etc/xgc2/lichtblick-web.env",
-          "/usr/share/doc/xgc2-lichtblick-web",
-          "/opt/Lichtblick",
-          "/usr/bin/lichtblick",
-          "/usr/share/applications/lichtblick.desktop",
-          "/usr/share/doc/xgc2-lichtblick",
-          "/usr/share/icons/hicolor/16x16/apps/lichtblick.png",
-          "/usr/share/icons/hicolor/32x32/apps/lichtblick.png",
-          "/usr/share/icons/hicolor/48x48/apps/lichtblick.png",
-          "/usr/share/icons/hicolor/64x64/apps/lichtblick.png",
-          "/usr/share/icons/hicolor/128x128/apps/lichtblick.png",
-          "/usr/share/icons/hicolor/256x256/apps/lichtblick.png",
-          "/usr/share/icons/hicolor/512x512/apps/lichtblick.png",
-          "/usr/share/icons/hicolor/1024x1024/apps/lichtblick.png",
-          "/usr/share/mime/packages/lichtblick.xml"
-        ]
-      },
-      "release": {
-        "apt_versions": {
-          "focal": "1.27.0-1~focal",
-          "jammy": "1.27.0-1~jammy",
-          "noble": "1.27.0-1~noble"
-        },
-        "ci_workflow": "ci.yml",
-        "ref": "main",
-        "repository": "lxk36/xgc2-lichtblick-packaging",
-        "workflow": "release.yml"
-      },
+      "name": "XGC2 Lichtblick",
       "schema": "xgc2.product.v1",
-      "summary": "Pinned Lichtblick browser server with an optional Electron desktop package.",
+      "summary": "XGC2-maintained Lichtblick source product for high-performance live robotics visualization.",
       "usage": {
-        "install": "sudo apt update\nsudo apt install xgc2-lichtblick-web",
-        "notes": "xgc2-lichtblick-web is the default browser-based package and never opens a desktop window. It recommends the release-matched Foxglove bridge (Noetic on focal, Humble on jammy, and Jazzy on noble) so standard installs add the live-data bridge automatically. The optional xgc2-lichtblick package retains Electron desktop integration and disables its built-in updater; install upgrades through APT.",
-        "smoke_test": "xgc2-lichtblick-web --help\ncurl --fail http://127.0.0.1:8080/healthz"
+        "install": "corepack yarn install --immutable\n./xgc2/scripts/build-web.sh",
+        "notes": "Source and browser runtime are maintained together. Lichtblick is no longer installed or released through the XGC2 APT pipeline.",
+        "smoke_test": "node --test xgc2/tests/test_lichtblick_web.js\ncorepack yarn test packages/suite-base/src/panels/ThreeDeeRender/transforms/TransformTree.test.ts --runInBand"
       },
-      "version": "1.27.0-1"
+      "version": "1.27.0-xgc2.1"
     }
   ],
   "schema": "xgc2.catalog.v1"
