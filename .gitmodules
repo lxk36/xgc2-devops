@@ -174,3 +174,7 @@
 	path = products/common/media-edge
 	url = git@github.com:lxk36/xgc2-media-edge.git
 	branch = main
+[submodule "products/webui/lichtblick-packaging"]
+	path = products/webui/lichtblick-packaging
+	url = https://github.com/lxk36/xgc2-lichtblick-packaging.git
+	branch = main
