@@ -273,6 +273,8 @@ class MetadataSubmoduleCheckoutScriptTests(unittest.TestCase):
         )
         git_config = (self.root / "home" / ".gitconfig").read_text(encoding="utf-8")
         self.assertIn("git@github.com:", git_config)
+        self.assertIn("https://github.com/", git_config)
+        self.assertEqual(git_config.count("insteadOf"), 2)
 
     def test_script_stops_on_first_checkout_failure(self):
         result = self.run_checkout(FAKE_GIT_FAIL_PATH=self.fixture.gitlinks[0])

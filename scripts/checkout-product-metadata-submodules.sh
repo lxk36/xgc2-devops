@@ -30,8 +30,11 @@ if [[ -n "${SUBMODULE_SSH_KEY:-}" ]]; then
   git config --global core.sshCommand \
     "ssh -i ${key_file} -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
 elif [[ -n "${GH_TOKEN:-}" ]]; then
-  git config --global \
-    url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf git@github.com:
+  authenticated_github_url="https://x-access-token:${GH_TOKEN}@github.com/"
+  git config --global --add \
+    url."${authenticated_github_url}".insteadOf git@github.com:
+  git config --global --add \
+    url."${authenticated_github_url}".insteadOf https://github.com/
 else
   git config --global url."https://github.com/".insteadOf git@github.com:
 fi
