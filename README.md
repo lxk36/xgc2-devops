@@ -24,11 +24,6 @@ products/webui/*
 products/xgc2
 ```
 
-The cross-product camera data contract, 4K preview paths, scientific rosbag
-profile, offline alignment, optional Media Edge recording, and snapshot
-workflow are documented in
-[Camera preview, scientific recording, and snapshots](docs/camera-scientific-recording.md).
-
 Long-lived source repositories should be mounted under `products/`; platform
 repositories should be mounted under `platforms/`. Avoid adding new long-lived
 repositories under temporary or top-level product directories.
