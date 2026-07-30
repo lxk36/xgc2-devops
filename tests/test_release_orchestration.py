@@ -175,6 +175,18 @@ fi
             "args+=(--resume-state .work/release-resume-state.json)",
             workflow_text,
         )
+        self.assertIn(
+            "release-state artifact has no digest-bound state; recovering from immutable plan evidence",
+            workflow_text,
+        )
+        self.assertIn(
+            '--name "xgc2-release-plan-${RESUME_RUN_ID}"',
+            workflow_text,
+        )
+        self.assertIn(
+            'cp -a "${resume_source}/." .work/resume/',
+            workflow_text,
+        )
 
     def test_release_boolean_input_types_are_explicit(self):
         workflow = """

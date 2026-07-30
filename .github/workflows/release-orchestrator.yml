@@ -165,17 +165,29 @@ jobs:
           RESUME_RUN_ID: ${{ inputs.resume_run_id }}
         run: |
           set -euo pipefail
-          mkdir -p .work/resume
-          if ! gh run download "$RESUME_RUN_ID" \
+          mkdir -p .work/resume .work/resume-state-artifact .work/resume-plan-artifact
+          resume_source=""
+          if gh run download "$RESUME_RUN_ID" \
               --repo "${{ github.repository }}" \
               --name xgc2-release-state \
-              --dir .work/resume; then
+              --dir .work/resume-state-artifact; then
+            if [[ -s .work/resume-state-artifact/release-state.json ]]; then
+              python3 -c 'import json, sys; state = json.load(open(".work/resume-state-artifact/release-state.json", encoding="utf-8")); sys.exit(0 if state.get("schema") == "xgc2.release-state.v2" else "resume state is not xgc2.release-state.v2")'
+              resume_source=".work/resume-state-artifact"
+            else
+              echo "release-state artifact has no digest-bound state; recovering from immutable plan evidence"
+            fi
+          else
             echo "release-state artifact unavailable; recovering from immutable plan evidence"
+          fi
+          if [[ -z "$resume_source" ]]; then
             gh run download "$RESUME_RUN_ID" \
               --repo "${{ github.repository }}" \
               --name "xgc2-release-plan-${RESUME_RUN_ID}" \
-              --dir .work/resume
+              --dir .work/resume-plan-artifact
+            resume_source=".work/resume-plan-artifact"
           fi
+          cp -a "${resume_source}/." .work/resume/
           for name in release-products.json release-plan.json release-lock.json; do
             test -s ".work/resume/${name}" || {
               echo "resume run is missing ${name}" >&2
