@@ -37,7 +37,7 @@
       "dependency_policy": {},
       "dependency_set_digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
       "dependency_sources": {},
-      "expected_source_sha": "78899b7585b97dd56736dfbcc364ac25cb2e7101",
+      "expected_source_sha": "18a7d30b5517554272dc75d0a19dfa42401af43d",
       "expected_version": "0.1.0-8",
       "id": "libxgc2-camera-dev",
       "inputs": {},
@@ -47,8 +47,8 @@
       "repository": "lxk36/xgc2-camera-core",
       "skip_apt_verify": false,
       "source": "products/common/camera-core",
-      "source_sha": "78899b7585b97dd56736dfbcc364ac25cb2e7101",
-      "version": "0.1.0-7",
+      "source_sha": "18a7d30b5517554272dc75d0a19dfa42401af43d",
+      "version": "0.1.0-8",
       "workflow": "release.yml",
       "workflow_inputs": [
         "apt_overlay_url",
@@ -210,7 +210,7 @@
       "skip_apt_verify": false,
       "source": "products/common/math",
       "source_sha": "7b015e202cb6603fe88f01677065aec5bb066a71",
-      "version": "0.5.6-11",
+      "version": "0.5.6-12",
       "workflow": "release.yml",
       "workflow_inputs": [
         "apt_overlay_url",
@@ -327,7 +327,7 @@
       "skip_apt_verify": false,
       "source": "products/ros1/simulator/gazebo-sim/scenes",
       "source_sha": "cf91f7a54e2bfa1a2ab807e2897f94ea2572cd59",
-      "version": "1.2.0-11",
+      "version": "1.2.0-12",
       "workflow": "release.yml",
       "workflow_inputs": [
         "apt_overlay_url",
@@ -441,7 +441,7 @@
       "skip_apt_verify": false,
       "source": "products/common/media-edge",
       "source_sha": "bafc2315454462355579fff9a305c9f86be4e22c",
-      "version": "0.3.0-1",
+      "version": "0.3.0-2",
       "workflow": "release.yml",
       "workflow_inputs": [
         "apt_overlay_url",
@@ -501,7 +501,7 @@
       "skip_apt_verify": false,
       "source": "products/common/protobuf",
       "source_sha": "d982a96ce5141ba0f55d8d4922d7ab8e1bf48d41",
-      "version": "0.5.0-9",
+      "version": "0.5.0-10",
       "workflow": "release.yml",
       "workflow_inputs": [
         "apt_overlay_url",
@@ -563,7 +563,7 @@
       "skip_apt_verify": false,
       "source": "products/ros1/simulator/gazebo-sim/px4-sitl-112",
       "source_sha": "b0266a8522601d9f7382c605e612d23b342a256b",
-      "version": "1.12.3-21",
+      "version": "1.12.3-22",
       "workflow": "release.yml",
       "workflow_inputs": [
         "apt_overlay_url",
@@ -625,7 +625,7 @@
       "skip_apt_verify": false,
       "source": "products/ros1/simulator/gazebo-sim/px4-sitl-114",
       "source_sha": "46bfb4fe0a3ec65007baf9787ce48946c9682c96",
-      "version": "1.14.4-18",
+      "version": "1.14.4-19",
       "workflow": "release.yml",
       "workflow_inputs": [
         "apt_overlay_url",
@@ -687,7 +687,7 @@
       "skip_apt_verify": false,
       "source": "products/ros2/simulator/px4-sitl-116",
       "source_sha": "221f6add4ccbe1f715500a1f0da92a3acc148ba9",
-      "version": "1.16.2-13",
+      "version": "1.16.2-14",
       "workflow": "release.yml",
       "workflow_inputs": [
         "apt_overlay_url",
@@ -797,7 +797,7 @@
       "skip_apt_verify": false,
       "source": "products/ros1/common/ros1-msgs",
       "source_sha": "70d2901516d5cabfea93f77b2d59616cd5853b99",
-      "version": "1.2.0-9",
+      "version": "1.2.0-10",
       "workflow": "release.yml",
       "workflow_inputs": [
         "apt_overlay_url",
@@ -994,7 +994,7 @@
       "skip_apt_verify": false,
       "source": "products/common/adapter-runtime-client-cpp",
       "source_sha": "805814559502ac6d0a336173401c75dd9c9e3cc4",
-      "version": "0.6.0-6",
+      "version": "0.6.0-7",
       "workflow": "release.yml",
       "workflow_inputs": [
         "apt_overlay_url",
@@ -1041,7 +1041,7 @@
         "libxgc2-camera-dev": "rebuild",
         "xgc2-ros-msgs": "rebuild"
       },
-      "dependency_set_digest": "12d9c4f70f072ef3906bb2ac24fa269291c6cfac9f26c7821adba165b2015b6d",
+      "dependency_set_digest": "94e96d3c0c31f759d860f06507e417c4f6766f04d6aa378d0517b3bc098f3b24",
       "dependency_sources": {
         "libxgc2-camera-dev": [
           "apt.depends",
@@ -1063,7 +1063,7 @@
       "skip_apt_verify": false,
       "source": "products/ros1/driver/camera",
       "source_sha": "d4cd795f5172d1590d76bfef8bb567dc28984c64",
-      "version": "0.3.0-8",
+      "version": "0.3.0-9",
       "workflow": "release.yml",
       "workflow_inputs": [
         "apt_overlay_url",
@@ -1130,7 +1130,7 @@
       "skip_apt_verify": false,
       "source": "products/ros1/perception/hover-thrust",
       "source_sha": "6c50b1abe19658a9c3b6819d85ae3638ae114695",
-      "version": "1.1.24-11",
+      "version": "1.1.24-12",
       "workflow": "release.yml",
       "workflow_inputs": [
         "apt_overlay_url",
@@ -1197,7 +1197,7 @@
       "skip_apt_verify": false,
       "source": "products/ros1/perception/rigid-state",
       "source_sha": "549079bcf28c04571979e115056fa78d7da4d08e",
-      "version": "1.1.6-11",
+      "version": "1.1.6-12",
       "workflow": "release.yml",
       "workflow_inputs": [
         "apt_overlay_url",
@@ -1383,7 +1383,7 @@
       "skip_apt_verify": false,
       "source": "products/ros1/simulator/gazebo-sim/vrpn_bridge",
       "source_sha": "291d04b0b1647f8f4f7eb59f71357d2cabd5d8d3",
-      "version": "1.1.0-22",
+      "version": "1.1.0-23",
       "workflow": "release.yml",
       "workflow_inputs": [
         "apt_overlay_url",
@@ -1450,7 +1450,7 @@
       "skip_apt_verify": false,
       "source": "products/ros1/controller/multirotor-controller",
       "source_sha": "bc6f32893643c9db06920bc6139bd1f75ed386ba",
-      "version": "1.1.18-10",
+      "version": "1.1.18-11",
       "workflow": "release.yml",
       "workflow_inputs": [
         "apt_overlay_url",
@@ -1525,7 +1525,7 @@
       "skip_apt_verify": false,
       "source": "products/ros1/robot/xgc2_robot_visualization",
       "source_sha": "de57dd98f2152fdcdb176fe26564e4543e35587a",
-      "version": "0.1.0-15",
+      "version": "0.1.0-16",
       "workflow": "release.yml",
       "workflow_inputs": [
         "apt_overlay_url",
@@ -1592,7 +1592,7 @@
       "skip_apt_verify": false,
       "source": "products/ros1/controller/ugv-controller",
       "source_sha": "921930561f00e986bb385bd8633d0c7594d8b6cc",
-      "version": "1.1.4-16",
+      "version": "1.1.4-17",
       "workflow": "release.yml",
       "workflow_inputs": [
         "apt_overlay_url",
@@ -1656,7 +1656,7 @@
           "release.requires"
         ]
       },
-      "expected_source_sha": "b3eae363f02cedb3abe81ec8985d755a061d3250",
+      "expected_source_sha": "0349b703a19dfbdf9611cd9fe05c433d9b4a9717",
       "expected_version": "0.1.0-17",
       "id": "xgc2-gazebo-sim-camera",
       "inputs": {},
@@ -1666,8 +1666,8 @@
       "repository": "lxk36/xgc2-gazebo-sim-camera",
       "skip_apt_verify": false,
       "source": "products/ros1/simulator/gazebo-sim/camera",
-      "source_sha": "b3eae363f02cedb3abe81ec8985d755a061d3250",
-      "version": "0.1.0-16",
+      "source_sha": "0349b703a19dfbdf9611cd9fe05c433d9b4a9717",
+      "version": "0.1.0-17",
       "workflow": "release.yml",
       "workflow_inputs": [
         "apt_overlay_url",
@@ -1819,7 +1819,7 @@
       "skip_apt_verify": false,
       "source": "products/ros1/simulator/gazebo-sim/agilex",
       "source_sha": "299cdba21747f369ab3a5b4c64f3faf7391724e8",
-      "version": "0.4.9-31",
+      "version": "0.4.9-32",
       "workflow": "release.yml",
       "workflow_inputs": [
         "apt_overlay_url",
@@ -1881,7 +1881,7 @@
       "skip_apt_verify": false,
       "source": "products/ros1/simulator/gazebo-sim/visualization",
       "source_sha": "a8f0196e992c1649f1f47b7e0cab239429804c08",
-      "version": "1.1.0-24",
+      "version": "1.1.0-25",
       "workflow": "release.yml",
       "workflow_inputs": [
         "apt_overlay_url",
@@ -1972,7 +1972,7 @@
       "skip_apt_verify": false,
       "source": "products/ros1/communication/ros1-adapter",
       "source_sha": "127e51c1367e42d0cb27531a84e7ca8f31e620f9",
-      "version": "0.5.0-11",
+      "version": "0.5.0-12",
       "workflow": "release.yml",
       "workflow_inputs": [
         "apt_overlay_url",
@@ -2040,7 +2040,7 @@
       "skip_apt_verify": false,
       "source": "products/ros1/communication/ros1-tools-adapter",
       "source_sha": "6106a1d68823a059eb885d2ce9bac6edd3d04d82",
-      "version": "0.1.2-7",
+      "version": "0.1.2-8",
       "workflow": "release.yml",
       "workflow_inputs": [
         "apt_overlay_url",
