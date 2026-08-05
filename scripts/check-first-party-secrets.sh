@@ -36,7 +36,10 @@ rg_args=(
   # Some product repositories vendor upstream ASIO below include/asio rather
   # than a directory literally named vendor. Treat it as third-party code.
   --glob '!**/include/asio/**'
-  --glob '!scripts/check-first-party-secrets.sh'
+  # Scanner implementations necessarily contain the blocked patterns. Exclude
+  # them at every nested product boundary while continuing to scan their tests,
+  # source, configuration, and workflow files.
+  --glob '!**/scripts/check-first-party-secrets.sh'
 )
 
 failed=0
