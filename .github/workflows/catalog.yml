@@ -24,6 +24,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install catalog system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes ripgrep
+
       - name: Scan DevOps commits for general secrets
         uses: gitleaks/gitleaks-action@v2
         env:
