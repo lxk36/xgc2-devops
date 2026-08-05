@@ -312,7 +312,10 @@ def is_transient_message(message: str) -> bool:
         "sha256 mismatch",
         "manifest identity/hash mismatch",
         "assertion failed",
+        "[failure]",
+        "result: fail",
         "tests failed",
+        "test failed",
         "test failure",
         "test timed out",
         "compilation terminated",
@@ -322,8 +325,17 @@ def is_transient_message(message: str) -> bool:
     expected_version_mismatch = re.search(
         r"expected version[^\n]*(?:got|found|actual)", normalized
     )
-    if expected_version_mismatch or any(
-        pattern in normalized for pattern in deterministic_patterns
+    nonzero_failure_count = re.search(r"\bfailures?\s*:\s*[1-9][0-9]*\b", normalized)
+    test_summary_failure_count = re.search(
+        r"\bsummary:[^\n]*\b[1-9][0-9]*\s+failures?\b", normalized
+    )
+    if (
+        expected_version_mismatch
+        or nonzero_failure_count
+        or test_summary_failure_count
+        or any(
+            pattern in normalized for pattern in deterministic_patterns
+        )
     ):
         return False
     patterns = (
@@ -353,7 +365,6 @@ def is_transient_message(message: str) -> bool:
         "xgc2_transient",
         "publish lock",
         "lock conflict",
-        "resource busy",
     )
     return any(pattern in normalized for pattern in patterns)
 
@@ -1896,13 +1907,20 @@ def execute_central(args: argparse.Namespace) -> int:
         artifact_source = str(checkpoint.get("artifact_source", "fallback"))
         if checkpoint["phase"] == "workflow_dispatched":
             started = time.monotonic()
-            workflow_data = wait_for_run(
-                product,
-                run_id,
-                timeout_seconds=args.timeout_seconds,
-                poll_seconds=args.poll_seconds,
-                quality_required=args.quality_required,
-            )
+            try:
+                workflow_data = wait_for_run(
+                    product,
+                    run_id,
+                    timeout_seconds=args.timeout_seconds,
+                    poll_seconds=args.poll_seconds,
+                    quality_required=args.quality_required,
+                )
+            except CompletedTransientReleaseError:
+                # A completed transient run is immutable.  Forget its exact
+                # checkpoint so the scheduler's next attempt can dispatch a
+                # replacement instead of polling the same dead run again.
+                clear_publish_checkpoint(plan_path, product)
+                raise
             metric["release_workflow_seconds"] = round(time.monotonic() - started, 3)
             write_node_checkpoint(
                 plan_path,
@@ -1953,13 +1971,17 @@ def execute_central(args: argparse.Namespace) -> int:
             artifact_source=artifact_source,
         )
         started = time.monotonic()
-        workflow_data = wait_for_run(
-            product,
-            run_id,
-            timeout_seconds=args.timeout_seconds,
-            poll_seconds=args.poll_seconds,
-            quality_required=args.quality_required,
-        )
+        try:
+            workflow_data = wait_for_run(
+                product,
+                run_id,
+                timeout_seconds=args.timeout_seconds,
+                poll_seconds=args.poll_seconds,
+                quality_required=args.quality_required,
+            )
+        except CompletedTransientReleaseError:
+            clear_publish_checkpoint(plan_path, product)
+            raise
         metric["release_workflow_seconds"] = round(time.monotonic() - started, 3)
         metric["build_seconds"] = metric["release_workflow_seconds"]
         write_node_checkpoint(

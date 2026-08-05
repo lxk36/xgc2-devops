@@ -1783,11 +1783,29 @@ class TransientClassificationTests(unittest.TestCase):
             "release manifest deb SHA256 mismatch",
             "unit test assertion failed",
             "unit test assertion failed after operation timed out",
+            "Summary: 29 tests, 0 errors, 1 failures: connection reset by peer",
             "compilation terminated after connection reset by peer",
         )
         for message in messages:
             with self.subTest(message=message):
                 self.assertFalse(runner.is_transient_message(message))
+
+    def test_apt_resource_busy_noise_does_not_hide_test_failure(self):
+        message = """\
+ln: failed to create symbolic link '/etc/resolv.conf': Device or resource busy
+[gazebo_sim_camera.rosunit-static_camera_contract/test_camera_contract][FAILURE]
+'video' not found in {}
+ * RESULT: FAIL
+ * FAILURES: 1
+Summary: 29 tests, 0 errors, 1 failures, 0 skipped
+"""
+        self.assertFalse(runner.is_transient_message(message))
+        self.assertFalse(
+            runner.is_transient_message(
+                "ln: failed to create symbolic link '/etc/resolv.conf': "
+                "Device or resource busy"
+            )
+        )
 
     def test_workflow_timeout_is_retryable_because_exact_run_is_known(self):
         with self.assertRaises(runner.TransientReleaseError):
@@ -2197,6 +2215,97 @@ class CentralStagingTests(unittest.TestCase):
             self.assertEqual(errors, [])
             self.assertTrue(second_acquired.is_set())
             self.assertGreaterEqual(queue_seconds["second"], 0.04)
+
+    def test_completed_transient_prepare_run_is_replaced_on_scheduler_retry(self):
+        with tempfile.TemporaryDirectory() as directory, mock.patch.dict(
+            os.environ,
+            {
+                "GH_TOKEN": "token", "XGC2_RELEASE_ID": "release-1",
+                "XGC2_RELEASE_LOCK_DIGEST": "b" * 64,
+                "XGC2_EXECUTION_POLICY_DIGEST": "c" * 64,
+            },
+            clear=False,
+        ):
+            root = Path(directory)
+            product = self.resumable_product()
+            product["release_scoped_build"] = True
+            plan_path = root / "plan.json"
+            plan_path.write_text(json.dumps({"layers": [[product]]}), encoding="utf-8")
+            args = self.resumable_args(plan_path)
+
+            with mock.patch.object(
+                runner, "recover_server_staged_receipt", return_value=False
+            ), mock.patch.object(
+                runner, "verify_release_lock_is_current"
+            ), mock.patch.object(
+                runner, "trigger_prepare", side_effect=[12345, 67890]
+            ) as trigger, mock.patch.object(
+                runner,
+                "wait_for_run",
+                side_effect=[
+                    runner.CompletedTransientReleaseError("publish lock conflict"),
+                    runner.TransientReleaseError("workflow run timed out"),
+                ],
+            ) as wait:
+                with self.assertRaises(runner.CompletedTransientReleaseError):
+                    runner.execute_central(args)
+                self.assertFalse(
+                    runner.node_checkpoint_path(plan_path, "x").exists()
+                )
+
+                with self.assertRaises(runner.TransientReleaseError):
+                    runner.execute_central(args)
+
+            self.assertEqual(trigger.call_count, 2)
+            self.assertEqual(
+                [call.args[1] for call in wait.call_args_list],
+                [12345, 67890],
+            )
+            checkpoint = runner.load_node_checkpoint(plan_path, product)
+            self.assertIsNotNone(checkpoint)
+            self.assertEqual(checkpoint["phase"], "workflow_dispatched")
+            self.assertEqual(checkpoint["run_id"], 67890)
+
+    def test_resumed_completed_transient_prepare_checkpoint_is_cleared(self):
+        with tempfile.TemporaryDirectory() as directory, mock.patch.dict(
+            os.environ,
+            {
+                "GH_TOKEN": "token", "XGC2_RELEASE_ID": "release-1",
+                "XGC2_RELEASE_LOCK_DIGEST": "b" * 64,
+                "XGC2_EXECUTION_POLICY_DIGEST": "c" * 64,
+            },
+            clear=False,
+        ):
+            root = Path(directory)
+            product = self.resumable_product()
+            plan_path = root / "plan.json"
+            plan_path.write_text(json.dumps({"layers": [[product]]}), encoding="utf-8")
+            runner.write_node_checkpoint(
+                plan_path,
+                product,
+                phase="workflow_dispatched",
+                run_id=12345,
+                artifact_source="fallback",
+            )
+
+            with mock.patch.object(
+                runner, "verify_release_lock_is_current"
+            ), mock.patch.object(
+                runner, "trigger_prepare"
+            ) as trigger, mock.patch.object(
+                runner,
+                "wait_for_run",
+                side_effect=runner.CompletedTransientReleaseError(
+                    "publish lock conflict"
+                ),
+            ) as wait:
+                with self.assertRaises(runner.CompletedTransientReleaseError):
+                    runner.execute_central(self.resumable_args(plan_path))
+
+            trigger.assert_not_called()
+            wait.assert_called_once()
+            self.assertEqual(wait.call_args.args[1], 12345)
+            self.assertFalse(runner.node_checkpoint_path(plan_path, "x").exists())
 
     def test_trusted_artifacts_form_deterministic_bundle_and_release_train(self):
         with tempfile.TemporaryDirectory() as directory:
