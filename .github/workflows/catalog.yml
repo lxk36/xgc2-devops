@@ -9,6 +9,9 @@ on:
   schedule:
     - cron: "17 3 * * *"
 
+permissions:
+  contents: read
+
 jobs:
   validate:
     name: catalog / validate
@@ -18,12 +21,23 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan DevOps commits for general secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: "false"
 
       - name: Checkout product metadata submodules
         env:
           GH_TOKEN: ${{ secrets.XGC2_RELEASE_ORCHESTRATOR_TOKEN }}
           SUBMODULE_SSH_KEY: ${{ secrets.SUBMODULE_SSH_KEY }}
         run: bash scripts/checkout-product-metadata-submodules.sh
+
+      - name: Enforce first-party secret policy
+        run: bash scripts/check-first-party-secrets.sh
 
       - name: Install metadata dependencies
         run: python3 -m pip install --user --no-cache-dir PyYAML jsonschema
