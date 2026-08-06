@@ -178,7 +178,11 @@
 	path = products/webui/lichtblick-packaging
 	url = https://github.com/lxk36/xgc2-lichtblick-packaging.git
 	branch = main
-[submodule "products/common/unitree-sdk2"]
-	path = products/common/unitree-sdk2
-	url = git@github.com:lxk36/xgc2-unitree-sdk2.git
+[submodule "products/ros2/driver/unitree_ros2"]
+	path = products/ros2/driver/unitree_ros2
+	url = git@github.com:lxk36/xgc2-unitree-ros2.git
+	branch = xgc2
+[submodule "products/ros2/driver/odin_ros_driver"]
+	path = products/ros2/driver/odin_ros_driver
+	url = git@github.com:lxk36/xgc2-odin-ros-driver.git
 	branch = xgc2
