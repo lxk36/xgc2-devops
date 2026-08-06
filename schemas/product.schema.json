@@ -64,6 +64,21 @@
     "ros": {
       "type": "object",
       "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "required": ["packages"],
+            "properties": {
+              "packages": {
+                "minItems": 1
+              }
+            }
+          },
+          "then": {
+            "required": ["distro"]
+          }
+        }
+      ],
       "properties": {
         "distro": {
           "type": "string"

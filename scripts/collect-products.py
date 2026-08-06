@@ -121,6 +121,28 @@ def scalar_field(product: dict[str, Any], *path: str) -> list[str]:
     return [str(value)]
 
 
+def ros_package_ownership_values(product: dict[str, Any]) -> list[str]:
+    """Return ROS package ownership keys scoped to one ROS distribution."""
+
+    distros = scalar_field(product, "ros", "distro")
+    packages = list_field(product, "ros", "packages")
+    if not packages or not distros:
+        return []
+    distro = distros[0]
+    return [f"{distro}/{package}" for package in packages]
+
+
+def validate_ros_metadata(products: list[dict[str, Any]]) -> list[str]:
+    errors: list[str] = []
+    for product in products:
+        packages = list_field(product, "ros", "packages")
+        if packages and not scalar_field(product, "ros", "distro"):
+            errors.append(
+                f"{product['id']}: ros.distro is required when ros.packages is declared"
+            )
+    return errors
+
+
 def is_deprecated(product: dict[str, Any]) -> bool:
     lifecycle = product.get("lifecycle")
     return isinstance(lifecycle, dict) and lifecycle.get("deprecated") is True
@@ -159,7 +181,7 @@ def validate_ownership(products: list[dict[str, Any]]) -> list[str]:
     checks = [
         ("APT package", lambda product: list_field(product, "apt", "packages")),
         ("APT install package", lambda product: list_field(product, "apt", "install")),
-        ("ROS package", lambda product: list_field(product, "ros", "packages")),
+        ("ROS package", ros_package_ownership_values),
         ("owned path", lambda product: list_field(product, "ownership", "paths")),
         ("Docker image", lambda product: list_field(product, "docker", "images")),
         ("app-store app id", lambda product: scalar_field(product, "app_store", "app_id")),
@@ -325,6 +347,7 @@ def main() -> int:
         products.append(product)
 
     errors = validate_non_publishing_catalogs(products)
+    errors.extend(validate_ros_metadata(products))
     errors.extend(validate_ownership(products))
     errors.extend(
         validate_internal_dependency_policies(

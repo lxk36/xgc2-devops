@@ -71,6 +71,7 @@ apt-get install -y --no-install-recommends git python3-pip
 git config --file "${HOME}/.gitconfig" --add safe.directory "*"
 python3 -m pip install --no-cache-dir PyYAML jsonschema
 bash -n scripts/*.sh helper/*.sh
+python3 scripts/check-visual-description-boundaries.py --root .
 python3 scripts/collect-products.py --root . --output .work/products-container-ci.json
 python3 scripts/orchestrate-apt-release.py --root . --catalog .work/products-container-ci.json --product libxgc2-math-dev --no-downstream --plan-output .work/release-plan-smoke.json
 '

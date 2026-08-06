@@ -276,6 +276,52 @@ on:
 
 
 class CatalogDependencyPolicyTests(unittest.TestCase):
+    def test_ros_package_ownership_is_scoped_by_distro(self):
+        noetic = {
+            "id": "visual-noetic",
+            "ros": {"distro": "noetic", "packages": ["robot_description"]},
+        }
+        melodic = {
+            "id": "visual-melodic",
+            "ros": {"distro": "melodic", "packages": ["robot_description"]},
+        }
+        jazzy = {
+            "id": "visual-jazzy",
+            "ros": {"distro": "jazzy", "packages": ["robot_description"]},
+        }
+
+        products = [noetic, melodic, jazzy]
+        self.assertEqual(catalog_collector.validate_ros_metadata(products), [])
+        self.assertEqual(catalog_collector.validate_ownership(products), [])
+
+    def test_ros_package_ownership_still_rejects_same_distro_duplicate(self):
+        products = [
+            {
+                "id": "visual-a",
+                "ros": {"distro": "jazzy", "packages": ["robot_description"]},
+            },
+            {
+                "id": "visual-b",
+                "ros": {"distro": "jazzy", "packages": ["robot_description"]},
+            },
+        ]
+
+        self.assertEqual(
+            catalog_collector.validate_ownership(products),
+            [
+                "duplicate ROS package ownership for jazzy/robot_description: "
+                "visual-a, visual-b"
+            ],
+        )
+
+    def test_ros_packages_require_a_distro(self):
+        product = {"id": "visual", "ros": {"packages": ["robot_description"]}}
+
+        self.assertEqual(
+            catalog_collector.validate_ros_metadata([product]),
+            ["visual: ros.distro is required when ros.packages is declared"],
+        )
+
     def test_catalog_exclusions_require_ids_reasons_and_unique_entries(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             path = Path(temp_dir) / "exclusions.json"

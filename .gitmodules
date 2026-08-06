@@ -186,3 +186,27 @@
 	path = products/ros2/driver/odin_ros_driver
 	url = git@github.com:lxk36/xgc2-odin-ros-driver.git
 	branch = xgc2
+[submodule "products/ros1/robot/b2arx_description"]
+	path = products/ros1/robot/b2arx_description
+	url = git@github.com:lxk36/xgc2-b2arx-description.git
+	branch = noetic
+[submodule "products/ros2/robot/mecanum_description"]
+	path = products/ros2/robot/mecanum_description
+	url = git@github.com:lxk36/xgc2-mecanum-description.git
+	branch = jazzy
+[submodule "products/ros2/robot/scout_description"]
+	path = products/ros2/robot/scout_description
+	url = git@github.com:lxk36/xgc2-scout-description.git
+	branch = jazzy
+[submodule "products/ros2/robot/fs150_description"]
+	path = products/ros2/robot/fs150_description
+	url = git@github.com:lxk36/xgc2-fs150-description.git
+	branch = jazzy
+[submodule "products/ros2/robot/b2arx_description"]
+	path = products/ros2/robot/b2arx_description
+	url = git@github.com:lxk36/xgc2-b2arx-description.git
+	branch = jazzy
+[submodule "products/ros1/robot/melodic/scout_description"]
+	path = products/ros1/robot/melodic/scout_description
+	url = git@github.com:lxk36/xgc2-scout-description.git
+	branch = melodic

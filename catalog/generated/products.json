@@ -488,6 +488,8 @@
           "ros-melodic-genmsg",
           "ros-melodic-geometry-msgs",
           "ros-melodic-image-transport",
+          "ros-melodic-joint-state-publisher",
+          "ros-melodic-joint-state-publisher-gui",
           "ros-melodic-message-runtime",
           "ros-melodic-nav-msgs",
           "ros-melodic-nodelet",
@@ -498,6 +500,8 @@
           "ros-melodic-roslib",
           "ros-melodic-rospy",
           "ros-melodic-rosgraph",
+          "ros-melodic-robot-state-publisher",
+          "ros-melodic-rviz",
           "ros-melodic-scout-msgs (>= 0.3.3-5)",
           "ros-melodic-sensor-msgs",
           "ros-melodic-serial",
@@ -512,6 +516,7 @@
           "udev",
           "iproute2",
           "ros-melodic-xacro",
+          "ros-melodic-xgc2-scout-description (>= 0.4.10-1)",
           "libpcap-dev",
           "libpcl-dev",
           "librealsense2-dev",
@@ -575,9 +580,10 @@
       },
       "release": {
         "apt_versions": {
-          "bionic": "0.1.1-16"
+          "bionic": "0.1.1-18"
         },
         "dependency_policy": {
+          "xgc2-ros-melodic-scout-description": "verify",
           "xgc2-scout-msgs": "rebuild",
           "xgc2-swarm-ros-bridge": "verify"
         },
@@ -603,10 +609,10 @@
       "summary": "ROS Melodic onboard IMU, Scout chassis, communication, and sensor packages for the AgileX onboard computer.",
       "usage": {
         "install": "sudo apt update\nsudo apt install ros-melodic-xgc2-agilex-onboard-autostart\n",
-        "notes": "The launch defaults match the recovered vehicle startup chain:\nport=/dev/imu, baud=115200, topic=/imu/data_raw, frame_id=imu_link.\nThe IMU deb also installs a one-time udev setup script for /dev/imu:\n/opt/ros/melodic/share/agilex_onboard_imu/scripts/install_imu_udev_rule.sh.\nThe Scout chassis packages are split by ROS package so SDK, messages,\ndriver, and bringup can be installed independently. The compatible Scout\nmessage definitions are maintained in xgc2-scout-msgs and consumed as the\nexternal Debian package ros-melodic-scout-msgs.\nThe AgileX swarm bridge package only provides vehicle-specific YAML and\nlaunch files. It consumes the external generic package\nros-melodic-swarm-ros-bridge.\nThe onboard sensor packages are grouped under onboard/ros1/src/sensors and\nsplit into independent Debian packages for RealSense camera, RealSense\ndescription assets, and RoboSense LiDAR.\nThe optional autostart package installs systemd units, the IMU udev rule,\nlightweight ROS readiness probes, and default swarm bridge configuration.\nIt enables xgc2-agilex-onboard.target but does not start the target during\ninstallation.\nInternal Debian dependencies include >= version constraints so driver and\nbringup packages do not silently bind to older SDK/driver packages.\n",
-        "smoke_test": "rospack find agilex_onboard_imu\nroslaunch --files agilex_onboard_imu imu_msg.launch\nrospack find scout_base\nroslaunch --files scout_bringup scout_minimal.launch\nrospack find agilex_swarm_ros_bridge\nroslaunch --files agilex_swarm_ros_bridge agilex_swarm_ros_bridge.launch\n"
+        "notes": "The launch defaults match the recovered vehicle startup chain:\nport=/dev/imu, baud=115200, topic=/imu/data_raw, frame_id=imu_link.\nThe IMU deb also installs a one-time udev setup script for /dev/imu:\n/opt/ros/melodic/share/agilex_onboard_imu/scripts/install_imu_udev_rule.sh.\nThe Scout chassis packages are split by ROS package so SDK, messages,\ndriver, and bringup can be installed independently. The compatible Scout\nmessage definitions are maintained in xgc2-scout-msgs and consumed as the\nexternal Debian package ros-melodic-scout-msgs.\nThe Scout visual model is consumed from the external visual-only package\nros-melodic-xgc2-scout-description. That package owns only URDF and meshes;\nrecovered display launches, maps, navigation parameters, and RViz profiles\nare owned and installed by scout_bringup.\nCore and headless display launch dependencies are closed by this product.\nThe recovered navigation, RTAB-Map, Cartographer, and LiDAR workflows remain\noptional: they require their corresponding extension packages, including\nrf2o_laser_odometry, which is not published by this product.\nThe AgileX swarm bridge package only provides vehicle-specific YAML and\nlaunch files. It consumes the external generic package\nros-melodic-swarm-ros-bridge.\nThe onboard sensor packages are grouped under onboard/ros1/src/sensors and\nsplit into independent Debian packages for RealSense camera, RealSense\ndescription assets, and RoboSense LiDAR.\nThe optional autostart package installs systemd units, the IMU udev rule,\nlightweight ROS readiness probes, and default swarm bridge configuration.\nIt enables xgc2-agilex-onboard.target but does not start the target during\ninstallation.\nInternal Debian dependencies include >= version constraints so driver and\nbringup packages do not silently bind to older SDK/driver packages.\n",
+        "smoke_test": "rospack find agilex_onboard_imu\nroslaunch --files agilex_onboard_imu imu_msg.launch\nrospack find scout_base\nroslaunch --files scout_bringup scout_minimal.launch\nrospack find scout_description\ntest -f \"$(rospack find scout_description)/urdf/scout_visual.urdf\"\ntest ! -d \"$(rospack find scout_description)/launch\"\ntest -f \"$(rospack find scout_bringup)/maps/map.yaml\"\nroslaunch --files scout_bringup display_scout_mini.launch\nrospack find agilex_swarm_ros_bridge\nroslaunch --files agilex_swarm_ros_bridge agilex_swarm_ros_bridge.launch\n"
       },
-      "version": "0.1.1-16"
+      "version": "0.1.1-18"
     },
     {
       "_source": "products/robotics/fs150/.xgc2/product.yml",
@@ -1514,6 +1520,62 @@
       "version": "1.1.6-10"
     },
     {
+      "_source": "products/ros1/robot/b2arx_description/.xgc2/product.yml",
+      "apt": {
+        "depends": [
+          "ros-noetic-urdf"
+        ],
+        "distribution": "focal",
+        "install": [
+          "ros-noetic-xgc2-b2arx-description"
+        ],
+        "package_architectures": {
+          "ros-noetic-xgc2-b2arx-description": [
+            "amd64",
+            "arm64"
+          ]
+        },
+        "packages": [
+          "ros-noetic-xgc2-b2arx-description"
+        ]
+      },
+      "groups": [
+        "ros1",
+        "robot",
+        "description"
+      ],
+      "id": "xgc2-b2arx-description",
+      "kind": "ros1-apt",
+      "name": "XGC2 B2ARX Description",
+      "ownership": {
+        "paths": [
+          "/opt/ros/noetic/share/b2arx_description"
+        ]
+      },
+      "release": {
+        "apt_versions": {
+          "focal": "0.1.0"
+        },
+        "ci_workflow": "ci.yml",
+        "ref": "noetic",
+        "repository": "lxk36/xgc2-b2arx-description",
+        "workflow": "release.yml"
+      },
+      "ros": {
+        "distro": "noetic",
+        "packages": [
+          "b2arx_description"
+        ]
+      },
+      "schema": "xgc2.product.v1",
+      "summary": "ROS Noetic visual description assets for Unitree B2 + ARX R5a (b2arx).",
+      "usage": {
+        "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-b2arx-description\n",
+        "smoke_test": "rospack find b2arx_description\ntest -f /opt/ros/noetic/share/b2arx_description/urdf/b2arx_visual.urdf\n"
+      },
+      "version": "0.1.0"
+    },
+    {
       "_source": "products/ros1/robot/fs150_description/.xgc2/product.yml",
       "apt": {
         "depends": [
@@ -1523,6 +1585,12 @@
         "install": [
           "ros-noetic-xgc2-fs150-description"
         ],
+        "package_architectures": {
+          "ros-noetic-xgc2-fs150-description": [
+            "amd64",
+            "arm64"
+          ]
+        },
         "packages": [
           "ros-noetic-xgc2-fs150-description"
         ]
@@ -1537,8 +1605,12 @@
       },
       "release": {
         "apt_versions": {
-          "focal": "0.1.0-7"
-        }
+          "focal": "0.1.0-9"
+        },
+        "ci_workflow": "ci.yml",
+        "ref": "noetic",
+        "repository": "lxk36/xgc2-fs150-description",
+        "workflow": "release.yml"
       },
       "ros": {
         "distro": "noetic",
@@ -1550,9 +1622,9 @@
       "summary": "ROS Noetic visual description assets for the XGC2 FS150 airframe.",
       "usage": {
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-fs150-description\n",
-        "smoke_test": "rospack find fs150_description\n"
+        "smoke_test": "rospack find fs150_description\ntest -f /opt/ros/noetic/share/fs150_description/urdf/fs150_visual.urdf\n"
       },
-      "version": "0.1.0-7"
+      "version": "0.1.0-9"
     },
     {
       "_source": "products/ros1/robot/mecanum_description/.xgc2/product.yml",
@@ -1588,7 +1660,7 @@
       },
       "release": {
         "apt_versions": {
-          "focal": "0.1.0-6"
+          "focal": "0.1.0-8"
         },
         "ci_workflow": "ci.yml",
         "ref": "noetic",
@@ -1607,20 +1679,75 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-mecanum-description\n",
         "smoke_test": "rospack find mecanum_description\ntest -f /opt/ros/noetic/share/mecanum_description/urdf/mecanum_visual.urdf\n"
       },
-      "version": "0.1.0-6"
+      "version": "0.1.0-8"
+    },
+    {
+      "_source": "products/ros1/robot/melodic/scout_description/.xgc2/product.yml",
+      "apt": {
+        "depends": [
+          "ros-melodic-urdf"
+        ],
+        "distribution": "bionic",
+        "install": [
+          "ros-melodic-xgc2-scout-description"
+        ],
+        "package_architectures": {
+          "ros-melodic-xgc2-scout-description": [
+            "amd64",
+            "arm64"
+          ]
+        },
+        "packages": [
+          "ros-melodic-xgc2-scout-description"
+        ]
+      },
+      "id": "xgc2-ros-melodic-scout-description",
+      "kind": "ros1-apt",
+      "name": "XGC2 ROS Melodic Scout Description",
+      "ownership": {
+        "paths": [
+          "/opt/ros/melodic/share/scout_description"
+        ]
+      },
+      "release": {
+        "apt_versions": {
+          "bionic": "0.4.10-1"
+        },
+        "ci_workflow": "ci.yml",
+        "ref": "melodic",
+        "repository": "lxk36/xgc2-scout-description",
+        "workflow": "release.yml"
+      },
+      "ros": {
+        "distro": "melodic",
+        "packages": [
+          "scout_description"
+        ]
+      },
+      "schema": "xgc2.product.v1",
+      "summary": "ROS Melodic visual-only AgileX Scout meshes and URDF.",
+      "usage": {
+        "install": "sudo apt update\nsudo apt install ros-melodic-xgc2-scout-description\n",
+        "smoke_test": "test -f \"$(rospack find scout_description)/urdf/scout_visual.urdf\"\ntest ! -d \"$(rospack find scout_description)/launch\"\n"
+      },
+      "version": "0.4.10-1"
     },
     {
       "_source": "products/ros1/robot/scout_description/.xgc2/product.yml",
       "apt": {
         "depends": [
-          "ros-noetic-lms1xx",
-          "ros-noetic-urdf",
-          "ros-noetic-xacro"
+          "ros-noetic-urdf"
         ],
         "distribution": "focal",
         "install": [
           "ros-noetic-xgc2-scout-description"
         ],
+        "package_architectures": {
+          "ros-noetic-xgc2-scout-description": [
+            "amd64",
+            "arm64"
+          ]
+        },
         "packages": [
           "ros-noetic-xgc2-scout-description"
         ]
@@ -1635,8 +1762,12 @@
       },
       "release": {
         "apt_versions": {
-          "focal": "0.4.10-12"
-        }
+          "focal": "0.4.10-14"
+        },
+        "ci_workflow": "ci.yml",
+        "ref": "noetic",
+        "repository": "lxk36/xgc2-scout-description",
+        "workflow": "release.yml"
       },
       "ros": {
         "distro": "noetic",
@@ -1645,12 +1776,12 @@
         ]
       },
       "schema": "xgc2.product.v1",
-      "summary": "ROS Noetic AgileX Scout description meshes, URDF, and launch assets.",
+      "summary": "ROS Noetic visual-only AgileX Scout meshes and URDF.",
       "usage": {
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-scout-description\n",
-        "smoke_test": "rospack find scout_description\nroslaunch --files scout_description mini_description.launch\n"
+        "smoke_test": "test -f \"$(rospack find scout_description)/urdf/scout_visual.urdf\"\ntest ! -d \"$(rospack find scout_description)/launch\"\n"
       },
-      "version": "0.4.10-12"
+      "version": "0.4.10-14"
     },
     {
       "_source": "products/ros1/robot/scout_msgs/.xgc2/product.yml",
@@ -1798,7 +1929,9 @@
       "apt": {
         "depends": [
           "ros-noetic-scout-msgs (>= 0.3.3-5)",
-          "ros-noetic-xgc2-scout-description (>= 0.4.10-8)",
+          "ros-noetic-urdf",
+          "ros-noetic-xacro",
+          "ros-noetic-xgc2-scout-description (>= 0.4.10-14)",
           "ros-noetic-xgc2-gazebo-sim-worlds (>= 1.1.0-14)",
           "ros-noetic-xgc2-gazebo-sim-vrpn-bridge (>= 1.1.0-13)"
         ],
@@ -1806,6 +1939,12 @@
         "install": [
           "ros-noetic-xgc2-gazebo-sim-scout"
         ],
+        "package_architectures": {
+          "ros-noetic-xgc2-gazebo-sim-scout": [
+            "amd64",
+            "arm64"
+          ]
+        },
         "packages": [
           "ros-noetic-xgc2-gazebo-sim-scout"
         ]
@@ -1822,7 +1961,7 @@
       },
       "release": {
         "apt_versions": {
-          "focal": "0.4.9-30"
+          "focal": "0.4.9-33"
         },
         "dependency_policy": {
           "xgc2-gazebo-sim-scenes": "verify",
@@ -1846,7 +1985,7 @@
         "install": "sudo apt update\nsudo apt install ros-noetic-xgc2-gazebo-sim-scout\n",
         "smoke_test": "roslaunch --files gazebo_sim_scout simple.launch rviz:=false\n"
       },
-      "version": "0.4.9-30"
+      "version": "0.4.9-33"
     },
     {
       "_source": "products/ros1/simulator/gazebo-sim/camera/.xgc2/product.yml",
@@ -2459,6 +2598,229 @@
         "smoke_test": "roslaunch --files sss_sim_env sim_clock.launch\n"
       },
       "version": "1.1.0-12"
+    },
+    {
+      "_source": "products/ros2/robot/b2arx_description/.xgc2/product.yml",
+      "apt": {
+        "depends": [
+          "ros-jazzy-urdf"
+        ],
+        "distribution": "noble",
+        "install": [
+          "ros-jazzy-xgc2-b2arx-description"
+        ],
+        "package_architectures": {
+          "ros-jazzy-xgc2-b2arx-description": [
+            "amd64",
+            "arm64"
+          ]
+        },
+        "packages": [
+          "ros-jazzy-xgc2-b2arx-description"
+        ]
+      },
+      "groups": [
+        "ros2",
+        "robot",
+        "description"
+      ],
+      "id": "xgc2-ros-jazzy-b2arx-description",
+      "kind": "ros2-apt",
+      "name": "XGC2 B2ARX Description for ROS Jazzy",
+      "ownership": {
+        "paths": [
+          "/opt/ros/jazzy/share/b2arx_description",
+          "/opt/ros/jazzy/share/ament_index/resource_index/packages/b2arx_description",
+          "/opt/ros/jazzy/share/ament_index/resource_index/package_run_dependencies/b2arx_description",
+          "/opt/ros/jazzy/share/ament_index/resource_index/parent_prefix_path/b2arx_description"
+        ]
+      },
+      "release": {
+        "apt_versions": {
+          "noble": "0.1.0"
+        },
+        "ci_workflow": "ci.yml",
+        "ref": "jazzy",
+        "repository": "lxk36/xgc2-b2arx-description",
+        "workflow": "release.yml"
+      },
+      "ros": {
+        "distro": "jazzy",
+        "packages": [
+          "b2arx_description"
+        ]
+      },
+      "schema": "xgc2.product.v1",
+      "summary": "ROS Jazzy visual description assets for Unitree B2 + ARX R5a (b2arx).",
+      "usage": {
+        "install": "sudo apt update\nsudo apt install ros-jazzy-xgc2-b2arx-description\n",
+        "smoke_test": "ros2 pkg prefix b2arx_description\ntest -f /opt/ros/jazzy/share/b2arx_description/urdf/b2arx_visual.urdf\n"
+      },
+      "version": "0.1.0"
+    },
+    {
+      "_source": "products/ros2/robot/fs150_description/.xgc2/product.yml",
+      "apt": {
+        "depends": [
+          "ros-jazzy-urdf"
+        ],
+        "distribution": "noble",
+        "install": [
+          "ros-jazzy-xgc2-fs150-description"
+        ],
+        "package_architectures": {
+          "ros-jazzy-xgc2-fs150-description": [
+            "amd64",
+            "arm64"
+          ]
+        },
+        "packages": [
+          "ros-jazzy-xgc2-fs150-description"
+        ]
+      },
+      "id": "xgc2-ros-jazzy-fs150-description",
+      "kind": "ros2-apt",
+      "name": "XGC2 ROS Jazzy FS150 Description",
+      "ownership": {
+        "paths": [
+          "/opt/ros/jazzy/share/fs150_description",
+          "/opt/ros/jazzy/share/ament_index/resource_index/packages/fs150_description",
+          "/opt/ros/jazzy/share/ament_index/resource_index/package_run_dependencies/fs150_description",
+          "/opt/ros/jazzy/share/ament_index/resource_index/parent_prefix_path/fs150_description"
+        ]
+      },
+      "release": {
+        "apt_versions": {
+          "noble": "0.1.0-1"
+        },
+        "ci_workflow": "ci.yml",
+        "ref": "jazzy",
+        "repository": "lxk36/xgc2-fs150-description",
+        "workflow": "release.yml"
+      },
+      "ros": {
+        "distro": "jazzy",
+        "packages": [
+          "fs150_description"
+        ]
+      },
+      "schema": "xgc2.product.v1",
+      "summary": "ROS 2 Jazzy visual description assets for the XGC2 FS150 airframe.",
+      "usage": {
+        "install": "sudo apt update\nsudo apt install ros-jazzy-xgc2-fs150-description\n",
+        "smoke_test": "source /opt/ros/jazzy/setup.bash\nros2 pkg prefix fs150_description\ntest -f /opt/ros/jazzy/share/fs150_description/urdf/fs150_visual.urdf\n"
+      },
+      "version": "0.1.0-1"
+    },
+    {
+      "_source": "products/ros2/robot/mecanum_description/.xgc2/product.yml",
+      "apt": {
+        "depends": [
+          "ros-jazzy-urdf"
+        ],
+        "distribution": "noble",
+        "install": [
+          "ros-jazzy-xgc2-mecanum-description"
+        ],
+        "package_architectures": {
+          "ros-jazzy-xgc2-mecanum-description": [
+            "amd64",
+            "arm64"
+          ]
+        },
+        "packages": [
+          "ros-jazzy-xgc2-mecanum-description"
+        ]
+      },
+      "groups": [
+        "gazebo-sim",
+        "ugv-tracking"
+      ],
+      "id": "xgc2-ros-jazzy-mecanum-description",
+      "kind": "ros2-apt",
+      "name": "XGC2 ROS Jazzy Mecanum Description",
+      "ownership": {
+        "paths": [
+          "/opt/ros/jazzy/share/mecanum_description",
+          "/opt/ros/jazzy/share/ament_index/resource_index/packages/mecanum_description",
+          "/opt/ros/jazzy/share/ament_index/resource_index/package_run_dependencies/mecanum_description",
+          "/opt/ros/jazzy/share/ament_index/resource_index/parent_prefix_path/mecanum_description"
+        ]
+      },
+      "release": {
+        "apt_versions": {
+          "noble": "0.1.0-1"
+        },
+        "ci_workflow": "ci.yml",
+        "ref": "jazzy",
+        "repository": "lxk36/xgc2-mecanum-description",
+        "workflow": "release.yml"
+      },
+      "ros": {
+        "distro": "jazzy",
+        "packages": [
+          "mecanum_description"
+        ]
+      },
+      "schema": "xgc2.product.v1",
+      "summary": "ROS 2 Jazzy visual description assets for the XGC2 Mecanum UGV.",
+      "usage": {
+        "install": "sudo apt update\nsudo apt install ros-jazzy-xgc2-mecanum-description\n",
+        "smoke_test": "source /opt/ros/jazzy/setup.bash\nros2 pkg prefix mecanum_description\ntest -f /opt/ros/jazzy/share/mecanum_description/urdf/mecanum_visual.urdf\n"
+      },
+      "version": "0.1.0-1"
+    },
+    {
+      "_source": "products/ros2/robot/scout_description/.xgc2/product.yml",
+      "apt": {
+        "depends": [
+          "ros-jazzy-urdf"
+        ],
+        "distribution": "noble",
+        "install": [
+          "ros-jazzy-xgc2-scout-description"
+        ],
+        "package_architectures": {
+          "ros-jazzy-xgc2-scout-description": [
+            "amd64",
+            "arm64"
+          ]
+        },
+        "packages": [
+          "ros-jazzy-xgc2-scout-description"
+        ]
+      },
+      "id": "xgc2-ros-jazzy-scout-description",
+      "kind": "ros2-apt",
+      "name": "XGC2 ROS Jazzy Scout Description",
+      "ownership": {
+        "paths": [
+          "/opt/ros/jazzy/share/scout_description",
+          "/opt/ros/jazzy/share/ament_index/resource_index/packages/scout_description"
+        ]
+      },
+      "release": {
+        "apt_versions": {
+          "noble": "0.4.10-1"
+        },
+        "ci_workflow": "ci.yml",
+        "ref": "jazzy",
+        "repository": "lxk36/xgc2-scout-description",
+        "workflow": "release.yml"
+      },
+      "ros": {
+        "distro": "jazzy",
+        "packages": [
+          "scout_description"
+        ]
+      },
+      "schema": "xgc2.product.v1",
+      "summary": "ROS 2 Jazzy visual-only AgileX Scout meshes and URDF.",
+      "usage": {
+        "install": "sudo apt update\nsudo apt install ros-jazzy-xgc2-scout-description\n",
+        "smoke_test": "source /opt/ros/jazzy/setup.bash\nros2 pkg prefix scout_description\ntest -f /opt/ros/jazzy/share/scout_description/urdf/scout_visual.urdf\n"
+      },
+      "version": "0.4.10-1"
     },
     {
       "_source": "products/ros2/simulator/px4-sitl-116/.xgc2/product.yml",

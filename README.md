@@ -45,7 +45,7 @@ scripts/docker-ci-local.sh
 The validator rejects duplicate active ownership of:
 
 - APT package names
-- ROS package names
+- ROS package names within the same ROS distribution
 - owned installation paths
 - Docker image names
 - app-store app ids
@@ -53,6 +53,16 @@ The validator rejects duplicate active ownership of:
 If a repository is replaced by another product, mark it deprecated in its own
 metadata instead of letting two active products claim the same ROS package or
 file paths.
+
+The same ROS package name may be productized for multiple ROS distributions.
+Each product must declare exactly one `ros.distro`; ownership is keyed by the
+pair `(ros.distro, ros package)`, while product IDs, Debian package names, and
+installation paths remain globally unique.
+
+The visual robot descriptions currently target ROS Noetic and ROS Jazzy. The
+only Melodic exception is `scout_description`, kept for the legacy Scout onboard
+computer at `products/ros1/robot/melodic/scout_description`; its behavior and
+bringup resources remain owned by the AgileX onboard product.
 
 ## APT Bootstrap
 
