@@ -2655,6 +2655,9 @@
         "packages": [
           "ros-jazzy-xgc2-ros-image-rtp-adapter",
           "ros-humble-xgc2-ros-image-rtp-adapter"
+        ],
+        "recommends": [
+          "xgc2-media-edge"
         ]
       },
       "groups": [
@@ -2680,8 +2683,14 @@
           "noble": "0.1.0"
         },
         "ci_workflow": "ci.yml",
+        "dependency_policy": {
+          "xgc2-media-edge": "order"
+        },
         "ref": "jazzy",
         "repository": "lxk36/xgc2-ros-image-rtp-adapter",
+        "requires": [
+          "xgc2-media-edge"
+        ],
         "workflow": "release.yml"
       },
       "ros": {
