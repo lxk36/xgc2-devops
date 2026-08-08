@@ -2631,7 +2631,8 @@
         ],
         "distribution": "jammy,noble",
         "install": [
-          "ros-jazzy-xgc2-ros-image-rtp-adapter"
+          "ros-jazzy-xgc2-ros-image-rtp-adapter",
+          "ros-humble-xgc2-ros-image-rtp-adapter"
         ],
         "package_architectures": {
           "ros-humble-xgc2-ros-image-rtp-adapter": [
