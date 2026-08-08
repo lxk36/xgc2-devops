@@ -1,0 +1,129 @@
+# XGC2 B2 link — Zenoh key & payload contract v1
+# Owners: G3 (onboard forwarder) + G4 (ground B2 adapter)
+# Breaking change = bump version path and both sides.
+
+version: 1
+key_prefix_template: "xgc2/{robot_id}"
+
+# Relative keys under key_prefix_template
+channels:
+  up:
+    odom:
+      key: up/odom
+      encode: cdr_ros2          # nav_msgs/msg/Odometry CDR + type header
+      type: nav_msgs/msg/Odometry
+      default_max_hz: 15
+      domain: 0
+      source_topic: /b2/odom
+    joint_states:
+      key: up/joint_states
+      encode: cdr_ros2
+      type: sensor_msgs/msg/JointState
+      default_max_hz: 15
+      domain: 0
+      source_topic: /b2/joint_states
+    imu:
+      key: up/imu
+      encode: cdr_ros2
+      type: sensor_msgs/msg/Imu
+      default_max_hz: 10
+      domain: 0
+      source_topic: /b2/imu
+      enabled_by_default: false
+    power_summary:
+      key: up/power_summary
+      encode: json_utf8
+      schema: power_summary_v1
+      default_max_hz: 2
+      domain: 0
+      source_topic: /b2/low_state   # summarized, never full 50Hz wire
+    driver_status:
+      key: up/driver_status
+      encode: cdr_ros2
+      type: diagnostic_msgs/msg/DiagnosticArray
+      default_max_hz: 1
+      domain: 0
+      source_topic: /b2/driver_status
+    odin_odom:
+      key: up/odin_odom
+      encode: cdr_ros2
+      type: nav_msgs/msg/Odometry
+      default_max_hz: 10
+      domain: 0
+      source_topic: /odin1/odometry
+      enabled_by_default: false
+    arm_slave_status:
+      key: up/arm_slave_status
+      encode: json_utf8          # joint_state-like JSON for portability
+      schema: arm_status_v1
+      default_max_hz: 15
+      domain: 17
+      source_topic: arm_slave_l_status
+      enabled_by_default: true
+    forwarder_hb:
+      key: up/forwarder_hb
+      encode: json_utf8
+      schema: forwarder_hb_v1
+      default_max_hz: 1
+      domain: 0
+  down:
+    cmd:
+      key: down/cmd
+      encode: json_utf8
+      schema: high_level_cmd_v1
+      ground_to_onboard: true
+      onboard_publish_topic: /remote/high_level_cmd
+      onboard_publish_type: std_msgs/msg/String
+
+# Ground B2 Adapter (G4) re-publishes recovered ROS (ROS1 names shown for GCS)
+ground_ros1_topics:
+  odom: /remote/b2/odom
+  joint_states: /remote/b2/joint_states
+  imu: /remote/b2/imu
+  power_summary: /remote/b2/power_summary   # std_msgs/String JSON or diagnostic
+  driver_status: /remote/b2/driver_status
+  odin_odom: /remote/b2/odin_odom
+  arm_slave_status: /remote/arm/slave_joint_states
+  cmd: /remote/b2/high_level_cmd_out        # optional mirror; command path is Adapter→Zenoh
+
+# CDR envelope (encode: cdr_ros2)
+cdr_envelope:
+  magic: "XGC2"
+  version: 1
+  # wire: magic(4) | version(u8) | type_len(u16be) | type_utf8 | cdr_bytes
+  # CDR is ROS2 default endian CDR for the named message type
+
+schemas:
+  power_summary_v1:
+    fields: [v, t_ms, soc, power_v, power_a, temperature_ntc1, temperature_ntc2]
+  arm_status_v1:
+    fields: [v, t_ms, joint_pos, joint_vel, joint_cur, end_pos]
+  # High-level commands only (no raw cmd_vel / low_cmd by default).
+  # value is a JSON-compatible string or nested object depending on type.
+  high_level_cmd_v1:
+    fields: [v, type, value, source, ts_ms]
+    # MVP allowlist — expand with product review; motion teleop stays off.
+    default_allow_types:
+      - echo_value          # loopback / health
+      - set_plan_goal       # planning goal (e.g. x,y,yaw or frame+pose JSON in value)
+      - cancel_plan         # cancel active plan
+      - set_motion_enable   # enable/disable motion gate if onboard supports it
+    # Explicitly NOT default: twist / cmd_vel / low_level motor FOC
+    notes: >
+      Ground UI / G6 should only emit these types. G3 forwarder publishes
+      std_msgs/String JSON on /remote/high_level_cmd; onboard planner or
+      safety node interprets type — forwarder does not execute motion.
+  forwarder_hb_v1:
+    fields: [v, t_ms, robot_id, domain, channels]
+
+transport:
+  preferred: zenoh
+  # Development fallback when eclipse-zenoh is unavailable:
+  fallback_tcp:
+    description: length-prefixed frames over TCP; same keys as Zenoh path
+    default_listen: "127.0.0.1:7448"
+  zenoh:
+    mode: peer   # or client to a router
+    # example endpoints (override in deploy yaml)
+    connect: []
+    listen: ["tcp/127.0.0.1:7447"]

@@ -1,0 +1,8 @@
+# Deploy overlay for G4 ground peer (transport half of B2 Adapter).
+robot_id: b2-01
+transport: auto
+tcp:
+  host: 127.0.0.1
+  port: 7448
+  role: server
+publish_ros: false

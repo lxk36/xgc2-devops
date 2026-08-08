@@ -2622,6 +2622,82 @@
       "version": "1.1.0-13"
     },
     {
+      "_source": "products/ros2/driver/ros_image_rtp_adapter/.xgc2/product.yml",
+      "apt": {
+        "depends": [
+          "ffmpeg",
+          "python3-numpy",
+          "python3-pil"
+        ],
+        "distribution": "jammy,noble",
+        "install": [
+          "ros-jazzy-xgc2-ros-image-rtp-adapter"
+        ],
+        "package_architectures": {
+          "ros-humble-xgc2-ros-image-rtp-adapter": [
+            "amd64",
+            "arm64"
+          ],
+          "ros-jazzy-xgc2-ros-image-rtp-adapter": [
+            "amd64",
+            "arm64"
+          ]
+        },
+        "package_distributions": {
+          "ros-humble-xgc2-ros-image-rtp-adapter": [
+            "jammy"
+          ],
+          "ros-jazzy-xgc2-ros-image-rtp-adapter": [
+            "noble"
+          ]
+        },
+        "packages": [
+          "ros-jazzy-xgc2-ros-image-rtp-adapter",
+          "ros-humble-xgc2-ros-image-rtp-adapter"
+        ]
+      },
+      "groups": [
+        "ros2",
+        "driver",
+        "media"
+      ],
+      "id": "xgc2-ros-image-rtp-adapter",
+      "kind": "ros2-apt",
+      "name": "XGC2 ROS Image RTP Adapter",
+      "ownership": {
+        "paths": [
+          "/opt/ros/jazzy/lib/ros_image_rtp_adapter",
+          "/opt/ros/jazzy/share/ros_image_rtp_adapter",
+          "/opt/ros/jazzy/lib/python3.12/site-packages/ros_image_rtp_adapter",
+          "/opt/ros/humble/lib/ros_image_rtp_adapter",
+          "/opt/ros/humble/share/ros_image_rtp_adapter"
+        ]
+      },
+      "release": {
+        "apt_versions": {
+          "jammy": "0.1.0",
+          "noble": "0.1.0"
+        },
+        "ci_workflow": "ci.yml",
+        "ref": "jazzy",
+        "repository": "lxk36/xgc2-ros-image-rtp-adapter",
+        "workflow": "release.yml"
+      },
+      "ros": {
+        "distro": "jazzy",
+        "packages": [
+          "ros_image_rtp_adapter"
+        ]
+      },
+      "schema": "xgc2.product.v1",
+      "summary": "Parameterized ROS 2 CompressedImage (JPEG) to H264/RTP adapter implementing the xgc2-media-edge source control contract. Topic names and source IDs are launch parameters. Ships ROS Jazzy (noble) and ROS Humble (jammy) packages.",
+      "usage": {
+        "install": "# Thor / Ubuntu 24.04 + Jazzy\nsudo apt update\nsudo apt install ros-jazzy-xgc2-ros-image-rtp-adapter\n# Ubuntu 22.04 + Humble\n# sudo apt install ros-humble-xgc2-ros-image-rtp-adapter\n",
+        "smoke_test": "ros2 pkg prefix ros_image_rtp_adapter\ntest -x \"$(ros2 pkg prefix ros_image_rtp_adapter)/lib/ros_image_rtp_adapter/image_rtp_adapter\"\n"
+      },
+      "version": "0.1.0"
+    },
+    {
       "_source": "products/ros2/robot/b2arx_description/.xgc2/product.yml",
       "apt": {
         "depends": [

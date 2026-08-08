@@ -1,0 +1,15 @@
+# Deploy overlay for G3 forwarder_d0 (also pass CLI flags).
+robot_id: b2-01
+transport: auto
+tcp:
+  host: 127.0.0.1
+  port: 7448
+  role: client
+zenoh:
+  mode: peer
+  listen: []
+  connect: []
+enable_imu: false
+enable_odin_odom: false
+# High-level only — planning goals etc.; not continuous teleop.
+allow_cmd_types: [echo_value, set_plan_goal, cancel_plan, set_motion_enable]
