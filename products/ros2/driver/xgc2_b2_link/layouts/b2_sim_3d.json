@@ -1,0 +1,95 @@
+{
+  "configById": {
+    "3D!b2sim": {
+      "cameraState": {
+        "distance": 8,
+        "perspective": true,
+        "phi": 55,
+        "thetaOffset": 45,
+        "target": [0, 0, 0],
+        "targetOffset": [0, 0, 0.4],
+        "targetOrientation": [0, 0, 0, 1],
+        "fovy": 45,
+        "near": 0.05,
+        "far": 5000
+      },
+      "followMode": "follow-pose",
+      "followTf": "b2_description",
+      "scene": {
+        "enableStats": false,
+        "meshUpAxis": "z_up",
+        "backgroundColor": "#111111",
+        "transforms": {
+          "editable": false,
+          "showLabel": true,
+          "labelSize": 0.12,
+          "enablePreloading": false
+        }
+      },
+      "topics": {
+        "/remote/b2/path": {
+          "visible": true,
+          "color": "#00ff88",
+          "lineSize": 0.04
+        },
+        "/remote/b2/odom": {
+          "visible": true
+        },
+        "/tf": {
+          "visible": true
+        },
+        "/tf_static": {
+          "visible": true
+        },
+        "/joint_states": {
+          "visible": false
+        }
+      },
+      "layers": {
+        "grid-b2": {
+          "visible": true,
+          "frameLocked": true,
+          "label": "Grid",
+          "instanceId": "grid-b2",
+          "layerId": "foxglove.Grid",
+          "size": 20,
+          "divisions": 20,
+          "lineWidth": 1,
+          "color": "#248eff",
+          "position": [0, 0, 0],
+          "rotation": [0, 0, 0],
+          "order": 1
+        },
+        "urdf-b2": {
+          "visible": true,
+          "frameLocked": true,
+          "label": "B2+R5a",
+          "instanceId": "urdf-b2",
+          "layerId": "foxglove.Urdf",
+          "sourceType": "param",
+          "paramName": "/robot_description",
+          "framePrefix": "",
+          "displayMode": "auto",
+          "fallbackColor": "#bbbbbb",
+          "order": 2
+        }
+      },
+      "publish": {
+        "type": "point",
+        "poseTopic": "/move_base_simple/goal",
+        "pointTopic": "/clicked_point",
+        "poseEstimateTopic": "/initialpose",
+        "poseEstimateXDeviation": 0.5,
+        "poseEstimateYDeviation": 0.5,
+        "poseEstimateThetaDeviation": 0.26179939
+      },
+      "imageMode": {}
+    }
+  },
+  "globalVariables": {},
+  "userNodes": {},
+  "playbackConfig": {
+    "speed": 1
+  },
+  "layout": "3D!b2sim"
+}

@@ -1,0 +1,60 @@
+schema: xgc2.product.v1
+id: xgc2-b2-link
+name: XGC2 B2 Link (forwarder + ground peer)
+version: 0.1.0
+kind: ros2-apt
+summary: >-
+  Unitree B2 (and R5 arm status) cross-host link: onboard whitelist forwarder
+  and ground recovery peer sharing one Zenoh/TCP key contract. Onboard targets
+  ROS 2 Jazzy (Thor). Ground ROS1 recovery scripts are included for Noetic hosts
+  via the same Python package when run with system rospy.
+groups:
+- ros2
+- driver
+- robot
+- link
+ros:
+  distro: jazzy
+  packages:
+  - xgc2_b2_link
+apt:
+  distribution: noble
+  install:
+  - ros-jazzy-xgc2-b2-link
+  packages:
+  - ros-jazzy-xgc2-b2-link
+  package_architectures:
+    ros-jazzy-xgc2-b2-link:
+    - amd64
+    - arm64
+  depends:
+  - python3-yaml
+  # eclipse-zenoh is optional at runtime (TCP framed fallback is default in lab);
+  # document pip/apt extra for production Zenoh.
+usage:
+  install: |
+    # Thor / Ubuntu 24.04 + ROS 2 Jazzy (onboard forwarder)
+    sudo apt update
+    sudo apt install ros-jazzy-xgc2-b2-link
+    source /opt/ros/jazzy/setup.bash
+    # example (after drivers are up):
+    # ros2 run xgc2_b2_link b2_forwarder_d0 -- --robot-id b2-01 --transport auto
+  smoke_test: |
+    ros2 pkg prefix xgc2_b2_link
+    test -f "$(ros2 pkg prefix xgc2_b2_link)/share/xgc2_b2_link/contract/zenoh_v1.yaml"
+    test -x "$(ros2 pkg prefix xgc2_b2_link)/lib/xgc2_b2_link/b2_forwarder_d0"
+    test -x "$(ros2 pkg prefix xgc2_b2_link)/lib/xgc2_b2_link/b2_ground_peer"
+    test -x "$(ros2 pkg prefix xgc2_b2_link)/lib/xgc2_b2_link/b2_sim_publisher"
+ownership:
+  paths:
+  - /opt/ros/jazzy/lib/xgc2_b2_link
+  - /opt/ros/jazzy/share/xgc2_b2_link
+  - /opt/ros/jazzy/lib/python3.12/site-packages/xgc2_b2_link
+release:
+  # Public sub-repo target (create when first APT train runs)
+  repository: lxk36/xgc2-b2-link
+  ref: jazzy
+  workflow: release.yml
+  ci_workflow: ci.yml
+  apt_versions:
+    noble: 0.1.0

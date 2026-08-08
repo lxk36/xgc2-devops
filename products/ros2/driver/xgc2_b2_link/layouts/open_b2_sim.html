@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>XGC2 B2 sim → Lichtblick</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, sans-serif; background: #111; color: #ddd; max-width: 42rem; margin: 3rem auto; padding: 0 1rem; }
+    a { color: #6cf; }
+    code { background: #222; padding: 0.15em 0.4em; border-radius: 4px; word-break: break-all; }
+    .warn { color: #f90; }
+  </style>
+  <script>
+    // Critical: ds must be the FULL id "foxglove-websocket".
+    // A truncated "foxglove-" makes Lichtblick skip auto-connect and show
+    // "Unknown data source" + "[followTf] No coordinate frames found".
+    (function () {
+      var layoutPort = location.port || "8091";
+      var layoutUrl = location.protocol + "//" + location.hostname + ":" + layoutPort + "/b2_sim_3d.json";
+      var target = new URL("http://127.0.0.1:8080/");
+      target.searchParams.set("ds", "foxglove-websocket");
+      target.searchParams.set("ds.url", "ws://127.0.0.1:8080/ws");
+      target.searchParams.set("layoutUrl", layoutUrl);
+      // replace so Back does not re-enter this trampoline
+      window.location.replace(target.href);
+    })();
+  </script>
+</head>
+<body>
+  <h1>Opening Lichtblick…</h1>
+  <p>If the browser does not redirect, open:</p>
+  <p><a id="link" href="http://127.0.0.1:8080/?ds=foxglove-websocket&amp;ds.url=ws%3A%2F%2F127.0.0.1%3A8080%2Fws&amp;layoutUrl=http%3A%2F%2F127.0.0.1%3A8091%2Fb2_sim_3d.json">Lichtblick B2 sim 3D</a></p>
+  <p class="warn">Do not paste a shortened <code>ds=foxglove-</code> — the full value is <code>foxglove-websocket</code>.</p>
+</body>
+</html>

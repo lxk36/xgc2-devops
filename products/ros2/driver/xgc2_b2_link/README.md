@@ -1,5 +1,13 @@
 # xgc2_b2_link (G3 + G4 aligned)
 
+**XGC2 独立子产品** — 产品 ID `xgc2-b2-link`（见 [docs/PRODUCT.md](./docs/PRODUCT.md)、[`.xgc2/product.yml`](./.xgc2/product.yml)）。
+
+| 部署 | 方式 |
+|------|------|
+| **Thor 机载** | 目标：`sudo apt install ros-jazzy-xgc2-b2-link` 后 `ros2 run …` |
+| **地面开发** | **源码** `PYTHONPATH` + Noetic rospy（最快） |
+| **两头都要快** | 机载 APT + 地面源码并行；契约同一文件 `contract/zenoh_v1.yaml` |
+
 Shared **Zenoh key contract** and first implementation slice for:
 
 | Role | Component | Side |
@@ -57,40 +65,71 @@ PYTHONPATH=. python3 -m pytest test/ -q
 
 ## Visualization closed loop (sim → ROS1 recovery → foxglove → Lichtblick)
 
-Host: ROS Noetic + `foxglove_bridge` + `robot_state_publisher` + URDF `b2arx_description`.
+**Data path is not “open 8080 and a dog appears”.** Lichtblick only shows a robot after:
 
-```bash
-cd products/ros2/driver/xgc2_b2_link
-export PYTHONPATH=$PWD
-# one-shot stack (Ctrl-C stops):
-bash scripts/viz_closed_loop.sh
-```
+1. Backend is live (odom / joints / TF / `robot_description` / meshes), and  
+2. UI has a **3D panel + URDF layer** (empty default layout shows no dog).
 
-What it starts:
-
-1. `roscore` (if needed)
-2. `/robot_description` from `b2arx_visual.urdf` (mesh paths rewritten to `file://`)
-3. **G4** `ground_peer --publish-ros` (TCP server) — recovers:
-   - `/remote/b2/odom`, `/remote/b2/joint_states`, `/remote/b2/path`, `/remote/b2/power_summary`
-   - `/joint_states` (dog URDF joints + R5a arm joints)
-   - `/remote/arm/slave_joint_states`
-   - TF `odom` → `b2_description`
-4. **Sim** `sim_publisher` (TCP client) — walk gait + circle odom + arm motion + battery
-5. `robot_state_publisher` — full TF tree from URDF + joints
-6. `foxglove_bridge` on `ws://127.0.0.1:8765`
-7. `xgc2-lichtblick-web` if installed — open UI and connect Foxglove WebSocket to `8765`
-
-Manual verify:
+### Backend verify (must pass before blaming UI)
 
 ```bash
 source /opt/ros/noetic/setup.bash
+export ROS_PACKAGE_PATH=$PWD/../../robot/b2arx_description:$ROS_PACKAGE_PATH
+export PYTHONPATH=/opt/ros/noetic/lib/python3/dist-packages:$PWD
+# topics
 rostopic echo -n 1 /remote/b2/odom
 rostopic echo -n 1 /joint_states
-# path history:
-rostopic hz /remote/b2/path
+# TF
+rosrun tf tf_echo odom b2_description
+# foxglove must advertise those topics (script checks this)
 ```
 
-In Lichtblick / Foxglove Studio: add **3D** panel, fixed frame `odom`, enable TF, Robot (from `robot_description` / URDF), topics `/remote/b2/path`, `/remote/b2/odom`.
+### Start stack (one shot)
+
+```bash
+cd products/ros2/driver/xgc2_b2_link
+bash scripts/one_shot_viz.sh
+```
+
+Checks TF + foxglove advertise + URDF param + **CORS layout server**, then prints one URL.
+
+### Open URL
+
+**Recommended** (HTML trampoline — always expands the full data-source id):
+
+```text
+http://127.0.0.1:8091/open_b2_sim.html
+```
+
+Direct (must keep `ds` **exactly** `foxglove-websocket`, never truncated `foxglove-`):
+
+```text
+http://127.0.0.1:8080/?ds=foxglove-websocket&ds.url=ws%3A%2F%2F127.0.0.1%3A8080%2Fws&layoutUrl=http%3A%2F%2F127.0.0.1%3A8091%2Fb2_sim_3d.json
+```
+
+Short form (Lichtblick injects `ds` via auto-connect when `ds` is omitted):
+
+```text
+http://127.0.0.1:8080/?layoutUrl=http%3A%2F%2F127.0.0.1%3A8091%2Fb2_sim_3d.json
+```
+
+| Console message | Meaning |
+|-----------------|---------|
+| `[followTf] No coordinate frames found` | 3D panel has no TF because the WebSocket data source is not connected (wrong/truncated `ds`). Backend `/tf` is usually fine. |
+| `called render done function twice` | Benign panel remount race in Lichtblick; ignore. |
+| `Unknown data source: foxglove-` | `ds` was truncated — use the trampoline URL above. |
+
+- Layout server uses **CORS** (`scripts/cors_static_server.py`) so `layoutUrl` is not blocked.
+- Layout ships a **3D panel with URDF layer** (`/robot_description`). Hard-refresh after restart.
+- Confirm connection: Topics sidebar should list `/tf`, `/remote/b2/odom`, etc., and 3D Fixed/Follow frame shows `b2_description` / `odom`.
+
+### What the stack runs
+
+1. sim_publisher (walk + circle odom + arm + battery)  
+2. ground_peer ROS1 recovery  
+3. robot_state_publisher  
+4. foxglove_bridge `:8765` (assets + package:// meshes)  
+5. xgc2-lichtblick-web `:8080`
 
 ## MVP topics (G3→G4)
 
