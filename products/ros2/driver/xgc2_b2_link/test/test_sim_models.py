@@ -32,6 +32,8 @@ def test_odom_circle_moves():
     assert a["pose"]["position"]["x"] != b["pose"]["position"]["x"] or a["pose"]["position"]["y"] != b[
         "pose"
     ]["position"]["y"]
+    # Standing height must keep feet near ground (b2arx FK ≈ 0.64 m), not 0.55.
+    assert a["pose"]["position"]["z"] >= 0.60
 
 
 def test_arm_8():

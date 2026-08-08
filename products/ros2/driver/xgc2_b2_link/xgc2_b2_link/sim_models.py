@@ -58,6 +58,12 @@ ARM_URDF_JOINTS: List[str] = [
 ODOM_FRAME = "odom"
 BASE_FRAME = "b2_description"  # URDF root link
 
+# Nominal body height so foot links sit near z=0 for b2arx_visual.urdf.
+# FK (walk stance): foot ≈ -0.64 m in base frame → base z ≈ 0.64.
+# Real B2: prefer state-estimator / odom.z when available; LowState does not
+# always expose a calibrated world height without extrinsics.
+STANDING_BASE_Z = 0.64
+
 
 def yaw_to_quat(yaw: float) -> Tuple[float, float, float, float]:
     """Return (x, y, z, w)."""
@@ -68,15 +74,16 @@ def yaw_to_quat(yaw: float) -> Tuple[float, float, float, float]:
 def walk_leg_positions(t: float, phase: float = 0.0) -> List[float]:
     """12-DOF simple trot-like positions (rad)."""
     w = 2.0 * math.pi * 1.2  # ~1.2 Hz gait
-    a_hip = 0.15
-    a_thigh = 0.35
-    a_calf = 0.45
+    a_hip = 0.12
+    a_thigh = 0.28
+    a_calf = 0.35
     # pairs: FR, FL, RR, RL — diagonal trot
     phases = [0.0 + phase, math.pi + phase, math.pi + phase, 0.0 + phase]
     out: List[float] = []
     for p in phases:
         s = math.sin(w * t + p)
-        out.extend([a_hip * s * 0.3, a_thigh * s, -a_calf * abs(s) - 0.6])
+        # Nominal stance (thigh/calf) keeps feet near ground when base_z=STANDING_BASE_Z
+        out.extend([a_hip * s * 0.3, 0.55 + a_thigh * s * 0.5, -1.05 - a_calf * abs(s) * 0.25])
     return out
 
 
@@ -94,13 +101,18 @@ def arm_positions(t: float) -> List[float]:
     ]
 
 
-def odom_circle(t: float, radius: float = 2.0, speed: float = 0.35) -> Dict:
-    """Body walks a circle in odom frame."""
+def odom_circle(
+    t: float,
+    radius: float = 2.0,
+    speed: float = 0.35,
+    base_z: float = STANDING_BASE_Z,
+) -> Dict:
+    """Body walks a circle in odom frame (x/y translate; z = standing height)."""
     omega = speed / max(radius, 1e-3)
     yaw = omega * t
     x = radius * math.sin(yaw)
     y = radius * (1.0 - math.cos(yaw))
-    z = 0.55  # standing height-ish
+    z = float(base_z)
     qx, qy, qz, qw = yaw_to_quat(yaw)
     vx = speed * math.cos(yaw)
     vy = speed * math.sin(yaw)

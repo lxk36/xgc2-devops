@@ -120,8 +120,18 @@ http://127.0.0.1:8080/?layoutUrl=http%3A%2F%2F127.0.0.1%3A8091%2Fb2_sim_3d.json
 | `Unknown data source: foxglove-` | `ds` was truncated — use the trampoline URL above. |
 
 - Layout server uses **CORS** (`scripts/cors_static_server.py`) so `layoutUrl` is not blocked.
-- Layout ships a **3D panel with URDF layer** (`/robot_description`). Hard-refresh after restart.
-- Confirm connection: Topics sidebar should list `/tf`, `/remote/b2/odom`, etc., and 3D Fixed/Follow frame shows `b2_description` / `odom`.
+- Layout ships a **3D panel with URDF layer** on param **`parameter: /robot_description`** (not `paramName` — that typo hid the dog).
+- Appearance defaults (layout `b2_sim_3d_v5`):
+  - path **`lineWidth=0.02`** (not `lineSize` — ignored; default was 0.2 m)
+  - **follow-none + frame odom**, sim odom **z≈0.64 m**
+  - **no black mesh edges** — same pattern as product fs150/scout/mecanum layouts
+    (`lichtblick_layout.go`): for every URDF visual set
+    `topics["{link}-{index}-mesh"].showOutlines = false`.
+    **Layer-level `showOutlines` does nothing for URDF meshes** (children look up the
+    synthetic mesh topic key). Regenerate: `scripts/gen_layout_outline_keys.py`.
+- First load can take several seconds: `base_link.dae` is ~7 MB over foxglove `fetchAsset`.
+- Confirm: Topics list `/tf`, `/remote/b2/odom`; Layers **B2+R5a**; dog walks a circle above the grid.
+- Re-open via trampoline so layout **`b2_sim_3d_v5`** is re-imported.
 
 ### What the stack runs
 

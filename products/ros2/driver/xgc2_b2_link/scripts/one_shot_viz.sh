@@ -68,15 +68,32 @@ if ! python3 -c "import rosgraph; rosgraph.Master('/p').getPid()" 2>/dev/null; t
   done
 fi
 
+# Param for robot_state_publisher + foxglove parameters; latched topic for Lichtblick topic path.
 python3 - <<PY
 import rospy
 rospy.init_node("xgc2_set_rd", anonymous=True)
 xml = open("${B2ARX}/urdf/b2arx_visual.urdf", encoding="utf-8").read()
 assert "package://b2arx_description/" in xml
 rospy.set_param("/robot_description", xml)
-print("robot_description ok", len(xml))
+print("robot_description param ok", len(xml))
 print("rospack", __import__("subprocess").check_output(["rospack","find","b2arx_description"], text=True).strip())
 PY
+
+# Background latched /robot_description publisher (Lichtblick topic path).
+cat >"$LOG_DIR/urdf_topic_pub.py" <<'PY'
+import rospy
+from std_msgs.msg import String
+
+rospy.init_node("xgc2_urdf_topic_pub", anonymous=True)
+xml = rospy.get_param("/robot_description")
+pub = rospy.Publisher("/robot_description", String, queue_size=1, latch=True)
+rospy.sleep(0.3)
+pub.publish(String(data=xml))
+print("latched /robot_description topic", len(xml), flush=True)
+rospy.spin()
+PY
+nohup python3 "$LOG_DIR/urdf_topic_pub.py" >"$LOG_DIR/urdf_topic.log" 2>&1 &
+echo $! >"$LOG_DIR/urdf_topic.pid"
 
 nohup python3 -m xgc2_b2_link.ground_peer \
   --robot-id "$ROBOT_ID" --transport tcp --tcp-role server --tcp-port "$TCP_PORT" \
@@ -167,9 +184,10 @@ fi
 # Do NOT paste a truncated ds=foxglove- into the address bar — that skips
 # Lichtblick auto-connect and yields "[followTf] No coordinate frames found".
 LAUNCH_URL="http://127.0.0.1:${LAYOUT_PORT}/open_b2_sim.html"
-URL="http://127.0.0.1:8080/?ds=foxglove-websocket&ds.url=ws%3A%2F%2F127.0.0.1%3A8080%2Fws&layoutUrl=http%3A%2F%2F127.0.0.1%3A${LAYOUT_PORT}%2Fb2_sim_3d.json"
+# b2_sim_3d_v5: mesh outline keys (product pattern), lineWidth path, follow-none.
+URL="http://127.0.0.1:8080/?ds=foxglove-websocket&ds.url=ws%3A%2F%2F127.0.0.1%3A8080%2Fws&layoutUrl=http%3A%2F%2F127.0.0.1%3A${LAYOUT_PORT}%2Fb2_sim_3d_v5.json"
 # Short form also works: omit ds so index auto-connect injects the full id.
-URL_SHORT="http://127.0.0.1:8080/?layoutUrl=http%3A%2F%2F127.0.0.1%3A${LAYOUT_PORT}%2Fb2_sim_3d.json"
+URL_SHORT="http://127.0.0.1:8080/?layoutUrl=http%3A%2F%2F127.0.0.1%3A${LAYOUT_PORT}%2Fb2_sim_3d_v5.json"
 
 # write open helper
 cat >"$LOG_DIR/OPEN_ME.url" <<EOF

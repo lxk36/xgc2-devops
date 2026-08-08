@@ -16,7 +16,7 @@
     // "Unknown data source" + "[followTf] No coordinate frames found".
     (function () {
       var layoutPort = location.port || "8091";
-      var layoutUrl = location.protocol + "//" + location.hostname + ":" + layoutPort + "/b2_sim_3d.json";
+      var layoutUrl = location.protocol + "//" + location.hostname + ":" + layoutPort + "/b2_sim_3d_v5.json";
       var target = new URL("http://127.0.0.1:8080/");
       target.searchParams.set("ds", "foxglove-websocket");
       target.searchParams.set("ds.url", "ws://127.0.0.1:8080/ws");
@@ -29,7 +29,7 @@
 <body>
   <h1>Opening Lichtblick…</h1>
   <p>If the browser does not redirect, open:</p>
-  <p><a id="link" href="http://127.0.0.1:8080/?ds=foxglove-websocket&amp;ds.url=ws%3A%2F%2F127.0.0.1%3A8080%2Fws&amp;layoutUrl=http%3A%2F%2F127.0.0.1%3A8091%2Fb2_sim_3d.json">Lichtblick B2 sim 3D</a></p>
+  <p><a id="link" href="http://127.0.0.1:8080/?ds=foxglove-websocket&amp;ds.url=ws%3A%2F%2F127.0.0.1%3A8080%2Fws&amp;layoutUrl=http%3A%2F%2F127.0.0.1%3A8091%2Fb2_sim_3d_v5.json">Lichtblick B2 sim 3D (dog URDF)</a></p>
   <p class="warn">Do not paste a shortened <code>ds=foxglove-</code> — the full value is <code>foxglove-websocket</code>.</p>
 </body>
 </html>
