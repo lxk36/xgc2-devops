@@ -13,13 +13,13 @@ if [[ ! -f "$URDF_DEFAULT" ]]; then
   URDF_DEFAULT="/home/lxk/Dev/xgc2-vibe-coding/xgc2-devops/products/ros2/robot/b2arx_description/urdf/b2arx_visual.urdf"
 fi
 
-export PYTHONPATH="$ROOT${PYTHONPATH:+:$PYTHONPATH}"
 ROBOT_ID="${ROBOT_ID:-b2-sim}"
 PORT="${PORT:-7448}"
 URDF="${URDF_PATH:-$URDF_DEFAULT}"
 RUN_LICHTBLICK="${RUN_LICHTBLICK:-1}"
 FOXGLOVE_PORT="${FOXGLOVE_PORT:-8765}"
-LICHTBLICK_PORT="${LICHTBLICK_PORT:-18081}"
+# xgc2-lichtblick-web defaults to :8080 and proxies foxglove ws
+LICHTBLICK_PORT="${LICHTBLICK_PORT:-8080}"
 LOG_DIR="${LOG_DIR:-/tmp/xgc2_b2_viz_$$}"
 mkdir -p "$LOG_DIR"
 
@@ -35,6 +35,8 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 source /opt/ros/noetic/setup.bash
+# Keep Noetic site-packages first; append package root for xgc2_b2_link
+export PYTHONPATH="/opt/ros/noetic/lib/python3/dist-packages:${ROOT}${PYTHONPATH:+:$PYTHONPATH}"
 
 if ! rostopic list &>/dev/null; then
   echo "[viz] starting roscore..."
@@ -154,15 +156,13 @@ else
 fi
 
 if [[ "$RUN_LICHTBLICK" == "1" ]] && [[ -x /usr/bin/xgc2-lichtblick-web ]]; then
-  # Lichtblick web typically serves UI; connect to foxglove ws in layout
-  XGC2_LICHTBLICK_PORT="$LICHTBLICK_PORT" \
-    /usr/bin/xgc2-lichtblick-web \
+  # Binary serves UI and defaults WebSocket upstream to ws://127.0.0.1:8765
+  /usr/bin/xgc2-lichtblick-web \
     >"$LOG_DIR/lichtblick.log" 2>&1 &
   PIDS+=($!)
   sleep 1
-  echo "[viz] lichtblick-web started (log $LOG_DIR/lichtblick.log)"
-  echo "[viz] Open UI (if served): http://127.0.0.1:${LICHTBLICK_PORT}/"
-  echo "[viz] In layout: Foxglove WebSocket → ws://127.0.0.1:${FOXGLOVE_PORT}"
+  echo "[viz] lichtblick-web: http://127.0.0.1:${LICHTBLICK_PORT}/ (upstream foxglove ws://127.0.0.1:${FOXGLOVE_PORT}/)"
+  echo "[viz] log: $LOG_DIR/lichtblick.log"
 else
   echo "[viz] skip lichtblick (RUN_LICHTBLICK=0 or binary missing)"
   echo "[viz] Connect Foxglove Studio / Lichtblick to ws://127.0.0.1:${FOXGLOVE_PORT}"
